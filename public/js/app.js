@@ -625,6 +625,129 @@ class EmbryoApp {
     this.renderResults(this.currentRoom);
   }
 
+  async startOfflineDuoMatch(teamName, memberA, memberB) {
+    this.closeModal('joinModal');
+    let questions = this.studyBankQuestions;
+    if (!questions) {
+      try {
+        const res = await fetch('/data/questions.json');
+        if (res.ok) questions = await res.json();
+      } catch (e) {}
+    }
+    if (!questions || questions.length === 0) {
+      return alert('Não foi possível carregar as questões para a partida.');
+    }
+
+    const shuffled = [...questions].sort(() => 0.5 - Math.random()).slice(0, 15);
+    const participantId = 'part_' + Date.now();
+    this.currentParticipant = { id: participantId, name: memberA, role: 'member_A', score: 0 };
+    this.currentTeam = {
+      code: 'DP-' + Math.floor(1000 + Math.random() * 9000),
+      name: teamName,
+      memberA,
+      memberB,
+      score: 0
+    };
+
+    this.offlineDuoMatch = {
+      teamName,
+      memberA,
+      memberB,
+      score: 0,
+      correctCount: 0,
+      totalCorrectTime: 0,
+      questions: shuffled,
+      currentIndex: 0,
+      timeLimit: 180
+    };
+
+    this.startOfflineDuoRound(0);
+  }
+
+  startOfflineDuoRound(index) {
+    if (!this.offlineDuoMatch || index >= this.offlineDuoMatch.questions.length) {
+      return this.finishOfflineDuoMatch();
+    }
+    const q = this.offlineDuoMatch.questions[index];
+    this.offlineDuoMatch.currentIndex = index;
+    this.selectedOptionIndex = null;
+    this.hasAnsweredCurrentRound = false;
+
+    const now = Date.now();
+    const duration = this.offlineDuoMatch.timeLimit;
+    const currentTurn = (index % 2 === 0) ? 'A' : 'B';
+    const activeMemberName = (currentTurn === 'A') ? this.offlineDuoMatch.memberA : this.offlineDuoMatch.memberB;
+
+    const roomState = {
+      id: 'room_duo_offline',
+      name: `Desafio em Dupla: ${this.offlineDuoMatch.teamName}`,
+      mode: 'duo',
+      status: 'in_progress',
+      totalQuestions: this.offlineDuoMatch.questions.length,
+      currentQuestionIndex: index,
+      timeLimit: duration,
+      question: {
+        id: q.id,
+        category: q.category,
+        theme: q.theme,
+        question: q.question,
+        options: q.options,
+        difficulty: q.difficulty,
+        points: q.points || (q.difficulty === 'Difícil' ? 30 : (q.difficulty === 'Média' ? 20 : 10)),
+        correctAnswer: null,
+        scientificExplanation: null
+      },
+      currentRound: {
+        questionIndex: index,
+        startTime: now,
+        endTime: now + (duration * 1000),
+        duration: duration,
+        isClosed: false
+      },
+      me: {
+        id: 'duo_user',
+        name: activeMemberName,
+        role: currentTurn === 'A' ? 'member_A' : 'member_B'
+      },
+      myTeam: {
+        code: this.currentTeam ? this.currentTeam.code : 'DP-LOCAL',
+        name: this.offlineDuoMatch.teamName,
+        memberA: this.offlineDuoMatch.memberA,
+        memberB: this.offlineDuoMatch.memberB,
+        score: this.offlineDuoMatch.score
+      },
+      myTurn: true,
+      myAnswer: null,
+      leaderboard: [{
+        rank: 1,
+        name: this.offlineDuoMatch.teamName,
+        score: this.offlineDuoMatch.score,
+        correctCount: this.offlineDuoMatch.correctCount
+      }]
+    };
+
+    this.currentRoom = roomState;
+    this.switchView('arena');
+    this.renderArena(roomState);
+  }
+
+  finishOfflineDuoMatch() {
+    const finalScore = this.offlineDuoMatch ? this.offlineDuoMatch.score : 0;
+    const teamName = this.offlineDuoMatch ? this.offlineDuoMatch.teamName : 'Dupla';
+    const finalCorrect = this.offlineDuoMatch ? this.offlineDuoMatch.correctCount : 0;
+    this.offlineDuoMatch = null;
+
+    this.currentRoom = {
+      status: 'finished',
+      mode: 'duo',
+      leaderboard: [
+        { rank: 1, name: teamName, score: finalScore, correctCount: finalCorrect, isSolo: false }
+      ]
+    };
+    this.switchView('results');
+    this.renderResults(this.currentRoom);
+  }
+
   async handleDuoCreateSubmit() {
     const teamName = document.getElementById('duoTeamName').value.trim();
     const teamPassword = document.getElementById('duoTeamPassword').value.trim();
@@ -632,6 +755,12 @@ class EmbryoApp {
 
     if (!teamName || !teamPassword || !creatorName) {
       return alert('Preencha todos os campos para criar a dupla.');
+    }
+
+    if (!window.socketClient.isConnected) {
+      const partnerName = prompt(`Modo Local / Apresentação no Netlify\n\nDupla: ${teamName}\nIntegrante A: ${creatorName}\n\nInforme o nome do Integrante B para a alternância oficial de turnos:`);
+      if (!partnerName) return;
+      return this.startOfflineDuoMatch(teamName, creatorName, partnerName.trim());
     }
 
     const res = await window.socketClient.createDuoTeam(this.targetJoinRoomId, teamName, teamPassword, creatorName);
@@ -653,6 +782,10 @@ class EmbryoApp {
 
     if (!teamCode || !teamPassword || !memberName) {
       return alert('Preencha o código, senha e seu nome.');
+    }
+
+    if (!window.socketClient.isConnected) {
+      return alert('No modo local estático (Netlify), utilize a opção "Criar Nova Dupla" para iniciar a partida diretamente na tela.');
     }
 
     const res = await window.socketClient.joinDuoTeam(this.targetJoinRoomId, teamCode, teamPassword, memberName);
@@ -1137,7 +1270,7 @@ class EmbryoApp {
       confirmBtn.innerHTML = 'Enviando... ⏳';
     }
 
-    // Static host (Netlify) Offline Match execution
+    // Static host (Netlify) Offline Match execution (Solo)
     if (!window.socketClient.isConnected && this.offlineMatch) {
       const q = this.offlineMatch.questions[this.offlineMatch.currentIndex];
       const isCorrect = parseInt(this.selectedOptionIndex) === q.correctAnswer;
@@ -1177,6 +1310,54 @@ class EmbryoApp {
       setTimeout(() => {
         if (this.offlineMatch) {
           this.startOfflineRound(this.offlineMatch.currentIndex + 1);
+        }
+      }, 10000);
+      return;
+    }
+
+    // Static host (Netlify) Offline Match execution (Duo)
+    if (!window.socketClient.isConnected && this.offlineDuoMatch) {
+      const q = this.offlineDuoMatch.questions[this.offlineDuoMatch.currentIndex];
+      const isCorrect = parseInt(this.selectedOptionIndex) === q.correctAnswer;
+      const now = Date.now();
+      const startTime = (this.currentRoom.currentRound && this.currentRoom.currentRound.startTime) ? this.currentRoom.currentRound.startTime : now;
+      const timeUsed = Math.min(this.offlineDuoMatch.timeLimit, Math.max(0, (now - startTime) / 1000));
+      const maxPts = q.points || (q.difficulty === 'Difícil' ? 30 : q.difficulty === 'Média' ? 20 : 10);
+      let points = 0;
+      if (isCorrect) {
+        const ratio = timeUsed / this.offlineDuoMatch.timeLimit;
+        points = Math.round(maxPts * (1 - 0.5 * ratio));
+        this.offlineDuoMatch.score += points;
+        this.offlineDuoMatch.correctCount += 1;
+        this.offlineDuoMatch.totalCorrectTime += timeUsed;
+      }
+
+      this.currentRoom.myAnswer = {
+        optionIndex: this.selectedOptionIndex,
+        isCorrect,
+        points,
+        timeUsed
+      };
+      this.currentRoom.status = 'explanation';
+      this.currentRoom.explanationDuration = 10;
+      this.currentRoom.explanationEndsAt = Date.now() + 10000;
+      this.currentRoom.question.correctAnswer = q.correctAnswer;
+      this.currentRoom.question.scientificExplanation = q.scientificExplanation;
+      this.currentRoom.question.curiosity = q.curiosity;
+      this.currentRoom.question.difference = q.difference;
+      this.currentRoom.question.reference = q.reference;
+      if (this.currentRoom.leaderboard && this.currentRoom.leaderboard[0]) {
+        this.currentRoom.leaderboard[0].score = this.offlineDuoMatch.score;
+        this.currentRoom.leaderboard[0].correctCount = this.offlineDuoMatch.correctCount;
+      }
+
+      this.renderArena(this.currentRoom);
+      if (isCorrect) window.soundManager.playCorrect();
+      else window.soundManager.playIncorrect();
+
+      setTimeout(() => {
+        if (this.offlineDuoMatch) {
+          this.startOfflineDuoRound(this.offlineDuoMatch.currentIndex + 1);
         }
       }, 10000);
       return;
@@ -2183,8 +2364,50 @@ class EmbryoApp {
       if (res.ok && contentType.includes('application/json')) {
         const state = await res.json();
         this.handleAdminRoomStateUpdate(state);
+        return;
       }
     } catch (e) {}
+
+    // Fallback: carregar sala local do localStorage (modo Netlify / offline)
+    try {
+      let localRooms = JSON.parse(localStorage.getItem('g5_local_rooms') || '[]');
+      let room = localRooms.find(r => r.id === roomId);
+      if (room) {
+        if (!room.questions || room.questions.length === 0) {
+          let allQ = this.adminQuestionsData || this.studyBankQuestions || [];
+          if (!allQ || allQ.length === 0) {
+            const staticRes = await fetch('/data/questions.json');
+            if (staticRes.ok) allQ = await staticRes.json();
+          }
+          const count = room.questionCount === 'all' ? allQ.length : (parseInt(room.questionCount) || 15);
+          room.questions = (allQ || []).slice(0, count);
+        }
+
+        const currentIdx = room.currentQuestionIndex !== undefined ? room.currentQuestionIndex : -1;
+        const currentQ = (currentIdx >= 0 && room.questions && room.questions[currentIdx]) ? room.questions[currentIdx] : null;
+
+        const simulatedState = {
+          id: room.id,
+          code: room.code,
+          name: room.name,
+          mode: room.mode || 'solo',
+          status: room.status || 'lobby',
+          timeLimit: room.timeLimit || 180,
+          totalQuestions: (room.questions && room.questions.length) || 15,
+          currentRound: currentQ ? {
+            questionIndex: currentIdx,
+            answersCount: room.answersCount || 0,
+            totalExpected: room.participantCount || 1
+          } : null,
+          question: currentQ,
+          participants: room.participants || [],
+          leaderboard: room.leaderboard || []
+        };
+        this.handleAdminRoomStateUpdate(simulatedState);
+      }
+    } catch (err) {
+      console.error('Erro ao montar estado da sala local:', err);
+    }
   }
 
   handleAdminRoomStateUpdate(adminState) {
@@ -2269,17 +2492,71 @@ class EmbryoApp {
   async adminRoomAction(action) {
     if (!this.adminSelectedRoomId) return;
     try {
-      const res = await fetch(`/api/admin/rooms/${this.adminSelectedRoomId}/${action}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.adminToken}`
+      let actionHandled = false;
+      try {
+        const res = await fetch(`/api/admin/rooms/${this.adminSelectedRoomId}/${action}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.adminToken}`
+          }
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data && !data.error) {
+            actionHandled = true;
+          }
         }
-      });
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      this.fetchAdminRoomState(this.adminSelectedRoomId);
-      this.refreshAdminRooms();
+      } catch (e) {}
+
+      // Fallback local caso esteja no Netlify sem backend
+      if (!actionHandled) {
+        let localRooms = JSON.parse(localStorage.getItem('g5_local_rooms') || '[]');
+        let room = localRooms.find(r => r.id === this.adminSelectedRoomId);
+        if (room) {
+          if (!room.questions || room.questions.length === 0) {
+            let allQ = this.adminQuestionsData || this.studyBankQuestions || [];
+            if (!allQ || allQ.length === 0) {
+              const staticRes = await fetch('/data/questions.json');
+              if (staticRes.ok) allQ = await staticRes.json();
+            }
+            const count = room.questionCount === 'all' ? (allQ ? allQ.length : 15) : (parseInt(room.questionCount) || 15);
+            room.questions = (allQ || []).slice(0, count);
+          }
+
+          if (action === 'start') {
+            room.status = 'in_progress';
+            room.currentQuestionIndex = 0;
+            room.answersCount = 0;
+          } else if (action === 'pause') {
+            room.status = 'paused';
+          } else if (action === 'resume') {
+            room.status = 'in_progress';
+          } else if (action === 'advance') {
+            if (room.status === 'in_progress' && room.revealExplanation) {
+              room.status = 'explanation';
+            } else {
+              const nextIdx = (room.currentQuestionIndex !== undefined ? room.currentQuestionIndex : 0) + 1;
+              if (nextIdx >= room.questions.length) {
+                room.status = 'finished';
+              } else {
+                room.currentQuestionIndex = nextIdx;
+                room.status = 'in_progress';
+                room.answersCount = 0;
+              }
+            }
+          } else if (action === 'finish') {
+            room.status = 'finished';
+          }
+
+          localStorage.setItem('g5_local_rooms', JSON.stringify(localRooms));
+          actionHandled = true;
+        }
+      }
+
+      await this.fetchAdminRoomState(this.adminSelectedRoomId);
+      await this.refreshAdminRooms();
     } catch (e) {
       alert('Erro na ação do anfitrião: ' + e.message);
     }
@@ -2349,7 +2626,23 @@ class EmbryoApp {
 
       if (!created) {
         // Fallback local caso esteja sem servidor Node ativo (Netlify)
-        const localCode = 'G5' + Math.floor(1000 + Math.random() * 9000);
+        const localCode = 'G5-' + Math.floor(100 + Math.random() * 900);
+        let allQ = this.adminQuestionsData || this.studyBankQuestions || [];
+        if (!allQ || allQ.length === 0) {
+          try {
+            const staticRes = await fetch('/data/questions.json');
+            if (staticRes.ok) allQ = await staticRes.json();
+          } catch (e) {}
+        }
+        let filtered = allQ || [];
+        if (difficulty !== 'all' && filtered.length > 0) {
+          const diffMap = { 'facil': 'Fácil', 'medio': 'Média', 'dificil': 'Difícil' };
+          const matched = filtered.filter(q => q.difficulty === diffMap[difficulty]);
+          if (matched.length > 0) filtered = matched;
+        }
+        const count = questionCount === 'all' ? filtered.length : (parseInt(questionCount) || 15);
+        const shuffled = [...filtered].sort(() => Math.random() - 0.5).slice(0, count);
+
         const newLocalRoom = {
           id: 'room_' + Date.now(),
           code: localCode,
@@ -2358,11 +2651,14 @@ class EmbryoApp {
           mode,
           timeLimit,
           revealExplanation,
-          questionCount: questionCount === 'all' ? 200 : parseInt(questionCount) || 15,
+          questionCount: count,
           difficulty,
           status: 'lobby',
           participantCount: 0,
-          teamCount: 0
+          teamCount: 0,
+          questions: shuffled,
+          currentQuestionIndex: -1,
+          createdAt: new Date().toISOString()
         };
         let localRooms = [];
         try {

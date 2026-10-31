@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/index.html">
+  <title>EmbrioPatos — Redirecionando...</title>
+  <script>
+    if (window.location.pathname === '/' || window.location.pathname === '') {
+      // If deployed at root without /public publish dir, try public/index.html or reload
+      window.location.replace('/public/index.html');
+    }
+  </script>
+</head>
+<body>
+  <p style="font-family: sans-serif; text-align: center; margin-top: 3rem;">
+    Carregando EmbrioPatos... Caso não redirecione, <a href="/public/index.html">clique aqui</a>.
+  </p>
+</body>
+</html>

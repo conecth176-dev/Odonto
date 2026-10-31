@@ -237,6 +237,22 @@
             </div>
           </div>
 
+          <!-- WebSocket Server Status & Connector -->
+          <div class="glass" style="padding: 1.15rem 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(56, 189, 248, 0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+              <div>
+                <h4 style="color: #fff; font-size: 1.05rem; margin: 0 0 0.25rem 0;">📡 Conexão Multiplayer (WebSockets)</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+                  Status: <strong id="adminSocketStatusBadge" style="color: #34d399;">● Modo Local Ativo</strong>
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="adminBackendUrlInput" class="form-input" style="width: 270px; padding: 0.45rem 0.75rem; font-size: 0.85rem;" placeholder="Ex: http://localhost:3000 ou Render URL">
+                <button class="btn btn-secondary btn-sm" onclick="app.saveCustomBackendUrl()">Conectar Servidor</button>
+              </div>
+            </div>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.8rem;">
             <div>
               <h3 style="color: #fff; font-size: 1.3rem;">Salas de Competição Ativas</h3>
