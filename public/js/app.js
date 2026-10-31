@@ -616,30 +616,15 @@ class EmbryoApp {
         </p>
       </div>
 
-      <!-- Quick Start Host Box (Solves the issue where questions are waiting to be started) -->
-      <div class="glass" style="padding: 1.75rem; text-align: center; margin-bottom: 1.75rem; border: 2px solid var(--primary-cyan); background: rgba(6, 182, 212, 0.08); box-shadow: 0 0 25px rgba(6, 182, 212, 0.2);">
-        <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">🚀</div>
-        <h3 style="color: #fff; font-size: 1.3rem; margin-bottom: 0.4rem;">
-          Liberar Perguntas para a Turma
-        </h3>
-        <p style="color: #cbd5e1; font-size: 0.95rem; max-width: 580px; margin: 0 auto 1.25rem; line-height: 1.6;">
-          As perguntas são sincronizadas pelo servidor. Assim que o anfitrião clicar no botão abaixo, a <strong>Pergunta 1</strong> aparecerá imediatamente na tela de todos os participantes conectados!
-        </p>
-
-        <button class="btn btn-primary" onclick="app.quickStartRoomFromLobby('${room.id}')" style="font-size: 1.1rem; padding: 1rem 2.5rem; box-shadow: 0 4px 25px rgba(6, 182, 212, 0.5);">
-          ▶ Iniciar Competição Agora (Liberar Perguntas)
-        </button>
-      </div>
-
       ${duoInfoHtml}
 
-      <div class="glass" style="padding: 2rem; text-align: center; margin-bottom: 2rem;">
+      <div class="glass" style="padding: 2.25rem 2rem; text-align: center; margin-bottom: 2rem;">
         <div style="display: inline-block; width: 64px; height: 64px; border-radius: 50%; background: rgba(6, 182, 212, 0.15); border: 2px solid var(--primary-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.25rem; animation: pulse 2s infinite;">
           🧬
         </div>
-        <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: #fff;">Sala de Espera Ativa</h3>
-        <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 1.5rem;">
-          Você está pronto(a) e conectado(a). Aguarde a liberação da 1ª rodada.
+        <h3 style="font-size: 1.35rem; margin-bottom: 0.5rem; color: #fff;">Sala de Espera Ativa</h3>
+        <p style="color: var(--text-muted); font-size: 0.98rem; max-width: 520px; margin: 0 auto 1.5rem; line-height: 1.6;">
+          Você está pronto(a) e conectado(a)! Aguarde o anfitrião liberar o início da competição pelo <strong>Painel Administrativo</strong>.
         </p>
 
         <div style="display: flex; justify-content: center; gap: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.25rem; flex-wrap: wrap;">
