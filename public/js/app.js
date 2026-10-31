@@ -340,12 +340,9 @@ class EmbryoApp {
         </div>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.25rem; margin-top: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.25rem; margin-top: 1.5rem;">
         <button class="btn btn-secondary btn-sm" onclick="app.closeModal('topicDetailModal');">
           Fechar ✕
-        </button>
-        <button class="btn btn-primary btn-sm" onclick="app.closeModal('topicDetailModal'); app.openBankProtected('${catName}');">
-          Ver Perguntas Deste Tema no Banco (${catName}) 📝 →
         </button>
       </div>
     `;
@@ -644,9 +641,6 @@ class EmbryoApp {
       </div>
 
       <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-        <button class="btn btn-secondary btn-sm" onclick="app.openBankProtected();">
-          📚 Visualizar Banco de Questões (Admin)
-        </button>
         <button class="btn btn-secondary btn-sm" onclick="app.leaveRoom()">
           ← Sair desta Sala
         </button>
