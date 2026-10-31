@@ -37,6 +37,14 @@ class EmbryoApp {
     this.renderAudioButton();
     this.fetchInfo();
 
+    // Pre-warm SpeechSynthesis voices for realistic natural human voice
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.getVoices(); } catch (e) {}
+      window.speechSynthesis.onvoiceschanged = () => {
+        try { window.speechSynthesis.getVoices(); } catch (e) {}
+      };
+    }
+
     // Direct navigation check (#admin, /admin, #bank)
     const urlCheck = (window.location.pathname + window.location.hash).toLowerCase();
     if (urlCheck.includes('admin')) {
@@ -1807,22 +1815,70 @@ class EmbryoApp {
     }, 900);
   }
 
-  // --- Dr. Odonto Speech Synthesis Narration (Web Speech API) ---
+  // --- Dr. Odonto Speech Synthesis Narration (Realistic Human Male Voice) ---
+  getBestMalePtBrVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    if (voices.length === 0) return null;
+
+    // Filter Brazilian Portuguese and Portuguese voices
+    const ptVoices = voices.filter(v => v.lang && (v.lang === 'pt-BR' || v.lang.startsWith('pt')));
+    if (ptVoices.length === 0) return null;
+
+    // Known male Brazilian voices (Microsoft Antonio/Daniel/Julio, Google, Apple Felipe, etc.)
+    const maleNames = ['antonio', 'daniel', 'julio', 'felipe', 'fabio', 'ricardo', 'thiago', 'male', 'homem', 'pt-br-x-afs'];
+    const femaleNames = ['maria', 'francisca', 'leticia', 'heloisa', 'luciana', 'female', 'mulher', 'zira', 'fernanda', 'yara'];
+
+    // 1. Prioritize Natural/Neural Brazilian Male voice (Edge / Windows 11 / Chrome online)
+    const naturalMale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      const isMale = maleNames.some(m => name.includes(m));
+      const isNatural = name.includes('natural') || name.includes('neural') || name.includes('online');
+      return isMale && isNatural;
+    });
+    if (naturalMale) return naturalMale;
+
+    // 2. Any explicit male voice in pt-BR
+    const anyMale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return maleNames.some(m => name.includes(m));
+    });
+    if (anyMale) return anyMale;
+
+    // 3. Any pt-BR voice that is NOT female (to avoid high-pitched robotic female voices like Maria)
+    const nonFemale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return !femaleNames.some(f => name.includes(f));
+    });
+    if (nonFemale) return nonFemale;
+
+    // 4. Fallback to default pt-BR voice
+    return ptVoices.find(v => v.lang === 'pt-BR') || ptVoices[0];
+  }
+
   speakOdontoTop3(text) {
     if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 1.02;
-      utterance.pitch = 1.08;
+      // Optimize text for human natural speech rhythm (adds slight breathing pauses)
+      const humanText = text
+        .replace(/!/g, '. ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-      // Select Brazilian Portuguese voice if available
-      const voices = window.speechSynthesis.getVoices();
-      const ptBrVoice = voices.find(v => v.lang === 'pt-BR') || voices.find(v => v.lang.startsWith('pt')) || null;
-      if (ptBrVoice) {
-        utterance.voice = ptBrVoice;
+      const utterance = new SpeechSynthesisUtterance(humanText);
+      utterance.lang = 'pt-BR';
+      // Human male settings: lower pitch for deep, warm, masculine resonance
+      utterance.pitch = 0.88;
+      // Slightly more measured human pacing
+      utterance.rate = 0.94;
+      utterance.volume = 1.0;
+
+      // Select realistic human male voice
+      const maleVoice = this.getBestMalePtBrVoice();
+      if (maleVoice) {
+        utterance.voice = maleVoice;
       }
 
       const mascotWrap = document.getElementById('odontoMascotWrap');
