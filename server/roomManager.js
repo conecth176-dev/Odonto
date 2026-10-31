@@ -552,10 +552,10 @@ class RoomManager {
     room.historyRounds.push({ ...room.currentRound });
 
     // Auto-advance delay:
-    // Se todos responderam: 6s de feedback e explicação
-    // Se o tempo esgotou: 8s de explicação
+    // Se todos responderam: 10s de feedback e explicação (solicitado: 10s para leitura e análise)
+    // Se o tempo esgotou: 10s de explicação
     // Se explicação desligada: 2s
-    const autoAdvanceSeconds = room.revealExplanation ? (reason === 'all_answered' ? 6 : 8) : 2;
+    const autoAdvanceSeconds = room.revealExplanation ? 10 : 2;
     room.explanationDuration = autoAdvanceSeconds;
     room.explanationEndsAt = Date.now() + (autoAdvanceSeconds * 1000);
 

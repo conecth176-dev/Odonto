@@ -983,7 +983,7 @@ class EmbryoApp {
     if (isExplanation || !round) {
       if (timerWrap) timerWrap.classList.remove('timer-urgent');
       if (explanationEndsAt) {
-        const totalExp = explanationDuration || 6;
+        const totalExp = explanationDuration || 10;
         const tickExp = () => {
           const now = Date.now();
           const remMs = Math.max(0, explanationEndsAt - now);
