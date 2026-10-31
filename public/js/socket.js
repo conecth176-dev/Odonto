@@ -5,18 +5,24 @@ const socketClient = {
 
   init(onConnectCallback) {
     if (this.socket) return;
-    this.socket = io();
+    try {
+      if (typeof io === 'undefined') return;
+      this.socket = io({ timeout: 5000, reconnectionAttempts: 5 });
 
-    this.socket.on('connect', () => {
-      this.isConnected = true;
-      console.log('Socket connected:', this.socket.id);
-      if (onConnectCallback) onConnectCallback();
-    });
+      this.socket.on('connect', () => {
+        this.isConnected = true;
+        console.log('Socket connected:', this.socket.id);
+        if (onConnectCallback) onConnectCallback();
+      });
 
-    this.socket.on('disconnect', () => {
-      this.isConnected = false;
-      console.log('Socket disconnected');
-    });
+      this.socket.on('connect_error', () => {
+        this.isConnected = false;
+      });
+
+      this.socket.on('disconnect', () => {
+        this.isConnected = false;
+        console.log('Socket disconnected');
+      });
 
     this.socket.on('room_list_update', (rooms) => {
       if (window.app && window.app.handleRoomListUpdate) {

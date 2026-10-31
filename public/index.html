@@ -858,8 +858,13 @@
     </div>
   </div>
 
-  <!-- Socket.io library -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Socket.io library with CDN and local fallbacks -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script>
+    if (typeof io === 'undefined') {
+      document.write('<script src="/socket.io/socket.io.js"><\\/script>');
+    }
+  </script>
 
   <!-- Client Scripts -->
   <script src="/js/sound.js"></script>
