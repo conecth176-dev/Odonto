@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Os Mistérios da Vida — Curiosidades e Fenômenos Extraordinários da Embriologia | Seminário de Bases Celulares — Grupo 5</title>
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- Fullscreen Canvas for Victory Confetti -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="navbar-top-row">
+      <a href="#" class="nav-brand" id="navBrandBtn">
+        <div class="brand-icon">🧬</div>
+        <div class="brand-text-block">
+          <div class="brand-title">OS MISTÉRIOS DA VIDA</div>
+          <div class="brand-subtitle" onclick="event.preventDefault(); event.stopPropagation(); app.openTeamModal();" style="cursor: pointer;" title="Clique para ver os alunos responsáveis do Grupo 5">
+            Desenvolvido pelo: Grupo 5 👥
+          </div>
+        </div>
+        <span class="brand-badge" onclick="event.preventDefault(); event.stopPropagation(); app.openTeamModal();" style="cursor: pointer;" title="Clique para ver os alunos responsáveis do Grupo 5">
+          Desenvolvido pelo: Grupo 5 👥
+        </span>
+      </a>
+
+      <button class="audio-toggle mobile-only-audio" id="audioToggleMobileBtn" title="Alternar Som" onclick="app.renderAudioButton(window.soundManager.toggle());">🔊</button>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-btn active" id="navHomeBtn" onclick="app.switchView('home');">🏠 Início</button>
+      <button class="nav-btn" id="navRulesBtn" onclick="app.showRulesModal(false);">📜 Regras</button>
+      <button class="nav-btn" id="navBankBtn">📚 Questões (Admin)</button>
+      <button class="nav-btn admin-btn" id="navAdminBtn" onclick="app.openAdminView();">🔒 Painel Admin</button>
+      <button class="audio-toggle desktop-only-audio" id="audioToggleBtn" title="Alternar Som" onclick="app.renderAudioButton(window.soundManager.toggle());">🔊</button>
+    </nav>
+  </header>
+
+  <!-- ======================================================================
+       VIEW: HOME / SALAS DISPONÍVEIS
+       ====================================================================== -->
+  <main id="view-home" class="container">
+    <section class="hero-section">
+      <div class="hero-pill" onclick="app.openTeamModal();" style="cursor: pointer;" title="Clique para ver os alunos responsáveis do Grupo 5">
+        <span>🔬 Desenvolvido pelo: Grupo 5 • Bases Celulares & Embriologia 👥</span>
+      </div>
+
+      <h1 class="hero-title">
+        OS MISTÉRIOS DA VIDA
+      </h1>
+      <h2 class="hero-subtitle">
+        Curiosidades e Fenômenos Extraordinários da Embriologia
+      </h2>
+
+      <p class="hero-desc">
+        Plataforma acadêmica interativa desenvolvida para a disciplina de <strong>Bases Celulares</strong>. Explore a biologia celular, as divisões mitóticas, a pluripotência, as vias de sinalização morfogenética e a diferenciação dos tecidos por trás das maiores anomalias e curiosidades do desenvolvimento humano.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#salas-disponiveis" class="btn btn-primary">
+          Entrar na Competição ⚡
+        </a>
+        <button class="btn btn-secondary" onclick="app.openBankProtected();">
+          Ver Banco Científico (Admin) 📖
+        </button>
+      </div>
+    </section>
+
+    <!-- Scrollable Topics Bar with Interactive Deep-Dive Pages -->
+    <div style="margin-bottom: 2rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+        <span style="font-size: 0.82rem; text-transform: uppercase; color: var(--primary-cyan); font-weight: 700; letter-spacing: 0.05em;">
+          📖 Clique em um fenômeno para abrir a explicação científica completa:
+        </span>
+        <span style="font-size: 0.78rem; color: var(--text-dim);">
+          (10 Temas + Revisão Geral do Grupo 5)
+        </span>
+      </div>
+      <div class="topics-scroll">
+        <div class="topic-pill" onclick="app.openTopicModal('siameses')">🧬 Gêmeos siameses</div>
+        <div class="topic-pill" onclick="app.openTopicModal('parasitas')">👁️ Gêmeos parasitas</div>
+        <div class="topic-pill" onclick="app.openTopicModal('superfecundacao')">🧪 Superfecundação heteropaternal</div>
+        <div class="topic-pill" onclick="app.openTopicModal('superfetacao')">⏳ Superfetação</div>
+        <div class="topic-pill" onclick="app.openTopicModal('papiraceo')">📜 Feto papiráceo</div>
+        <div class="topic-pill" onclick="app.openTopicModal('desaparecido')">👻 Síndrome do gêmeo desaparecido</div>
+        <div class="topic-pill" onclick="app.openTopicModal('fetus_in_fetu')">🦴 Fetus in fetu</div>
+        <div class="topic-pill" onclick="app.openTopicModal('quimerismo')">🎨 Quimerismo humano</div>
+        <div class="topic-pill" onclick="app.openTopicModal('teratomas')">🦷 Teratomas (Odontogênese Ectópica)</div>
+        <div class="topic-pill" onclick="app.openTopicModal('empelicado')">💧 Nascimento empelicado</div>
+        <div class="topic-pill" onclick="app.openTopicModal('revisao')">⚖️ Revisão & Comparação</div>
+      </div>
+    </div>
+
+    <!-- Active Rooms Grid Section -->
+    <section id="salas-disponiveis">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <span>📡 Salas de Competição Abertas</span>
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.92rem;">
+            Selecione uma sala abaixo para participar individualmente ou formar uma dupla.
+          </p>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="app.fetchRooms()">
+            🔄 Atualizar Salas
+          </button>
+        </div>
+      </div>
+
+      <div class="rooms-grid" id="roomsListContainer">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- Project Credits Footer Card -->
+    <div class="glass" style="padding: 1.75rem; text-align: center; margin-top: 3rem; border-color: rgba(255,255,255,0.08);">
+      <div onclick="app.openTeamModal();" style="display: inline-block; padding: 0.35rem 1.15rem; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 9999px; color: #38bdf8; font-weight: 700; font-size: 0.88rem; margin-bottom: 0.75rem; letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s ease;" title="Clique para ver os alunos responsáveis do Grupo 5">
+        🧬 Desenvolvido pelo: Grupo 5 (Ver Alunos 👥)
+      </div>
+      <h4 style="color: #fff; font-size: 1.15rem; margin-bottom: 0.35rem;">
+        Seminário de Bases Celulares: "Os Mistérios da Vida"
+      </h4>
+      <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 700px; margin: 0 auto; line-height: 1.6;">
+        Seminário da disciplina de <strong>Bases Celulares e Moleculares</strong> para o curso de Odontologia. Investigação sobre o comportamento de células-tronco, sinalização paracrina, fusão e divisão de linhagens celulares nos fenômenos extraordinários da embriologia. Fundamentado em Alberts (Biologia Molecular da Célula), Moore (Embriologia Clínica) e Langman.
+      </p>
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       VIEW: LOBBY (SALA DE ESPERA)
+       ====================================================================== -->
+  <main id="view-lobby" class="container" style="display: none; padding-top: 2rem;">
+    <div id="lobbyContent" style="max-width: 780px; margin: 0 auto;">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       VIEW: ARENA (LIVE QUIZ VIEW)
+       ====================================================================== -->
+  <main id="view-arena" class="arena-container" style="display: none;">
+    <div id="arenaContent">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       VIEW: RESULTS (PODIUM & LEADERBOARD)
+       ====================================================================== -->
+  <main id="view-results" class="results-container" style="display: none;">
+    <div id="resultsContent">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       VIEW: STUDY BANK (QUESTÕES & FUNDAMENTAÇÃO CIENTÍFICA)
+       ====================================================================== -->
+  <main id="view-bank" class="container" style="display: none; padding-top: 2rem;">
+    <div id="studyBankContainer" style="max-width: 900px; margin: 0 auto;">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       VIEW: ADMIN DASHBOARD
+       ====================================================================== -->
+  <main id="view-admin" class="container" style="display: none; padding-top: 2rem;">
+    <div class="admin-grid">
+      <!-- Sidebar -->
+      <aside class="glass admin-sidebar">
+        <div style="margin-bottom: 1rem;">
+          <span class="room-code-tag">PAINEL DO ANFITRIÃO</span>
+          <h3 style="font-family: var(--font-display); font-size: 1.25rem; color: #fff; margin-top: 6px;">
+            Controle do Seminário
+          </h3>
+          <span style="font-size: 0.8rem; color: #34d399;">● Conectado como Administrador</span>
+        </div>
+
+        <nav style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <a class="admin-nav-item active" id="adminNav-rooms" onclick="app.showAdminTab('rooms')">
+            <span>🎮 Salas e Competições</span>
+          </a>
+          <a class="admin-nav-item" id="adminNav-questions" onclick="app.showAdminTab('questions')">
+            <span>📚 Banco de Perguntas</span>
+          </a>
+          <a class="admin-nav-item" id="adminNav-history" onclick="app.showAdminTab('history')">
+            <span>📊 Histórico e Exportação</span>
+          </a>
+        </nav>
+
+        <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+          <button class="btn btn-secondary btn-block btn-sm" onclick="app.openCreateRoomModal()">
+            + Criar Nova Sala
+          </button>
+          <button class="btn btn-danger btn-block btn-sm" style="margin-top: 0.5rem;" onclick="localStorage.removeItem('g5_admin_token'); app.adminToken = null; app.switchView('home');">
+            Sair do Admin
+          </button>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <section class="glass admin-panel-content">
+        <!-- Tab 1: Rooms -->
+        <div id="adminPane-rooms" class="admin-tab-pane">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+              <h3 style="color: #fff; font-size: 1.3rem;">Salas de Competição Ativas</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie o fluxo de perguntas, pausas, avanços manuais e rankings ao vivo.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="app.openCreateRoomModal()">
+              + Nova Sala
+            </button>
+          </div>
+
+          <div id="adminRoomsContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Questions CRUD -->
+        <div id="adminPane-questions" class="admin-tab-pane" style="display: none;">
+          <div id="adminQuestionsList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Tab 3: History & Export -->
+        <div id="adminPane-history" class="admin-tab-pane" style="display: none;">
+          <div id="adminHistoryContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       RODAPÉ GLOBAL DO PROJETO
+       ====================================================================== -->
+  <footer class="site-global-footer">
+    <div class="container" style="text-align: center; padding: 1.25rem 1rem;">
+      <p style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin: 0;">
+        <span>🧬 Seminário de Bases Celulares: "Os Mistérios da Vida"</span>
+        <span style="color: rgba(255,255,255,0.2);">•</span>
+        <strong onclick="app.openTeamModal();" style="color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" title="Clique para ver os alunos responsáveis do Grupo 5">
+          Desenvolvido pelo: Grupo 5 👥
+        </strong>
+        <span style="color: rgba(255,255,255,0.2);">•</span>
+        <span style="color: var(--text-dim);">Odontologia 2026</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- ======================================================================
+       MODAL: ALUNOS RESPONSÁVEIS (GRUPO 5)
+       ====================================================================== -->
+  <div class="modal-overlay" id="teamModal">
+    <div class="glass modal-content" style="max-width: 640px; text-align: center;">
+      <button class="modal-close" onclick="app.closeModal('teamModal');">&times;</button>
+      
+      <div style="margin-bottom: 1.25rem;">
+        <span class="hero-pill" style="margin-bottom: 0.5rem; background: rgba(6, 182, 212, 0.15); color: #38bdf8; border-color: rgba(6, 182, 212, 0.4);">
+          👥 SEMINÁRIO DE BASES CELULARES • ODONTOLOGIA
+        </span>
+        <h2 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">
+          Alunos Responsáveis
+        </h2>
+        <p style="color: #38bdf8; font-weight: 700; font-size: 1rem;">
+          Grupo 5 — "Os Mistérios da Vida: Curiosidades e Fenômenos da Embriologia"
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+          Pesquisa e desenvolvimento acadêmico para o curso de Odontologia 2026.
+        </p>
+      </div>
+
+      <div class="team-members-grid">
+        <div class="team-member-card">
+          <div class="team-member-avatar">👨‍⚕️</div>
+          <div class="team-member-name">Tawa Estrela</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👨‍🔬</div>
+          <div class="team-member-name">Cayo</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👨‍⚕️</div>
+          <div class="team-member-name">Caio Camerino</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👩‍⚕️</div>
+          <div class="team-member-name">Maria Luiza</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👩‍⚕️</div>
+          <div class="team-member-name">Alice</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👨‍⚕️</div>
+          <div class="team-member-name">Arthur Oliveira</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👨‍⚕️</div>
+          <div class="team-member-name">João Pedro</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👩‍⚕️</div>
+          <div class="team-member-name">Maria Giullia</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+
+        <div class="team-member-card">
+          <div class="team-member-avatar">👩‍⚕️</div>
+          <div class="team-member-name">Karine Figueredo</div>
+          <div class="team-member-role">Grupo 5 • Odontologia</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1rem;">
+        <button class="btn btn-secondary btn-block btn-sm" onclick="app.closeModal('teamModal');">
+          Fechar ✕
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: ENTRAR NA SALA (SOLO OU DUPLA)
+       ====================================================================== -->
+  <div class="modal-overlay" id="joinModal">
+    <div class="glass modal-content">
+      <button class="modal-close" id="joinModalClose">&times;</button>
+      <div class="modal-header">
+        <h3 class="modal-title" id="joinModalTitle">Entrar na Competição</h3>
+        <p class="modal-subtitle" id="joinModalSubtitle">Identifique-se para ingressar na sala</p>
+      </div>
+
+      <!-- Section SOLO -->
+      <div id="soloJoinSection" style="display: none;">
+        <form id="soloJoinForm">
+          <div class="form-group">
+            <label class="form-label" for="soloParticipantName">Seu Nome / Matrícula</label>
+            <input type="text" id="soloParticipantName" class="form-input" placeholder="Ex: Ana Clara Silva" required autocomplete="name">
+            <p class="form-hint">Este nome aparecerá no ranking individual da competição.</p>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            Entrar no Modo Solo →
+          </button>
+        </form>
+      </div>
+
+      <!-- Section DUPLA -->
+      <div id="duoJoinSection" style="display: none;">
+        <div class="modal-tabs">
+          <button type="button" class="tab-btn active" id="tabCreateTeam">Opção A: Criar Dupla</button>
+          <button type="button" class="tab-btn" id="tabJoinTeam">Opção B: Entrar em Dupla</button>
+        </div>
+
+        <!-- Tab A: Criar Dupla -->
+        <div id="formCreateTeamWrap">
+          <form id="duoCreateForm">
+            <div class="form-group">
+              <label class="form-label" for="duoTeamName">Nome da Dupla</label>
+              <input type="text" id="duoTeamName" class="form-input" placeholder="Ex: Blastômeros da Odonto" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="duoCreatorName">Seu Nome (Integrante A)</label>
+              <input type="text" id="duoCreatorName" class="form-input" placeholder="Ex: Lucas Ferreira" required>
+              <p class="form-hint">Você será o Integrante A e responderá as perguntas de número ímpar (1, 3, 5...).</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="duoTeamPassword">Definir Senha de Acesso da Dupla</label>
+              <input type="password" id="duoTeamPassword" class="form-input" placeholder="Crie uma senha para seu colega entrar" required>
+              <p class="form-hint">Compartilhe esta senha com seu parceiro para que apenas ele entre na sua dupla.</p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Gerar Código e Criar Dupla →
+            </button>
+          </form>
+        </div>
+
+        <!-- Tab B: Entrar em Dupla Existente -->
+        <div id="formJoinTeamWrap" style="display: none;">
+          <form id="duoJoinForm">
+            <div class="form-group">
+              <label class="form-label" for="joinDuoCode">Código da Dupla</label>
+              <input type="text" id="joinDuoCode" class="form-input" placeholder="Ex: DP-4821" required style="text-transform: uppercase;">
+              <p class="form-hint">Peça o código gerado ao seu parceiro que criou a equipe.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="joinDuoPassword">Senha da Dupla</label>
+              <input type="password" id="joinDuoPassword" class="form-input" placeholder="Digite a senha definida pelo parceiro" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="joinDuoMemberName">Seu Nome (Integrante B)</label>
+              <input type="text" id="joinDuoMemberName" class="form-input" placeholder="Ex: Beatriz Santos" required>
+              <p class="form-hint">Você será o Integrante B e responderá as perguntas de número par (2, 4, 6...).</p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Validar e Entrar na Dupla →
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: ADMIN LOGIN
+       ====================================================================== -->
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="glass modal-content">
+      <button class="modal-close" id="adminLoginModalClose">&times;</button>
+      <div class="modal-header">
+        <h3 class="modal-title">Acesso Administrativo</h3>
+        <p class="modal-subtitle">Exclusivo para anfitriões e apresentadores do Grupo 5</p>
+      </div>
+
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label class="form-label" for="adminPasswordInput">Senha de Administrador</label>
+          <input type="password" id="adminPasswordInput" class="form-input" placeholder="Digite a senha administrativa" required>
+          <p class="form-hint">Senha de acesso do anfitrião: <code>Dev.Tawa</code></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          Entrar no Painel →
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: ADMIN CONTROLE DA SALA AO VIVO
+       ====================================================================== -->
+  <div class="modal-overlay" id="adminRoomControlModal">
+    <div class="glass modal-content" style="max-width: 850px;">
+      <button class="modal-close" onclick="document.getElementById('adminRoomControlModal').classList.remove('active');">&times;</button>
+      <div id="adminRoomControlContent">
+        <!-- Rendered by app.selectAdminRoom -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: CRIAR NOVA SALA
+       ====================================================================== -->
+  <div class="modal-overlay" id="createRoomModal">
+    <div class="glass modal-content" style="max-width: 600px;">
+      <button class="modal-close" id="createRoomModalClose">&times;</button>
+      <div class="modal-header">
+        <h3 class="modal-title">Criar Nova Sala de Competição</h3>
+        <p class="modal-subtitle">Configure as regras e o modo de disputa para a turma</p>
+      </div>
+
+      <form id="createRoomForm">
+        <div class="form-group">
+          <label class="form-label" for="newRoomName">Nome da Competição</label>
+          <input type="text" id="newRoomName" class="form-input" placeholder="Ex: Torneio de Embriologia — Turma Odonto 2026" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="newRoomDesc">Descrição do Seminário</label>
+          <textarea id="newRoomDesc" class="form-textarea" rows="2" placeholder="Ex: Avaliação de raciocínio científico sobre curiosidades e anomalias do desenvolvimento humano."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="newRoomMode">Modo da Disputa</label>
+            <select id="newRoomMode" class="form-select">
+              <option value="solo">Modo Solo (Individual)</option>
+              <option value="duo">Modo Dupla (Alternância de Integrantes)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="newRoomTimeLimit">Tempo de Resposta por Pergunta</label>
+            <select id="newRoomTimeLimit" class="form-select">
+              <option value="180" selected>180 segundos (Padrão 3 min)</option>
+              <option value="120">120 segundos (2 min)</option>
+              <option value="90">90 segundos (1.5 min)</option>
+              <option value="60">60 segundos (Rápido)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="newRoomQuestionCount">Perguntas da Sala (Banco de 200)</label>
+            <select id="newRoomQuestionCount" class="form-select">
+              <option value="10">Sortear 10 perguntas dinâmicas (~15 min)</option>
+              <option value="15" selected>Sortear 15 perguntas dinâmicas (Padrão Aula)</option>
+              <option value="20">Sortear 20 perguntas dinâmicas (~30 min)</option>
+              <option value="30">Sortear 30 perguntas dinâmicas (Desafio)</option>
+              <option value="all">Todas as 200 perguntas do acervo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="newRoomDifficulty">Filtro de Dificuldade</label>
+            <select id="newRoomDifficulty" class="form-select">
+              <option value="all" selected>Todas Balanceadas (Fácil, Médio, Difícil)</option>
+              <option value="facil">Apenas Nível Fácil (🟢 70 perguntas)</option>
+              <option value="medio">Apenas Nível Médio (🟡 70 perguntas)</option>
+              <option value="dificil">Apenas Nível Difícil (🔴 60 perguntas)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem;">
+          <input type="checkbox" id="newRoomRevealExplanation" checked style="width: 18px; height: 18px; accent-color: var(--primary-cyan);">
+          <label for="newRoomRevealExplanation" style="font-size: 0.9rem; color: #fff; cursor: pointer;">
+            Exibir explicação científica e curiosidades após o encerramento de cada rodada
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">
+          Criar Sala de Competição 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: FORMULÁRIO DE QUESTÃO (CRUD)
+       ====================================================================== -->
+  <div class="modal-overlay" id="questionModal">
+    <div class="glass modal-content" style="max-width: 680px;">
+      <button class="modal-close" id="questionModalClose">&times;</button>
+      <div class="modal-header">
+        <h3 class="modal-title" id="questionModalTitle">Cadastrar Pergunta</h3>
+        <p class="modal-subtitle">Insira as informações com rigor e clareza científica</p>
+      </div>
+
+      <form id="questionForm">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="qCategory">Categoria do Fenômeno</label>
+            <select id="qCategory" class="form-select">
+              <option value="Gêmeos siameses">Gêmeos siameses</option>
+              <option value="Gêmeos parasitas">Gêmeos parasitas</option>
+              <option value="Superfecundação heteropaternal">Superfecundação heteropaternal</option>
+              <option value="Superfetação">Superfetação</option>
+              <option value="Feto papiráceo">Feto papiráceo</option>
+              <option value="Síndrome do gêmeo desaparecido">Síndrome do gêmeo desaparecido</option>
+              <option value="Fetus in fetu">Fetus in fetu</option>
+              <option value="Quimerismo humano">Quimerismo humano</option>
+              <option value="Teratomas">Teratomas</option>
+              <option value="Nascimento empelicado">Nascimento empelicado</option>
+              <option value="Revisão geral e comparação entre fenômenos">Revisão geral e comparação</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="qDifficulty">Dificuldade</label>
+            <select id="qDifficulty" class="form-select">
+              <option value="Fácil">Fácil (10 pontos)</option>
+              <option value="Média" selected>Média (20 pontos)</option>
+              <option value="Difícil">Difícil (30 pontos)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qTheme">Subtema ou Eixo Biológico</label>
+          <input type="text" id="qTheme" class="form-input" placeholder="Ex: Mecanismo de Fissão e Cronologia Embrionária" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qQuestion">Enunciado da Questão</label>
+          <textarea id="qQuestion" class="form-textarea" rows="3" placeholder="Formule a pergunta de maneira clara e acadêmica..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">4 Alternativas de Resposta</label>
+          <input type="text" id="qOpt0" class="form-input" placeholder="Alternativa A" required style="margin-bottom: 0.4rem;">
+          <input type="text" id="qOpt1" class="form-input" placeholder="Alternativa B" required style="margin-bottom: 0.4rem;">
+          <input type="text" id="qOpt2" class="form-input" placeholder="Alternativa C" required style="margin-bottom: 0.4rem;">
+          <input type="text" id="qOpt3" class="form-input" placeholder="Alternativa D" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qCorrect">Alternativa Correta (Gabarito Oficial)</label>
+          <select id="qCorrect" class="form-select">
+            <option value="0">Alternativa A</option>
+            <option value="1">Alternativa B</option>
+            <option value="2">Alternativa C</option>
+            <option value="3">Alternativa D</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qExplanation">Explicação Científica da Resposta</label>
+          <textarea id="qExplanation" class="form-textarea" rows="3" placeholder="Mecanismos moleculares, celulares e embriológicos que justificam a resposta..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qCuriosity">Curiosidade do Fenômeno (Opcional)</label>
+          <input type="text" id="qCuriosity" class="form-input" placeholder="Fato histórico, extraordinário ou relevância clínica">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qDifference">Diferença Chave com Outros Fenômenos (Opcional)</label>
+          <input type="text" id="qDifference" class="form-input" placeholder="Ex: Diferença entre Fetus in fetu e Teratoma">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="qReference">Referência Científica / Bibliográfica</label>
+          <input type="text" id="qReference" class="form-input" placeholder="Ex: Moore, K.L. Embriologia Clínica, 11ª Ed.">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          Salvar no Banco de Perguntas 💾
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: REGRAS OFICIAIS DO JOGO (COM TIMER OBRIGATÓRIO DE 15 SEGUNDOS)
+       ====================================================================== -->
+  <div class="modal-overlay" id="rulesModal">
+    <div class="glass modal-content" style="max-width: 800px; max-height: 92vh; border: 2px solid var(--primary-cyan); box-shadow: 0 0 45px rgba(6, 182, 212, 0.45); padding: 2rem 2.25rem;">
+      <button class="modal-close" id="rulesModalClose" style="display: none;" onclick="app.closeRulesModal();">&times;</button>
+
+      <div style="text-align: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1.25rem;">
+        <span class="hero-pill" style="margin-bottom: 0.5rem; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
+          ⚠️ LEITURA OBRIGATÓRIA ANTES DE INICIAR
+        </span>
+        <h2 style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 900; color: #fff; margin-bottom: 0.35rem;">
+          📜 Regras Oficiais da Competição
+        </h2>
+        <p style="color: #38bdf8; font-size: 0.95rem; font-weight: 600;">
+          Grupo 5 — Seminário de Bases Celulares: "Os Mistérios da Vida"
+        </p>
+
+        <!-- Progress and Countdown Notice -->
+        <div id="rulesCountdownWrap" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+          <span style="font-size: 1.25rem;">⏳</span>
+          <span style="font-size: 0.92rem; color: #cbd5e1;">
+            Por favor, leia atentamente as regras. O botão de fechar será liberado em:
+            <strong id="rulesTimerSec" style="color: var(--primary-cyan); font-size: 1.25rem; font-family: var(--font-display); margin-left: 4px;">15s</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Rules Grid -->
+      <div style="display: flex; flex-direction: column; gap: 1.15rem; font-size: 0.92rem; color: #e2e8f0; line-height: 1.6; margin-bottom: 1.75rem;">
+        
+        <!-- Regra 1: Sincronização & Tempo -->
+        <div class="glass" style="padding: 1.15rem; border-left: 4px solid var(--primary-cyan); background: rgba(15, 23, 42, 0.65);">
+          <strong style="color: var(--primary-cyan); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+            ⚡ 1. Sincronização Oficial e Tempo Limite
+          </strong>
+          <p>
+            Cada pergunta possui um tempo padrão de <strong>180 segundos (3 minutos)</strong> sincronizado no servidor.
+            Apenas <strong>uma resposta confirmada</strong> é permitida por rodada e não pode ser alterada após o envio.
+            Se o tempo esgotar sem resposta, a pontuação da questão é <strong>zero</strong>.
+          </p>
+        </div>
+
+        <!-- Regra 2: Modo Dupla e Alternância Estrita -->
+        <div class="glass" style="padding: 1.15rem; border-left: 4px solid #8b5cf6; background: rgba(139, 92, 246, 0.08);">
+          <strong style="color: #c084fc; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+            👥 2. Modo Dupla: Alternância Obrigatória de Integrantes
+          </strong>
+          <p>
+            As duplas possuem exatamente 2 integrantes (<strong>Integrante A</strong> e <strong>Integrante B</strong>).
+            A responsabilidade de resposta alterna obrigatoriamente a cada pergunta:
+          </p>
+          <ul style="margin: 0.4rem 0 0.4rem 1.4rem;">
+            <li><strong>Perguntas 1, 3, 5...:</strong> Apenas o <strong>Integrante A</strong> responde;</li>
+            <li><strong>Perguntas 2, 4, 6...:</strong> Apenas o <strong>Integrante B</strong> responde.</li>
+          </ul>
+          <p style="font-size: 0.85rem; color: #cbd5e1;">
+            O integrante que não está na sua vez acompanha o enunciado e o cronômetro, mas suas opções ficam bloqueadas. A pontuação é somada para a dupla!
+          </p>
+        </div>
+
+        <!-- Regra 3: Sistema de Pontuação com Fórmula Oficial -->
+        <div class="glass" style="padding: 1.15rem; border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.08);">
+          <strong style="color: #34d399; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+            🎯 3. Fórmula de Pontuação (Precisão + Velocidade)
+          </strong>
+          <p>
+            Respostas corretas enviadas mais rapidamente acumulam mais pontos:
+            <br>
+            <code style="background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 4px; color: #34d399; font-size: 0.9rem; display: inline-block; margin-top: 4px;">
+              Pontuação = Pontuação Máxima × (1 − 0,5 × Tempo Utilizado / Tempo Total)
+            </code>
+          </p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+            Fácil: até 10 pts • Média: até 20 pts • Difícil: até 30 pts. Resposta errada = 0 ponto.
+          </p>
+        </div>
+
+        <!-- Regra 4: Desempate e Critérios -->
+        <div class="glass" style="padding: 1.15rem; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.08);">
+          <strong style="color: #fbbf24; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+            🏆 4. Critério Oficial de Desempate no Ranking
+          </strong>
+          <p>
+            Em caso de empate na pontuação:
+            <strong>1º:</strong> Maior número de acertos;
+            <strong>2º:</strong> Menor tempo total acumulado nas respostas corretas.
+          </p>
+        </div>
+
+        <!-- Regra 5: Aprendizado e Explicação Científica -->
+        <div class="glass" style="padding: 1.15rem; border-left: 4px solid #38bdf8; background: rgba(6, 182, 212, 0.08);">
+          <strong style="color: #38bdf8; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+            🔬 5. Revelação Científica e Discussão
+          </strong>
+          <p>
+            Ao término de cada rodada, a explicação completa dos mecanismos de <strong>Bases Celulares</strong>, curiosidades e diferenças diagnósticas será apresentada para enriquecer o seminário.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Action Button Area with 15s Timer -->
+      <div id="rulesButtonArea" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1.25rem; text-align: center;">
+        <button class="btn btn-secondary btn-block" id="btnRulesClose" disabled style="opacity: 0.55; cursor: not-allowed; font-size: 1rem; padding: 0.9rem;">
+          ⏳ Aguarde 15s para liberar o botão de confirmação...
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: DETALHES COMPLETOS DO FENÔMENO CIENTÍFICO (ENCICLOPÉDIA)
+       ====================================================================== -->
+  <div class="modal-overlay" id="topicDetailModal">
+    <div class="glass modal-content" style="max-width: 820px; max-height: 90vh;">
+      <button class="modal-close" onclick="app.closeModal('topicDetailModal');">&times;</button>
+      
+      <div id="topicDetailContent">
+        <!-- Preenchido dinamicamente por app.openTopicModal -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io library -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Client Scripts -->
+  <script src="/js/sound.js"></script>
+  <script src="/js/confetti.js"></script>
+  <script src="/js/topicsData.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/app.js"></script>
+
+</body>
+</html>
