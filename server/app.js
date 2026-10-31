@@ -155,10 +155,10 @@ const PORT = process.env.PORT || 3000;
 
 function startServer(port = PORT) {
   return new Promise((resolve, reject) => {
-    server.listen(port, () => {
+    server.listen(port, '0.0.0.0', () => {
       console.log(`\n============================================================`);
       console.log(`🚀 PLATAFORMA GRUPO 5 — EMBRIOPATOS (EMBRIOLOGIA)`);
-      console.log(`📡 Servidor ativo em: http://localhost:${port}`);
+      console.log(`📡 Servidor ativo na porta: ${port}`);
       console.log(`🔑 Painel Admin disponível com senha padrão: Dev.Tawa`);
       console.log(`============================================================\n`);
       resolve({ server, port, roomManager });

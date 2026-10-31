@@ -2,7 +2,18 @@
 const socketClient = {
   socket: null,
   isConnected: false,
-  backendUrl: localStorage.getItem('g5_backend_url') || '',
+  backendUrl: (() => {
+    try {
+      const saved = localStorage.getItem('g5_backend_url') || '';
+      if (saved && (saved.includes('localhost') || saved.includes('127.0.0.1')) && typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+        localStorage.removeItem('g5_backend_url');
+        return '';
+      }
+      return saved;
+    } catch (e) {
+      return '';
+    }
+  })(),
 
   init(onConnectCallback, customUrl = null) {
     if (customUrl !== null) {
