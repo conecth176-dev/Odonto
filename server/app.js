@@ -149,7 +149,7 @@ function startServer(port = PORT) {
   return new Promise((resolve, reject) => {
     server.listen(port, () => {
       console.log(`\n============================================================`);
-      console.log(`🚀 PLATAFORMA GRUPO 5 — OS MISTÉRIOS DA VIDA (EMBRIOLOGIA)`);
+      console.log(`🚀 PLATAFORMA GRUPO 5 — EMBRIOPATOS (EMBRIOLOGIA)`);
       console.log(`📡 Servidor ativo em: http://localhost:${port}`);
       console.log(`🔑 Painel Admin disponível com senha padrão: Dev.Tawa`);
       console.log(`============================================================\n`);

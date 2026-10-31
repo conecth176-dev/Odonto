@@ -1341,7 +1341,7 @@ class EmbryoApp {
       </div>
 
       <div style="margin-top: 2.25rem; font-size: 0.85rem; color: var(--text-dim); text-align: center;">
-        🧬 Seminário de Bases Celulares: "Os Mistérios da Vida" • <strong onclick="app.openTeamModal();" style="color: #38bdf8; cursor: pointer; text-decoration: underline;" title="Clique para ver os alunos responsáveis do Grupo 5">Desenvolvido pelo: Grupo 5 👥</strong> (Odontologia 2026)
+        🧬 Seminário de Bases Celulares: "EmbrioPatos" • <strong onclick="app.openTeamModal();" style="color: #38bdf8; cursor: pointer; text-decoration: underline;" title="Clique para ver os alunos responsáveis do Grupo 5">Desenvolvido pelo: Grupo 5 👥</strong> (Odontologia 2026)
       </div>
     `;
 
