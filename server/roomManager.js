@@ -207,6 +207,9 @@ class RoomManager {
     if (!room) return { error: 'Sala não encontrada.' };
     if (room.mode !== 'solo') return { error: 'Esta sala é exclusiva para o modo Dupla.' };
     if (room.status === 'finished') return { error: 'Esta competição já foi finalizada.' };
+    if (room.status !== 'lobby') {
+      return { error: '⚠️ Sala Inicializada! A competição já começou e a entrada de novos participantes está bloqueada.' };
+    }
 
     const participantId = 'part_' + crypto.randomBytes(6).toString('hex');
     const participant = {
@@ -236,6 +239,9 @@ class RoomManager {
     if (!room) return { error: 'Sala não encontrada.' };
     if (room.mode !== 'duo') return { error: 'Esta sala é exclusiva para o modo Solo.' };
     if (room.status === 'finished') return { error: 'Esta competição já foi finalizada.' };
+    if (room.status !== 'lobby') {
+      return { error: '⚠️ Sala Inicializada! A competição já começou e a criação de novas duplas está bloqueada.' };
+    }
     if (!teamName || !teamName.trim()) return { error: 'O nome da dupla é obrigatório.' };
     if (!teamPassword || teamPassword.trim().length < 3) return { error: 'A senha da dupla deve ter no mínimo 3 caracteres.' };
 
@@ -289,6 +295,9 @@ class RoomManager {
     if (!room) return { error: 'Sala não encontrada.' };
     if (room.mode !== 'duo') return { error: 'Esta sala é exclusiva para o modo Solo.' };
     if (room.status === 'finished') return { error: 'Esta competição já foi finalizada.' };
+    if (room.status !== 'lobby') {
+      return { error: '⚠️ Sala Inicializada! A competição já começou e a entrada de novos integrantes está bloqueada.' };
+    }
 
     const team = room.teams[teamCode.toUpperCase().trim()];
     if (!team) return { error: 'Código de dupla inválido ou não encontrado.' };

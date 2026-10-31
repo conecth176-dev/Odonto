@@ -106,6 +106,19 @@ async function runTests() {
     assert.strictEqual(startData.success, true, 'Início da competição pelo anfitrião deve ter sucesso');
     console.log('✓ 8. Competição iniciada pelo anfitrião');
 
+    // 8.1. Test that new participants are strictly blocked once room is started ("Sala Inicializada!")
+    const blockedJoinRes = await new Promise(resolve => {
+      socketEve.emit('create_duo_team', {
+        roomId: testRoom.id,
+        teamName: 'Dupla Tardia',
+        teamPassword: 'senha',
+        creatorName: 'Aluno Atrasado'
+      }, resolve);
+    });
+    assert.strictEqual(!!blockedJoinRes.error, true, 'Tentativa de entrar em sala inicializada deve falhar');
+    assert.strictEqual(blockedJoinRes.error.includes('Sala Inicializada'), true, 'Mensagem deve indicar Sala Inicializada');
+    console.log('✓ 8.1. Bloqueio de novos participantes em sala inicializada validado: "' + blockedJoinRes.error + '"');
+
     // 9. Turn Alternation Test - Round 1 (Pergunta 1 - Deve ser vez do Integrante A)
     // Attempt by Daniela (Member B) should be rejected
     const invalidSubmit = await new Promise(resolve => {

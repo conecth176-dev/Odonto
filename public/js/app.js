@@ -401,9 +401,10 @@ class EmbryoApp {
       name: 'Desafio Solo de Embriologia — Grupo 5',
       description: 'Competição individual com 15 perguntas dinâmicas do acervo de Bases Celulares e Embriologia.',
       mode: 'solo',
-      status: 'in_progress',
-      participantCount: 1,
+      status: 'lobby',
+      participantCount: 0,
       teamCount: 0,
+      questionCount: 15,
       totalQuestions: 15,
       timeLimit: 180
     }];
@@ -419,6 +420,7 @@ class EmbryoApp {
   }
 
   renderRoomsList(rooms) {
+    this.roomsList = rooms || [];
     const container = document.getElementById('roomsListContainer');
     if (!container) return;
 
@@ -433,20 +435,23 @@ class EmbryoApp {
     }
 
     container.innerHTML = rooms.map(r => {
+      const isStarted = r.status && r.status !== 'lobby' && r.status !== 'waiting' && r.status !== 'finished';
+      const isFinished = r.status === 'finished';
+
       const statusLabels = {
         lobby: 'Aguardando Início',
-        in_progress: 'Ao Vivo / Em Andamento',
-        explanation: 'Fase de Explicação',
-        paused: 'Competição Pausada',
-        finished: 'Finalizada'
+        in_progress: '⚡ Sala Inicializada!',
+        explanation: '📖 Sala Inicializada!',
+        paused: '⏸️ Sala Inicializada! (Pausada)',
+        finished: '🏁 Finalizada'
       };
-      const statusClass = `status-${r.status}`;
+      const statusClass = isStarted ? 'status-in_progress' : `status-${r.status}`;
       const modeLabel = r.mode === 'duo' ? '👥 Modo Dupla' : '👤 Modo Solo';
       const badgeClass = r.mode === 'duo' ? 'badge-duo' : 'badge-solo';
-      const countLabel = r.mode === 'duo' ? `${r.teamCount} duplas` : `${r.participantCount} alunos`;
+      const countLabel = r.mode === 'duo' ? `${r.teamCount || 0} duplas` : `${r.participantCount || 0} alunos`;
 
       return `
-        <div class="glass room-card">
+        <div class="glass room-card" style="${isStarted ? 'border-color: rgba(239, 68, 68, 0.4);' : ''}">
           <div>
             <div class="room-header">
               <span class="room-code-tag">${r.code}</span>
@@ -454,16 +459,21 @@ class EmbryoApp {
             </div>
             <h3 class="room-name">${this.escapeHtml(r.name)}</h3>
             <p class="room-desc">${this.escapeHtml(r.description || 'Sem descrição')}</p>
+            ${isStarted ? `
+              <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.8rem; font-weight: 700; padding: 0.4rem 0.65rem; border-radius: 6px; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span>⚠️ Sala Inicializada! Entrada bloqueada.</span>
+              </div>
+            ` : ''}
           </div>
 
           <div>
             <div class="room-meta">
               <div class="meta-item">
                 <span class="status-indicator ${statusClass}"></span>
-                <span>${statusLabels[r.status] || r.status}</span>
+                <span style="${isStarted ? 'color: #fca5a5; font-weight: 700;' : ''}">${statusLabels[r.status] || r.status}</span>
               </div>
               <div class="meta-item">
-                <span>📚 ${r.questionCount} questões</span>
+                <span>📚 ${r.questionCount || r.totalQuestions || 15} questões</span>
               </div>
               <div class="meta-item">
                 <span>⚡ ${r.timeLimit}s</span>
@@ -473,9 +483,19 @@ class EmbryoApp {
               </div>
             </div>
 
-            <button class="btn btn-primary btn-block btn-sm" onclick="app.openJoinModal('${r.id}', '${r.mode}', '${this.escapeHtml(r.name)}')">
-              ${r.status === 'finished' ? 'Ver Resultados' : 'Entrar na Sala'} →
-            </button>
+            ${isFinished ? `
+              <button class="btn btn-secondary btn-block btn-sm" onclick="app.openJoinModal('${r.id}', '${r.mode}', '${this.escapeHtml(r.name)}')">
+                Ver Resultados 🏆 →
+              </button>
+            ` : (isStarted ? `
+              <button class="btn btn-secondary btn-block btn-sm" disabled style="opacity: 0.65; cursor: not-allowed; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 600;">
+                🔒 Sala Inicializada
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-block btn-sm" onclick="app.openJoinModal('${r.id}', '${r.mode}', '${this.escapeHtml(r.name)}')">
+                Entrar na Sala 🚪 →
+              </button>
+            `)}
           </div>
         </div>
       `;
@@ -484,6 +504,12 @@ class EmbryoApp {
 
   // --- Join Modal flow ---
   openJoinModal(roomId, mode, roomName) {
+    const room = (this.roomsList || []).find(r => r.id === roomId);
+    if (room && room.status && room.status !== 'lobby' && room.status !== 'waiting' && room.status !== 'finished') {
+      alert('⚠️ Sala Inicializada!\nA competição já começou e a entrada de novos participantes está bloqueada.');
+      return;
+    }
+
     this.targetJoinRoomId = roomId;
     this.targetJoinMode = mode;
 
