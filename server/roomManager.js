@@ -473,6 +473,7 @@ class RoomManager {
     this.calculateLeaderboard(roomId);
 
     // Save competition results in history
+    const hasWinner = room.leaderboard.some(p => (p.score || 0) > 0);
     const historyItem = {
       roomId: room.id,
       code: room.code,
@@ -481,6 +482,8 @@ class RoomManager {
       totalQuestions: room.questions.length,
       finishedAt: new Date().toISOString(),
       leaderboard: room.leaderboard,
+      hasWinner,
+      champion: hasWinner ? room.leaderboard[0] : null,
       teams: room.teams,
       participants: room.participants
     };

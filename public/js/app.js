@@ -1556,53 +1556,64 @@ class EmbryoApp {
     if ('speechSynthesis' in window) {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
-    window.soundManager.playVictoryFanfare();
-    window.confetti.launch(150, 5000);
+
+    const isSolo = (room.mode !== 'duo');
+    const lb = room.leaderboard || [];
+
+    // Regra oficial: se todos tiverem 0 pontos, ninguém será ganhador
+    const hasWinners = lb.some(p => (p.score || 0) > 0);
+
+    if (hasWinners) {
+      window.soundManager.playVictoryFanfare();
+      window.confetti.launch(150, 5000);
+    }
 
     const container = document.getElementById('resultsContent');
     if (!container) return;
 
-    const isSolo = (room.mode !== 'duo');
-    const lb = room.leaderboard || [];
-    const first  = lb[0] || null;
-    const second = lb[1] || null;
-    const third  = lb[2] || null;
+    const first  = (hasWinners && lb[0] && lb[0].score > 0) ? lb[0] : null;
+    const second = (hasWinners && lb[1] && lb[1].score > 0) ? lb[1] : null;
+    const third  = (hasWinners && lb[2] && lb[2].score > 0) ? lb[2] : null;
 
     // 1. Build Speech Text (Narration in Brazilian Portuguese)
     let spokenSpeech = '';
-    if (!first) {
+    if (!hasWinners) {
       spokenSpeech = isSolo
-        ? 'Nenhum estudante de odontologia pontuou nesta rodada. Continuem se dedicando aos estudos para a próxima competição!'
-        : 'Nenhuma equipe de odontologia pontuou nesta rodada. Continuem se dedicando aos estudos para a próxima competição!';
+        ? 'Atenção futuros cirurgiões-dentistas. Fim da competição. Como todos os participantes terminaram com zero pontos, não houve ganhador nesta rodada. Nenhum estudante pontuou. Não desanimem. Revisem os conceitos de Embriologia e continuem praticando para a próxima.'
+        : 'Atenção duplas de odontologia. Fim da competição. Como todas as equipes terminaram com zero pontos, não houve equipe ganhadora nesta rodada. Continuem estudando os mecanismos celulares e pratiquem para o próximo desafio.';
     } else {
       if (isSolo) {
-        spokenSpeech = `Atenção futuros cirurgiões-dentistas! Fim da rodada! Aqui está o Top 3 individual com mais pontos da competição! Em primeiro lugar, o grande vencedor: ${first.name}, com ${first.score} pontos!`;
+        spokenSpeech = `Atenção futuros cirurgiões-dentistas. Fim da rodada. Aqui está o pódio individual com mais pontos da competição. Em primeiro lugar, o grande vencedor: ${first.name}, com ${first.score} pontos.`;
         if (second) {
-          spokenSpeech += ` Em segundo lugar: ${second.name}, com ${second.score} pontos!`;
+          spokenSpeech += ` Em segundo lugar: ${second.name}, com ${second.score} pontos.`;
         }
         if (third) {
-          spokenSpeech += ` Em terceiro lugar: ${third.name}, com ${third.score} pontos!`;
+          spokenSpeech += ` Em terceiro lugar: ${third.name}, com ${third.score} pontos.`;
         }
-        spokenSpeech += ' Parabéns a todos pelo excelente conhecimento demonstrado!';
+        spokenSpeech += ' Parabéns a todos pelo excelente conhecimento demonstrado.';
       } else {
-        spokenSpeech = `Atenção equipes de odontologia! Fim da rodada! Aqui está o Top 3 de equipes com mais pontos da competição! Em primeiro lugar, a equipe campeã: Equipe ${first.name}, com ${first.score} pontos!`;
+        spokenSpeech = `Atenção equipes de odontologia. Fim da rodada. Aqui está o pódio das equipes com mais pontos da competição. Em primeiro lugar, a equipe campeã: Equipe ${first.name}, com ${first.score} pontos.`;
         if (second) {
-          spokenSpeech += ` Em segundo lugar: Equipe ${second.name}, com ${second.score} pontos!`;
+          spokenSpeech += ` Em segundo lugar: Equipe ${second.name}, com ${second.score} pontos.`;
         }
         if (third) {
-          spokenSpeech += ` Em terceiro lugar: Equipe ${third.name}, com ${third.score} pontos!`;
+          spokenSpeech += ` Em terceiro lugar: Equipe ${third.name}, com ${third.score} pontos.`;
         }
-        spokenSpeech += ' Parabéns a todas as equipes pelo excelente trabalho conjunto e dedicação!';
+        spokenSpeech += ' Parabéns a todas as equipes pelo excelente trabalho e dedicação.';
       }
     }
     this.lastOdontoSpeechText = spokenSpeech;
 
     // 2. Build Dr. Odonto Speech Bubble Cards
     let bubbleTop3CardsHtml = '';
-    if (!first) {
+    if (!hasWinners) {
       bubbleTop3CardsHtml = `
-        <div class="odonto-speech-intro" style="color: var(--text-muted); font-style: italic;">
-          📖 Nenhum participante pontuou nesta rodada. Não desanimem! Revisem o banco de questões e continuem praticando.
+        <div class="glass" style="padding: 1.25rem 1.5rem; text-align: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); margin: 0.5rem 0;">
+          <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">⚠️</div>
+          <h3 style="color: #fca5a5; font-size: 1.15rem; margin-bottom: 0.3rem;">Sem Ganhador Nesta Rodada (0 Pontos)</h3>
+          <p style="color: #e2e8f0; font-size: 0.9rem; line-height: 1.5; margin: 0 auto; max-width: 580px;">
+            Todos os participantes finalizaram a competição com <strong>0 pontos</strong>. Pelas regras oficiais, quando todos ficam com 0 pontos, ninguém é considerado ganhador nem sobe ao pódio. Continuem revisando os temas de Embriologia e participem da próxima!
+          </p>
         </div>
       `;
     } else {
@@ -1664,7 +1675,7 @@ class EmbryoApp {
           </div>
           <div class="odonto-character-badge">
             <span class="badge-icon">🩺</span>
-            <span class="badge-text"><strong>Dr. Odonto</strong> • Pódio da Rodada</span>
+            <span class="badge-text"><strong>Dr. Odonto</strong> • ${hasWinners ? 'Pódio da Rodada' : 'Veredito da Rodada'}</span>
           </div>
         </div>
 
@@ -1673,10 +1684,10 @@ class EmbryoApp {
           <div class="speech-bubble-header">
             <div>
               <span class="bubble-tag">${isSolo ? '👤 Modo Solo (Individual)' : '👥 Modo Equipe (Duplas)'}</span>
-              <h2 class="bubble-title">🦷 Dr. Odonto Anuncia o Top 3 com Mais Pontos!</h2>
+              <h2 class="bubble-title">${hasWinners ? '🦷 Dr. Odonto Anuncia o Top 3 com Mais Pontos!' : '🦷 Dr. Odonto Comunica: Sem Ganhador nesta Rodada'}</h2>
             </div>
             <div class="header-actions">
-              <button id="btnOdontoVoice" class="btn-odonto-audio" onclick="app.toggleOdontoSpeech()" title="Ouvir Dr. Odonto narrando o pódio">
+              <button id="btnOdontoVoice" class="btn-odonto-audio" onclick="app.toggleOdontoSpeech()" title="Ouvir Dr. Odonto narrando">
                 🔊 Ouvir em Voz Alta
               </button>
             </div>
@@ -1691,7 +1702,7 @@ class EmbryoApp {
 
     // 3. Build Podium Section
     let podiumHtml = '';
-    if (first) {
+    if (hasWinners && first) {
       podiumHtml = `
         <div class="podium-section">
           ${second ? `
@@ -1735,6 +1746,16 @@ class EmbryoApp {
           ` : ''}
         </div>
       `;
+    } else {
+      podiumHtml = `
+        <div class="glass" style="padding: 2.25rem; text-align: center; border: 1px dashed rgba(245, 158, 11, 0.4); margin-bottom: 2rem; background: rgba(15, 23, 42, 0.65);">
+          <div style="font-size: 2.5rem; margin-bottom: 0.6rem;">📚</div>
+          <h3 style="color: #fbbf24; font-size: 1.35rem; margin-bottom: 0.45rem;">Pódio Bloqueado: Ninguém Atingiu Pontuação Mínima</h3>
+          <p style="color: var(--text-muted); max-width: 620px; margin: 0 auto; font-size: 0.95rem; line-height: 1.6;">
+            Como todos os participantes terminaram com <strong>0 pontos</strong>, nenhum competidor subiu ao pódio. É necessário pontuar em pelo menos uma questão científica para consagrar um vencedor!
+          </p>
+        </div>
+      `;
     }
 
     container.innerHTML = `
@@ -1744,7 +1765,7 @@ class EmbryoApp {
           ${this.escapeHtml(room.name)}
         </h1>
         <p style="color: var(--text-muted); font-size: 1.05rem;">
-          Parabéns a todos os estudantes de Odontologia participantes pelo aprendizado e dedicação!
+          ${hasWinners ? 'Parabéns aos vencedores e a todos os participantes pelo aprendizado e dedicação!' : 'Fim da rodada! Revisem o conteúdo e pratiquem para o próximo desafio.'}
         </p>
       </div>
 
@@ -1773,7 +1794,7 @@ class EmbryoApp {
             <tbody>
               ${lb.map(item => `
                 <tr>
-                  <td><strong>#${item.position}</strong></td>
+                  <td><strong>${hasWinners ? `#${item.position}` : '-'}</strong></td>
                   <td>
                     <strong>${isSolo ? '' : 'Equipe '}${this.escapeHtml(item.name)}</strong>
                     ${item.code ? `<span class="room-code-tag" style="margin-left: 6px;">${item.code}</span>` : ''}
@@ -1784,10 +1805,10 @@ class EmbryoApp {
                     ` : ''}
                   </td>
                   <td style="text-align: right;">${item.answeredCount}</td>
-                  <td style="text-align: right; color: #34d399; font-weight: 600;">${item.correctCount}</td>
+                  <td style="text-align: right; color: ${item.correctCount > 0 ? '#34d399' : 'var(--text-dim)'}; font-weight: 600;">${item.correctCount}</td>
                   <td style="text-align: right;">${item.accuracy}%</td>
                   <td style="text-align: right; color: var(--text-muted);">${item.totalCorrectTime.toFixed(1)}s</td>
-                  <td style="text-align: right; font-weight: 800; font-size: 1.15rem; color: #38bdf8;">${item.score}</td>
+                  <td style="text-align: right; font-weight: 800; font-size: 1.15rem; color: ${item.score > 0 ? '#38bdf8' : 'var(--text-dim)'};">${item.score}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1796,9 +1817,6 @@ class EmbryoApp {
       </div>
 
       <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-        <button class="btn btn-secondary" onclick="app.openBankProtected();">
-          📚 Revisar Banco de Questões (Admin)
-        </button>
         <button class="btn btn-primary" onclick="app.switchView('home'); app.clearSession(); app.fetchRooms();">
           🏠 Retornar ao Início
         </button>
@@ -3008,7 +3026,7 @@ class EmbryoApp {
                   <span style="font-size: 0.8rem; color: var(--text-dim);">${new Date(h.finishedAt).toLocaleString('pt-BR')}</span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                  Modo: <strong>${(h.mode || '').toUpperCase()}</strong> • Questões: ${h.totalQuestions || 0} • Campeão: <strong style="color: #fbbf24;">${h.leaderboard && h.leaderboard[0] ? this.escapeHtml(h.leaderboard[0].name) : 'N/A'}</strong> (${h.leaderboard && h.leaderboard[0] ? h.leaderboard[0].score : 0} pts)
+                  Modo: <strong>${(h.mode || '').toUpperCase()}</strong> • Questões: ${h.totalQuestions || 0} • Campeão: <strong style="color: ${(h.leaderboard && h.leaderboard[0] && h.leaderboard[0].score > 0) ? '#fbbf24' : '#fca5a5'};">${(h.leaderboard && h.leaderboard[0] && h.leaderboard[0].score > 0) ? this.escapeHtml(h.leaderboard[0].name) : 'Nenhum (0 pts)'}</strong> (${h.leaderboard && h.leaderboard[0] ? h.leaderboard[0].score : 0} pts)
                 </p>
               </div>
             `).join('')}
