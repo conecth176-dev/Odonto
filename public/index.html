@@ -43,7 +43,7 @@
     <nav class="nav-links">
       <button class="nav-btn active" id="navHomeBtn" onclick="app.switchView('home');">🏠 Início</button>
       <button class="nav-btn" id="navRulesBtn" onclick="app.showRulesModal(false);">📜 Regras</button>
-      <button class="nav-btn" id="navBankBtn">📚 Questões (Admin)</button>
+      <button class="nav-btn" id="navBankBtn" onclick="app.openBankProtected();">📚 Questões (Admin)</button>
       <button class="nav-btn admin-btn" id="navAdminBtn" onclick="app.openAdminView();">🔒 Painel Admin</button>
       <button class="audio-toggle desktop-only-audio" id="audioToggleBtn" title="Alternar Som" onclick="app.renderAudioButton(window.soundManager.toggle());">🔊</button>
     </nav>
@@ -439,7 +439,7 @@
        ====================================================================== -->
   <div class="modal-overlay" id="adminLoginModal">
     <div class="glass modal-content">
-      <button class="modal-close" id="adminLoginModalClose">&times;</button>
+      <button class="modal-close" id="adminLoginModalClose" onclick="app.closeModal('adminLoginModal'); app.adminLoginTarget = null;">&times;</button>
       <div class="modal-header">
         <h3 class="modal-title">Acesso Administrativo</h3>
         <p class="modal-subtitle">Exclusivo para anfitriões e apresentadores do Grupo 5</p>

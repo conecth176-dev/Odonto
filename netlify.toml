@@ -8,7 +8,8 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
 
+# SPA fallback: any page route falls back to index.html
 [[redirects]]
-  from = "/api/*"
-  to = "/data/questions.json"
+  from = "/*"
+  to = "/index.html"
   status = 200
