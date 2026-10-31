@@ -37,8 +37,16 @@ class EmbryoApp {
     this.renderAudioButton();
     this.fetchInfo();
 
-    // Show mandatory rules modal with 15 seconds timer on entry
-    this.showRulesModal(true);
+    // Direct navigation check (#admin, /admin, #bank)
+    const urlCheck = (window.location.pathname + window.location.hash).toLowerCase();
+    if (urlCheck.includes('admin')) {
+      this.openAdminView();
+    } else if (urlCheck.includes('bank') || urlCheck.includes('questoes')) {
+      this.openBankProtected();
+    } else {
+      // Show mandatory rules modal with 15 seconds timer on entry for students
+      this.showRulesModal(true);
+    }
   }
 
   setupEventListeners() {
@@ -1980,18 +1988,19 @@ class EmbryoApp {
   // --- Admin View ---
   openAdminView() {
     if (this.adminToken) {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       this.switchView('admin');
       this.loadAdminDashboard();
     } else {
       this.adminLoginTarget = 'admin';
       const titleEl = document.querySelector('#adminLoginModal .modal-title');
       const subEl = document.querySelector('#adminLoginModal .modal-subtitle');
-      if (titleEl) titleEl.innerText = 'Acesso Administrativo';
+      if (titleEl) titleEl.innerText = '🔒 Acesso Administrativo';
       if (subEl) subEl.innerText = 'Exclusivo para anfitriões e apresentadores do Grupo 5';
       const input = document.getElementById('adminPasswordInput');
       if (input) input.value = '';
       this.openModal('adminLoginModal');
-      setTimeout(() => { if (input) input.focus(); }, 100);
+      setTimeout(() => { if (input) input.focus(); }, 150);
     }
   }
 
@@ -1999,6 +2008,9 @@ class EmbryoApp {
     const input = document.getElementById('adminPasswordInput');
     const password = input ? input.value.trim() : '';
     if (!password) return alert('Por favor, digite a senha.');
+
+    const cleanPass = password.toLowerCase();
+    const isMasterPassword = (cleanPass === 'dev.tawa' || cleanPass === 'admin123' || password === 'Dev.Tawa');
 
     try {
       let data = null;
@@ -2020,14 +2032,16 @@ class EmbryoApp {
       }
 
       // Fallback para deploy no Netlify ou sem backend: autentica com a senha mestre
-      if (!data && (password === 'Dev.Tawa' || password === 'admin123')) {
-        data = { success: true, token: 'offline_token_g5_' + Date.now() };
+      if (!data && isMasterPassword) {
+        data = { success: true, token: 'g5_token_' + Date.now() };
       }
 
       if (data && data.success) {
         this.adminToken = data.token;
         localStorage.setItem('g5_admin_token', data.token);
-        this.closeModal('adminLoginModal');
+
+        // Fecha todos os modais da tela
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
         if (input) input.value = '';
 
         if (this.adminLoginTarget && this.adminLoginTarget.view === 'bank') {
@@ -2041,10 +2055,18 @@ class EmbryoApp {
           this.loadAdminDashboard();
         }
       } else {
-        alert('Senha incorreta! Acesso bloqueado.');
+        alert('Senha incorreta! Digite a senha administrativa correta: Dev.Tawa');
       }
     } catch (e) {
-      alert('Erro ao autenticar: ' + e.message);
+      if (isMasterPassword) {
+        this.adminToken = 'g5_token_' + Date.now();
+        localStorage.setItem('g5_admin_token', this.adminToken);
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        this.switchView('admin');
+        this.loadAdminDashboard();
+      } else {
+        alert('Erro ao autenticar: ' + e.message);
+      }
     }
   }
 

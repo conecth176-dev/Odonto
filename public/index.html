@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" href="/img/logo.png">
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css?v=3.0">
 </head>
 <body>
 
@@ -218,7 +218,26 @@
       <section class="glass admin-panel-content">
         <!-- Tab 1: Rooms -->
         <div id="adminPane-rooms" class="admin-tab-pane">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <!-- Quick Admin Action Metrics -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="glass" style="padding: 1rem; border-left: 3px solid #38bdf8; cursor: pointer; transition: transform 0.2s ease;" onclick="app.showAdminTab('questions')">
+              <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Acervo Oficial</span>
+              <h4 style="color: #fff; font-size: 1.25rem; margin: 0.2rem 0;">200 Questões 📚</h4>
+              <span style="font-size: 0.8rem; color: #38bdf8;">Ver todas as questões →</span>
+            </div>
+            <div class="glass" style="padding: 1rem; border-left: 3px solid #34d399; cursor: pointer; transition: transform 0.2s ease;" onclick="app.openCreateRoomModal()">
+              <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Nova Competição</span>
+              <h4 style="color: #fff; font-size: 1.25rem; margin: 0.2rem 0;">Criar Sala 🎮</h4>
+              <span style="font-size: 0.8rem; color: #34d399;">Solo ou Duplas →</span>
+            </div>
+            <div class="glass" style="padding: 1rem; border-left: 3px solid #fbbf24; cursor: pointer; transition: transform 0.2s ease;" onclick="app.showAdminTab('history')">
+              <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Relatórios & Notas</span>
+              <h4 style="color: #fff; font-size: 1.25rem; margin: 0.2rem 0;">Exportação 📊</h4>
+              <span style="font-size: 0.8rem; color: #fbbf24;">CSV e JSON →</span>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.8rem;">
             <div>
               <h3 style="color: #fff; font-size: 1.3rem;">Salas de Competição Ativas</h3>
               <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie o fluxo de perguntas, pausas, avanços manuais e rankings ao vivo.</p>
@@ -867,11 +886,11 @@
   </script>
 
   <!-- Client Scripts -->
-  <script src="/js/sound.js"></script>
-  <script src="/js/confetti.js"></script>
-  <script src="/js/topicsData.js"></script>
-  <script src="/js/socket.js"></script>
-  <script src="/js/app.js"></script>
+  <script src="/js/sound.js?v=3.0"></script>
+  <script src="/js/confetti.js?v=3.0"></script>
+  <script src="/js/topicsData.js?v=3.0"></script>
+  <script src="/js/socket.js?v=3.0"></script>
+  <script src="/js/app.js?v=3.0"></script>
 
 </body>
 </html>

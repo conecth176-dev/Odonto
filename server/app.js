@@ -25,6 +25,14 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // API Routes
 app.use('/api', createApiRouter(roomManager));
 
+// SPA fallback for direct navigation (e.g. /admin, /bank)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
+    return res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  }
+  next();
+});
+
 // Real-time WebSocket connection handling
 io.on('connection', (socket) => {
   // Join solo room
