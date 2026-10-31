@@ -33,6 +33,16 @@ class EmbryoApp {
       this.fetchRooms();
     });
 
+    // Limpa salas fantasmas antigas do localStorage
+    try {
+      const stored = localStorage.getItem('g5_local_rooms');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const filtered = (parsed || []).filter(r => r.id !== 'room_solo_offline' && r.code !== 'SOLO-G5');
+        localStorage.setItem('g5_local_rooms', JSON.stringify(filtered));
+      }
+    } catch (e) {}
+
     this.setupEventListeners();
     this.renderAudioButton();
     this.fetchInfo();
@@ -388,7 +398,7 @@ class EmbryoApp {
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
         const rooms = await res.json();
-        if (Array.isArray(rooms) && rooms.length > 0 && rooms[0] && rooms[0].code) {
+        if (Array.isArray(rooms)) {
           this.renderRoomsList(rooms);
           return;
         }
@@ -399,25 +409,14 @@ class EmbryoApp {
     let localRooms = [];
     try {
       const stored = localStorage.getItem('g5_local_rooms');
-      if (stored) localRooms = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        localRooms = (parsed || []).filter(r => r.id !== 'room_solo_offline' && r.code !== 'SOLO-G5');
+      }
     } catch (e) {}
 
-    // Static fallback for hosts without running WebSocket server
-    const defaultRooms = [{
-      id: 'room_solo_offline',
-      code: 'SOLO-G5',
-      name: 'Desafio Solo de Embriologia — Grupo 5',
-      description: 'Competição individual com 15 perguntas dinâmicas do acervo de Bases Celulares e Embriologia.',
-      mode: 'solo',
-      status: 'lobby',
-      participantCount: 0,
-      teamCount: 0,
-      questionCount: 15,
-      totalQuestions: 15,
-      timeLimit: 180
-    }];
-
-    this.renderRoomsList([...localRooms, ...defaultRooms]);
+    // Nenhuma sala fictícia: mostra apenas lista limpa
+    this.renderRoomsList(localRooms);
   }
 
   handleRoomListUpdate(rooms) {
@@ -435,8 +434,9 @@ class EmbryoApp {
     if (!rooms || rooms.length === 0) {
       container.innerHTML = `
         <div class="glass" style="grid-column: 1/-1; padding: 2.5rem; text-align: center;">
-          <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 1rem;">Nenhuma sala de competição aberta no momento.</p>
-          <p style="font-size: 0.9rem; color: var(--text-dim);">Acesse o Painel Administrativo para criar uma nova sala para a turma.</p>
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🚪</div>
+          <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: 600;">Nenhuma sala aberta no momento.</p>
+          <p style="font-size: 0.9rem; color: var(--text-dim);">Aguarde o anfitrião do Grupo 5 criar uma sala ou acesse o Painel Administrativo para criar uma nova competição.</p>
         </div>
       `;
       return;

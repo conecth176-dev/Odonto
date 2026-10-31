@@ -10,35 +10,9 @@ class RoomManager {
   }
 
   initFromDb() {
-    const savedRooms = db.get('rooms') || {};
-    for (const [id, r] of Object.entries(savedRooms)) {
-      this.rooms[id] = {
-        ...r,
-        timer: null,
-        participants: r.participants || {},
-        teams: r.teams || {},
-        status: r.status === 'in_progress' ? 'paused' : r.status
-      };
-    }
-
-    // Seed default rooms if empty
-    if (Object.keys(this.rooms).length === 0) {
-      this.createRoom({
-        name: 'Competição Oficial — Bases Celulares (Modo Solo)',
-        description: 'Desafio individual sobre bases celulares, vias de sinalização e fenômenos extraordinários da embriologia.',
-        mode: 'solo',
-        timeLimit: 180,
-        revealExplanation: true
-      });
-
-      this.createRoom({
-        name: 'Grande Torneio em Duplas — Bases Celulares (Grupo 5)',
-        description: 'Batalha cooperativa em duplas com alternância de integrantes sobre o seminário de Bases Celulares.',
-        mode: 'duo',
-        timeLimit: 180,
-        revealExplanation: true
-      });
-    }
+    // Inicia limpo: sem salas fantasmas antigas ao reiniciar
+    this.rooms = {};
+    db.set('rooms', {});
   }
 
   saveRooms() {
