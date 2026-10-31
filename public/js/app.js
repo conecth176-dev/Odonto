@@ -532,6 +532,8 @@ class EmbryoApp {
     this.currentRoom = null;
     this.currentParticipant = null;
     this.currentTeam = null;
+    this.selectedOptionIndex = null;
+    this.lastRoundIndex = -1;
     if (this.timerInterval) clearInterval(this.timerInterval);
   }
 
@@ -554,6 +556,13 @@ class EmbryoApp {
   handleRoomStateUpdate(roomState) {
     if (!roomState) return;
     this.currentRoom = roomState;
+
+    if (roomState.me) {
+      this.currentParticipant = roomState.me;
+    }
+    if (roomState.myTeam) {
+      this.currentTeam = roomState.myTeam;
+    }
 
     if (roomState.status === 'lobby') {
       this.switchView('lobby');
@@ -828,23 +837,25 @@ class EmbryoApp {
         `;
       } else if (hasSubmitted) {
         actionText = `
-          <div class="submission-status">
-            <span>✅ Resposta enviada (${myAnswer.timeUsed.toFixed(1)}s)! Aguardando o término da rodada...</span>
+          <div class="submission-status" style="color: #34d399; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.85rem 1rem; border-radius: var(--radius-sm); text-align: center;">
+            <span>✅ <strong>Resposta da dupla confirmada (${myAnswer.timeUsed.toFixed(1)}s)!</strong> Aguardando o encerramento da rodada...</span>
           </div>
         `;
       } else if (room.mode === 'duo' && !room.myTurn) {
+        const activeRoleText = round && round.activeDuoRole === 'member_A' ? 'Integrante A' : 'Integrante B';
         actionText = `
-          <div class="submission-status" style="color: #fbbf24;">
-            <span>👁️ Modo visualização: Aguardando envio pelo seu parceiro...</span>
+          <div class="submission-status" style="color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 0.85rem 1rem; border-radius: var(--radius-sm); text-align: center;">
+            <span>👁️ <strong>Modo Acompanhamento:</strong> É a vez do seu parceiro (${activeRoleText}) responder pela dupla!</span>
+            <p style="font-size: 0.82rem; color: #cbd5e1; margin-top: 4px; margin-bottom: 0;">Você pode ler o enunciado e as opções, mas apenas o seu parceiro pode selecionar e confirmar a resposta nesta pergunta.</p>
           </div>
         `;
       } else {
         actionText = `
-          <div class="arena-actions" style="width: 100%;">
-            <div style="font-size: 0.85rem; color: var(--text-muted);">
-              Selecione uma alternativa e confirme. Não é possível alterar após o envio!
+          <div class="arena-actions" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="font-size: 0.88rem; color: var(--text-muted);">
+              ${this.selectedOptionIndex === null ? '👈 Selecione uma alternativa acima e confirme:' : '✅ Alternativa selecionada! Clique para confirmar:'}
             </div>
-            <button class="btn btn-primary" id="btnConfirmAnswer" onclick="app.confirmAnswer()" ${this.selectedOptionIndex === null ? 'disabled' : ''}>
+            <button class="btn btn-primary" id="btnConfirmAnswer" onclick="app.confirmAnswer()" ${this.selectedOptionIndex === null ? 'disabled' : ''} style="font-size: 1rem; padding: 0.85rem 1.75rem;">
               Confirmar Resposta ✓
             </button>
           </div>
@@ -919,9 +930,13 @@ class EmbryoApp {
   }
 
   selectOption(idx) {
+    if (!this.currentRoom) return;
     if (this.currentRoom.status === 'explanation') return;
     if (this.currentRoom.myAnswer) return;
-    if (this.currentRoom.mode === 'duo' && !this.currentRoom.myTurn) return;
+    if (this.currentRoom.mode === 'duo' && !this.currentRoom.myTurn) {
+      alert('Nesta rodada é a vez do seu parceiro de dupla responder!');
+      return;
+    }
 
     this.selectedOptionIndex = idx;
 
@@ -935,26 +950,61 @@ class EmbryoApp {
     });
 
     const confirmBtn = document.getElementById('btnConfirmAnswer');
-    if (confirmBtn) confirmBtn.disabled = false;
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.style.opacity = '1';
+      confirmBtn.style.cursor = 'pointer';
+    }
   }
 
   async confirmAnswer() {
-    if (this.selectedOptionIndex === null) return;
-    if (!this.currentRoom || !this.currentParticipant) return;
+    if (this.selectedOptionIndex === null) {
+      alert('Por favor, selecione uma alternativa antes de confirmar!');
+      return;
+    }
+    if (!this.currentRoom) return;
 
-    const res = await window.socketClient.submitAnswer(
-      this.currentRoom.id,
-      this.currentParticipant.id,
-      this.selectedOptionIndex
-    );
+    const participantId = (this.currentParticipant && this.currentParticipant.id) || 
+                          (this.currentRoom.me && this.currentRoom.me.id);
+    if (!participantId) {
+      alert('Identificação do participante não encontrada. Por favor, recarregue a página.');
+      return;
+    }
 
-    if (res.error) {
-      alert(res.error);
-    } else {
-      if (res.isCorrect) {
-        window.soundManager.playCorrect();
+    const confirmBtn = document.getElementById('btnConfirmAnswer');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = 'Enviando... ⏳';
+    }
+
+    try {
+      const res = await window.socketClient.submitAnswer(
+        this.currentRoom.id,
+        participantId,
+        this.selectedOptionIndex
+      );
+
+      if (res && res.error) {
+        alert(res.error);
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = 'Confirmar Resposta ✓';
+        }
       } else {
-        window.soundManager.playIncorrect();
+        if (confirmBtn) {
+          confirmBtn.innerHTML = '✓ Resposta Confirmada!';
+        }
+        if (res && res.isCorrect) {
+          window.soundManager.playCorrect();
+        } else {
+          window.soundManager.playIncorrect();
+        }
+      }
+    } catch (e) {
+      alert('Erro ao enviar resposta: ' + e.message);
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Confirmar Resposta ✓';
       }
     }
   }
