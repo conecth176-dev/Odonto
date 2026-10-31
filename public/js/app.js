@@ -629,9 +629,6 @@ class EmbryoApp {
         <button class="btn btn-primary" onclick="app.quickStartRoomFromLobby('${room.id}')" style="font-size: 1.1rem; padding: 1rem 2.5rem; box-shadow: 0 4px 25px rgba(6, 182, 212, 0.5);">
           ▶ Iniciar Competição Agora (Liberar Perguntas)
         </button>
-        <p style="font-size: 0.78rem; color: var(--text-dim); margin-top: 0.65rem;">
-          (Se solicitado, use a senha do anfitrião: <code>embrio2026</code>)
-        </p>
       </div>
 
       ${duoInfoHtml}
@@ -674,7 +671,7 @@ class EmbryoApp {
 
   async quickStartRoomFromLobby(roomId) {
     if (!this.adminToken) {
-      const pass = prompt('Digite a senha de administrador/anfitrião (padrão: embrio2026):', 'embrio2026');
+      const pass = prompt('Digite a senha de administrador/anfitrião:');
       if (!pass) return;
 
       try {
