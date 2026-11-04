@@ -13,6 +13,10 @@ class TelaoApp {
     this.currentNarratorIndex = -1;
     this.isNarrating = false;
     this.currentRoundIndex = -1;
+    this.activeNarrationSession = 0;
+    this._currentRoundKey = null;
+    this._narrationTimer = null;
+    this._utteranceSafetyTimer = null;
 
     this.init();
   }
@@ -418,9 +422,20 @@ class TelaoApp {
 
   // AI Voice Narration Sequence
   async onRoundStarted(data) {
-    this.currentRoundIndex = data.roundIndex;
     const q = data.question;
     if (!q) return;
+
+    // Guard against duplicate socket events for the same round
+    const roundKey = `${data.roundIndex}_${q.id || q.question}`;
+    if (this._currentRoundKey === roundKey && this.isNarrating) {
+      console.log('Evento duplicado de rodada ignorado no Telão.');
+      return;
+    }
+    this._currentRoundKey = roundKey;
+
+    // Terminate any previous speech or narration loops immediately
+    this.stopNarration();
+    this.currentRoundIndex = data.roundIndex;
 
     // Reset visual cards
     this.resetOptionCards();
@@ -447,24 +462,42 @@ class TelaoApp {
     this.narrateFullQuestion(q);
   }
 
+  stopNarration() {
+    this.activeNarrationSession++;
+    this.isNarrating = false;
+    window._activeUtterance = null;
+    if (this._narrationTimer) {
+      clearTimeout(this._narrationTimer);
+      this._narrationTimer = null;
+    }
+    if (this._utteranceSafetyTimer) {
+      clearTimeout(this._utteranceSafetyTimer);
+      this._utteranceSafetyTimer = null;
+    }
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    this.resetOptionCards();
+  }
+
   narrateFullQuestion(q) {
+    this.stopNarration();
+
     if (!('speechSynthesis' in window) || !this.soundEnabled) {
-      // If sound is disabled or speech not supported, simulate natural reading delay then finish
       console.warn('Speech synthesis mudo ou desativado. Liberando após delay de leitura.');
       this.setNarratorVisual(true, 'Leitura da pergunta em andamento...');
-      setTimeout(() => {
+      this._narrationTimer = setTimeout(() => {
         this.setNarratorVisual(false, 'Leitura concluída! Liberando botões...');
         this.notifyNarrationFinished();
       }, 7000);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    const sessionId = ++this.activeNarrationSession;
     this.isNarrating = true;
-    this.setNarratorVisual(true, 'Apresentador narrando a pergunta...');
-
-    const voice = this.getBestPortugueseVoice();
-    const letters = ['A', 'B', 'C', 'D'];
+    this.setNarratorVisual(true, 'Apresentadores narrando a pergunta...');
 
     // Clean question to not say "Quem sou eu?" or "Atenção participante" at the start
     let cleanQuestion = (q.question || '')
@@ -497,7 +530,12 @@ class TelaoApp {
     let currentPart = 0;
 
     const speakNext = async () => {
-      if (!this.isNarrating || currentPart >= parts.length) {
+      // Abort if session changed or narration stopped
+      if (this.activeNarrationSession !== sessionId || !this.isNarrating) {
+        return;
+      }
+
+      if (currentPart >= parts.length) {
         this.isNarrating = false;
         this.setNarratorVisual(false, 'Narração finalizada!');
         this.resetOptionCards();
@@ -512,19 +550,20 @@ class TelaoApp {
         if (card) card.classList.add('narrating');
       }
 
-      await this.playAudioOrSpeak(item.text, item.character || 'cebolinha');
+      await this.playAudioOrSpeak(item.text, item.character || 'cebolinha', sessionId);
 
-      if (!this.isNarrating) return;
+      if (this.activeNarrationSession !== sessionId || !this.isNarrating) return;
       currentPart++;
-      setTimeout(speakNext, 350);
+      this._narrationTimer = setTimeout(speakNext, 350);
     };
 
     speakNext();
   }
 
-  playAudioOrSpeak(text, character = 'cebolinha') {
+  playAudioOrSpeak(text, character = 'cebolinha', sessionId = null) {
     return new Promise((resolve) => {
       if (!this.soundEnabled || !('speechSynthesis' in window)) return resolve();
+      if (sessionId && this.activeNarrationSession !== sessionId) return resolve();
 
       try {
         window.speechSynthesis.cancel();
@@ -538,13 +577,13 @@ class TelaoApp {
         utter.lang = 'pt-BR';
 
         if (character === 'cebolinha') {
-          // Tom do Cebolinha (Angélica Santos / Paulo Cavalcante): agudo, nasal e travesso
+          // Tom do Cebolinha: agudo, nasal e travesso
           utter.pitch = 1.45;
           utter.rate = 1.05;
           const maleVoice = this.getBestPortugueseVoice();
           if (maleVoice) utter.voice = maleVoice;
         } else {
-          // Tom da Mônica (Marli Bortoletto): voz decidida, enérgica e animada
+          // Tom da Mônica: voz decidida, enérgica e animada
           utter.pitch = 1.30;
           utter.rate = 1.10;
           const femaleVoice = this.getBestFemaleVoice();
@@ -552,24 +591,44 @@ class TelaoApp {
         }
 
         let finished = false;
-        const done = () => {
+        const finish = () => {
           if (!finished) {
             finished = true;
+            window._activeUtterance = null;
+            if (this._utteranceSafetyTimer) {
+              clearTimeout(this._utteranceSafetyTimer);
+              this._utteranceSafetyTimer = null;
+            }
             resolve();
           }
         };
 
-        utter.onend = done;
-        utter.onerror = (e) => {
-          console.warn('Speech error:', e);
-          done();
+        utter.onend = () => {
+          // Breathing gap between dialogue lines so sentences never collide
+          setTimeout(finish, 220);
         };
 
-        // Safety timeout so speech never blocks
-        const maxTime = Math.max(3000, Math.min(22000, spokenText.length * 110));
-        setTimeout(done, maxTime);
+        utter.onerror = (e) => {
+          console.warn('Speech error:', e);
+          finish();
+        };
 
-        window.speechSynthesis.speak(utter);
+        // Chromium GC fix: keep globally referenced so Chrome won't drop it mid-speech
+        window._activeUtterance = utter;
+
+        // Safety timeout so speech never blocks indefinitely
+        const maxTime = Math.max(3000, Math.min(22000, spokenText.length * 120));
+        this._utteranceSafetyTimer = setTimeout(finish, maxTime);
+
+        // Small pause of 100ms after cancel() to let browser speech thread reset cleanly
+        setTimeout(() => {
+          if (!sessionId || this.activeNarrationSession === sessionId) {
+            window.speechSynthesis.speak(utter);
+          } else {
+            finish();
+          }
+        }, 100);
+
       } catch (err) {
         console.warn('SpeechSynthesis error:', err);
         resolve();
@@ -623,6 +682,7 @@ class TelaoApp {
   }
 
   onBuzzerWinner(winner) {
+    this.stopNarration();
     const banner = document.getElementById('statusBanner');
     banner.className = 'telao-banner banner-winner';
     banner.innerHTML = `<span>🚨</span><span>${winner.participantName} APERTOU PRIMEIRO! ESCOLHENDO RESPOSTA...</span>`;
@@ -633,6 +693,7 @@ class TelaoApp {
   }
 
   onAnswerRevealed(result) {
+    this.stopNarration();
     const banner = document.getElementById('statusBanner');
     this.resetOptionCards();
 

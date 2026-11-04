@@ -3199,11 +3199,13 @@ class EmbryoApp {
       } catch(e) {}
     }
 
-    // Dr. Odonto mascot voice announcement on correct or incorrect
-    if (result.isCorrect) {
-      this.speakMascotAnnouncement("A lesposta tá colétaaaa! Tolta nesse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
-    } else {
-      this.speakMascotAnnouncement("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
+    // Dr. Odonto mascot voice announcement on correct or incorrect (only on the participant device that answered)
+    if (isMe && this.currentView !== 'admin') {
+      if (result.isCorrect) {
+        this.speakMascotAnnouncement("A lesposta tá colétaaaa! Tolta nesse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
+      } else {
+        this.speakMascotAnnouncement("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
+      }
     }
 
     this.renderQse(this.currentRoom);

@@ -153,7 +153,6 @@ io.on('connection', (socket) => {
         return callback && callback({ error: 'Acesso restrito: Apenas o Administrador / Anfitrião pode abrir o Telão.' });
       }
       socket.join('telao_' + roomId);
-      socket.join(roomId);
       const roomState = roomManager.getSanitizedRoomState(roomId, null);
       if (callback) callback({ success: true, room: roomState });
     } catch (err) {
