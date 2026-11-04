@@ -1,7 +1,7 @@
 {
   "admin": {
     "passwordHash": "$2b$10$rDIs.nTi0zsMaDrw5nYrXuBk9/JFtBmxbWWZ6OfTXXXSDmaU.7u5W",
-    "lastLogin": "2026-11-04T19:51:59.397Z"
+    "lastLogin": "2026-11-04T20:02:34.126Z"
   },
   "settings": {
     "defaultTimeLimit": 180,
@@ -4199,6 +4199,506 @@
   ],
   "rooms": {},
   "history": [
+    {
+      "roomId": "room_qse_8009b95a",
+      "code": "QSE-686",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "mode": "quem_sou_eu",
+      "totalQuestions": 10,
+      "finishedAt": "2026-11-04T20:02:35.045Z",
+      "leaderboard": [
+        {
+          "id": "qse_815c46db09d9",
+          "name": "Ludymyla Coimbra",
+          "score": 30,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_5f2a75b44b6f",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "qse_815c46db09d9",
+        "name": "Ludymyla Coimbra",
+        "score": 30,
+        "correctCount": 1,
+        "errorCount": 0,
+        "tortadaOptIn": true,
+        "isConnected": true,
+        "position": 1
+      },
+      "participants": {
+        "qse_815c46db09d9": {
+          "id": "qse_815c46db09d9",
+          "name": "Ludymyla Coimbra",
+          "socketId": "pMpIkB1AMyZweUMdAAAA",
+          "score": 30,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:34.988Z"
+        },
+        "qse_5f2a75b44b6f": {
+          "id": "qse_5f2a75b44b6f",
+          "name": "Tawa Estrela",
+          "socketId": "JvLrSr01pBLcTFekAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:35.018Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_77fa5608",
+      "code": "G5-758",
+      "name": "Torneio Solo Teste",
+      "mode": "solo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:02:34.265Z",
+      "leaderboard": [
+        {
+          "id": "part_776e8d00d347",
+          "name": "Estudante Alfa",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "accuracy": 100,
+          "totalCorrectTime": 0.009,
+          "position": 1
+        },
+        {
+          "id": "part_4092b4f95f1f",
+          "name": "Estudante Beta",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "accuracy": 0,
+          "totalCorrectTime": 0,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "part_776e8d00d347",
+        "name": "Estudante Alfa",
+        "score": 30,
+        "answeredCount": 1,
+        "correctCount": 1,
+        "accuracy": 100,
+        "totalCorrectTime": 0.009,
+        "position": 1
+      },
+      "teams": {},
+      "participants": {
+        "part_776e8d00d347": {
+          "id": "part_776e8d00d347",
+          "name": "Estudante Alfa",
+          "socketId": "cL47zP-S4KfZrpARAAAA",
+          "role": "solo",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "totalCorrectTime": 0.009,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:34.206Z"
+        },
+        "part_4092b4f95f1f": {
+          "id": "part_4092b4f95f1f",
+          "name": "Estudante Beta",
+          "socketId": "FNlNcMsxuKnaFVyhAAAB",
+          "role": "solo",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "totalCorrectTime": 0,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:34.219Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_f0427498",
+      "code": "G5-245",
+      "name": "Torneio E2E Teste em Duplas",
+      "mode": "duo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:02:33.286Z",
+      "leaderboard": [
+        {
+          "id": "DP-7538",
+          "code": "DP-7538",
+          "name": "Dupla Odonto Vencedora",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "accuracy": 100,
+          "totalCorrectTime": 0.022,
+          "members": [
+            {
+              "id": "part_915779882d3a",
+              "name": "Carlos (Integrante A)",
+              "role": "A",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            },
+            {
+              "id": "part_309b07b1ae0a",
+              "name": "Daniela (Integrante B)",
+              "role": "B",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            }
+          ],
+          "position": 1
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "DP-7538",
+        "code": "DP-7538",
+        "name": "Dupla Odonto Vencedora",
+        "score": 40,
+        "answeredCount": 2,
+        "correctCount": 2,
+        "accuracy": 100,
+        "totalCorrectTime": 0.022,
+        "members": [
+          {
+            "id": "part_915779882d3a",
+            "name": "Carlos (Integrante A)",
+            "role": "A",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          },
+          {
+            "id": "part_309b07b1ae0a",
+            "name": "Daniela (Integrante B)",
+            "role": "B",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          }
+        ],
+        "position": 1
+      },
+      "teams": {
+        "DP-7538": {
+          "code": "DP-7538",
+          "name": "Dupla Odonto Vencedora",
+          "passwordHash": "$2b$10$AGqFTjXaSolJvqsnaXRbZes7nlxzuM4q30CatUJB4BlGtBnUYrj/a",
+          "memberA": "part_915779882d3a",
+          "memberB": "part_309b07b1ae0a",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "totalCorrectTime": 0.022,
+          "createdAt": "2026-11-04T20:02:33.047Z"
+        }
+      },
+      "participants": {
+        "part_915779882d3a": {
+          "id": "part_915779882d3a",
+          "name": "Carlos (Integrante A)",
+          "teamCode": "DP-7538",
+          "role": "member_A",
+          "socketId": "N0joCLI5iQy0iLIGAAAA",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:33.047Z"
+        },
+        "part_309b07b1ae0a": {
+          "id": "part_309b07b1ae0a",
+          "name": "Daniela (Integrante B)",
+          "teamCode": "DP-7538",
+          "role": "member_B",
+          "socketId": "NMXUhTdAsfzuSdx3AAAB",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:02:33.136Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_qse_7dc36f18",
+      "code": "QSE-405",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "mode": "quem_sou_eu",
+      "totalQuestions": 10,
+      "finishedAt": "2026-11-04T19:52:51.424Z",
+      "leaderboard": [
+        {
+          "id": "qse_fa6ef8c0b739",
+          "name": "Ludymyla Coimbra",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_711ad625ecdc",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "qse_fa6ef8c0b739",
+        "name": "Ludymyla Coimbra",
+        "score": 20,
+        "correctCount": 1,
+        "errorCount": 0,
+        "tortadaOptIn": true,
+        "isConnected": true,
+        "position": 1
+      },
+      "participants": {
+        "qse_fa6ef8c0b739": {
+          "id": "qse_fa6ef8c0b739",
+          "name": "Ludymyla Coimbra",
+          "socketId": "zUK76GjVfUzr2T-DAAAA",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:51.280Z"
+        },
+        "qse_711ad625ecdc": {
+          "id": "qse_711ad625ecdc",
+          "name": "Tawa Estrela",
+          "socketId": "bCivaDoVZSO01dDXAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:51.313Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_db0b307a",
+      "code": "G5-905",
+      "name": "Torneio Solo Teste",
+      "mode": "solo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T19:52:50.633Z",
+      "leaderboard": [
+        {
+          "id": "part_9a49086fdd60",
+          "name": "Estudante Alfa",
+          "score": 20,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "accuracy": 100,
+          "totalCorrectTime": 0.009,
+          "position": 1
+        },
+        {
+          "id": "part_9422e86374db",
+          "name": "Estudante Beta",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "accuracy": 0,
+          "totalCorrectTime": 0,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "part_9a49086fdd60",
+        "name": "Estudante Alfa",
+        "score": 20,
+        "answeredCount": 1,
+        "correctCount": 1,
+        "accuracy": 100,
+        "totalCorrectTime": 0.009,
+        "position": 1
+      },
+      "teams": {},
+      "participants": {
+        "part_9a49086fdd60": {
+          "id": "part_9a49086fdd60",
+          "name": "Estudante Alfa",
+          "socketId": "-qdEKorn7ZddRsUZAAAA",
+          "role": "solo",
+          "score": 20,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "totalCorrectTime": 0.009,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:50.581Z"
+        },
+        "part_9422e86374db": {
+          "id": "part_9422e86374db",
+          "name": "Estudante Beta",
+          "socketId": "I87c5d4AAFW1e-09AAAB",
+          "role": "solo",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "totalCorrectTime": 0,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:50.594Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_5c9a85db",
+      "code": "G5-213",
+      "name": "Torneio E2E Teste em Duplas",
+      "mode": "duo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T19:52:49.672Z",
+      "leaderboard": [
+        {
+          "id": "DP-9447",
+          "code": "DP-9447",
+          "name": "Dupla Odonto Vencedora",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "accuracy": 100,
+          "totalCorrectTime": 0.017,
+          "members": [
+            {
+              "id": "part_a0e9c8e4d41b",
+              "name": "Carlos (Integrante A)",
+              "role": "A",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            },
+            {
+              "id": "part_0da9c7e62dd4",
+              "name": "Daniela (Integrante B)",
+              "role": "B",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            }
+          ],
+          "position": 1
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "DP-9447",
+        "code": "DP-9447",
+        "name": "Dupla Odonto Vencedora",
+        "score": 40,
+        "answeredCount": 2,
+        "correctCount": 2,
+        "accuracy": 100,
+        "totalCorrectTime": 0.017,
+        "members": [
+          {
+            "id": "part_a0e9c8e4d41b",
+            "name": "Carlos (Integrante A)",
+            "role": "A",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          },
+          {
+            "id": "part_0da9c7e62dd4",
+            "name": "Daniela (Integrante B)",
+            "role": "B",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          }
+        ],
+        "position": 1
+      },
+      "teams": {
+        "DP-9447": {
+          "code": "DP-9447",
+          "name": "Dupla Odonto Vencedora",
+          "passwordHash": "$2b$10$.R5.lYhjl1Dsxqpe0B78kOZHxYHCtn3Au0nK6RloFYC6zoVDvCmOK",
+          "memberA": "part_a0e9c8e4d41b",
+          "memberB": "part_0da9c7e62dd4",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "totalCorrectTime": 0.017,
+          "createdAt": "2026-11-04T19:52:49.441Z"
+        }
+      },
+      "participants": {
+        "part_a0e9c8e4d41b": {
+          "id": "part_a0e9c8e4d41b",
+          "name": "Carlos (Integrante A)",
+          "teamCode": "DP-9447",
+          "role": "member_A",
+          "socketId": "S8rzO9I2vew2clOpAAAA",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:49.441Z"
+        },
+        "part_0da9c7e62dd4": {
+          "id": "part_0da9c7e62dd4",
+          "name": "Daniela (Integrante B)",
+          "teamCode": "DP-9447",
+          "role": "member_B",
+          "socketId": "64skZnsLZ0oAkZ44AAAB",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T19:52:49.533Z"
+        }
+      }
+    },
     {
       "roomId": "room_qse_72085abd",
       "code": "QSE-531",

@@ -554,10 +554,6 @@ class EmbryoApp {
       // Default to create team tab
       document.getElementById('tabCreateTeam').click();
     }
-      document.getElementById('duoJoinSection').style.display = 'block';
-      // Default to create team tab
-      document.getElementById('tabCreateTeam').click();
-    }
 
     this.openModal('joinModal');
   }
@@ -2136,7 +2132,19 @@ class EmbryoApp {
     `;
   }
 
-  openBankProtected(filterCategory = null) {
+  async openBankProtected(filterCategory = null) {
+    if (this.adminToken) {
+      try {
+        const verifyRes = await fetch('/api/admin/verify', {
+          headers: { 'Authorization': `Bearer ${this.adminToken}` }
+        });
+        if (!verifyRes.ok) {
+          this.adminToken = null;
+          localStorage.removeItem('g5_admin_token');
+        }
+      } catch (e) {}
+    }
+
     if (this.adminToken) {
       this.switchView('bank');
       this.loadStudyBank(filterCategory);
@@ -2299,7 +2307,19 @@ class EmbryoApp {
   }
 
   // --- Admin View ---
-  openAdminView() {
+  async openAdminView() {
+    if (this.adminToken) {
+      try {
+        const verifyRes = await fetch('/api/admin/verify', {
+          headers: { 'Authorization': `Bearer ${this.adminToken}` }
+        });
+        if (!verifyRes.ok) {
+          this.adminToken = null;
+          localStorage.removeItem('g5_admin_token');
+        }
+      } catch (e) {}
+    }
+
     if (this.adminToken) {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       this.switchView('admin');
