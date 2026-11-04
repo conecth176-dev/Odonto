@@ -303,6 +303,30 @@ class TelaoApp {
     return ptVoices.find(v => v.lang === 'pt-BR') || ptVoices[0];
   }
 
+  getBestFemaleVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    const ptVoices = voices.filter(v => v.lang && (v.lang === 'pt-BR' || v.lang.startsWith('pt')));
+    if (ptVoices.length === 0) return null;
+
+    const femaleNames = ['maria', 'francisca', 'leticia', 'heloisa', 'luciana', 'female', 'mulher', 'zira', 'fernanda', 'yara', 'raquel'];
+    const female = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return femaleNames.some(f => name.includes(f));
+    });
+    return female || ptVoices[0];
+  }
+
+  toCebolinha(text) {
+    if (!text) return '';
+    return text
+      .replace(/rr/gi, 'l')
+      .replace(/RR/gi, 'L')
+      .replace(/r([a-záéíóúâêîôûãõ])/gi, (m, v) => (m[0] === 'R' ? 'L' : 'l') + v)
+      .replace(/([ptbcfgdv])r/gi, (m, c) => c + (m[1] === 'R' ? 'L' : 'l'))
+      .replace(/r([bcdfghjklmnpqrstvwxyz])/gi, (m, c) => (m[0] === 'R' ? 'L' : 'l') + c);
+  }
+
   toggleSound() {
     this.soundEnabled = !this.soundEnabled;
     const icon = document.getElementById('soundIcon');
@@ -450,14 +474,22 @@ class TelaoApp {
       .replace(/(\s*atenção\s+participantes?\s*[\?:!\-—,\.]?\s*)+$/gi, '')
       .trim();
 
-    // Construct speech parts: Speaks ONLY the question text directly, then alternatives, and "Quem sou eu?" ONLY at the end!
+    // Comédia e dinâmica divertida entre Cebolinha & Mônica!
     const parts = [
-      { text: `${cleanQuestion}`, cardIdx: -1 },
-      { text: `Alternativa A: ${q.options[0]}`, cardIdx: 0 },
-      { text: `Alternativa B: ${q.options[1]}`, cardIdx: 1 },
-      { text: `Alternativa C: ${q.options[2]}`, cardIdx: 2 },
-      { text: `Alternativa D: ${q.options[3]}`, cardIdx: 3 },
-      { text: `Quem sou eu? Preparem-se... Está valendo!`, cardIdx: -1 }
+      // 1. Cebolinha lê a pergunta com o clássico sotaque trocando R por L
+      { character: 'cebolinha', text: cleanQuestion, cardIdx: -1 },
+      // 2. Mônica corta com bom humor
+      { character: 'monica', text: 'Sai da frente, Cebolinha! Deixa que eu leio as alternativas!', cardIdx: -1 },
+      // 3. Cebolinha insiste na alternativa A
+      { character: 'cebolinha', text: `Alternativa A: ${q.options[0]}`, cardIdx: 0 },
+      // 4. Mônica lê alternativa B
+      { character: 'monica', text: `Alternativa B: ${q.options[1]}`, cardIdx: 1 },
+      // 5. Cebolinha lê alternativa C
+      { character: 'cebolinha', text: `Alternativa C: ${q.options[2]}`, cardIdx: 2 },
+      // 6. Mônica lê alternativa D
+      { character: 'monica', text: `Alternativa D: ${q.options[3]}`, cardIdx: 3 },
+      // 7. Cebolinha encerra animado com o "Quem sou eu?" no final!
+      { character: 'cebolinha', text: `Quem sou eu? Plepalem-se... TÁ VALENDO!`, cardIdx: -1 }
     ];
 
     let currentPart = 0;
@@ -478,17 +510,17 @@ class TelaoApp {
         if (card) card.classList.add('narrating');
       }
 
-      await this.playAudioOrSpeak(item.text);
+      await this.playAudioOrSpeak(item.text, item.character || 'cebolinha');
 
       if (!this.isNarrating) return;
       currentPart++;
-      setTimeout(speakNext, 250);
+      setTimeout(speakNext, 300);
     };
 
     speakNext();
   }
 
-  playAudioOrSpeak(text) {
+  playAudioOrSpeak(text, character = 'cebolinha') {
     return new Promise((resolve) => {
       if (!this.soundEnabled) return resolve();
 
@@ -500,9 +532,14 @@ class TelaoApp {
         this.currentAudio = null;
       }
 
+      // Converte para a pronúncia do Cebolinha trocando R por L
+      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
+      const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : '🐰 Mônica';
+      this.setNarratorVisual(true, `${charTag}: "${spokenText}"`);
+
       // 1. Prioritize Studio Quality Google Neural Voice (/api/tts)
       try {
-        const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+        const audio = new Audio(`/api/tts?text=${encodeURIComponent(spokenText)}`);
         this.currentAudio = audio;
         let resolved = false;
 
@@ -514,35 +551,48 @@ class TelaoApp {
           }
         };
 
+        // Efeito de velocidade e tom estilo desenho animado
+        audio.preservesPitch = false;
+        audio.playbackRate = (character === 'cebolinha') ? 1.15 : 1.10;
+
         audio.onended = cleanup;
         audio.onerror = () => {
-          this.fallbackSpeechSynthesis(text).then(cleanup);
+          this.fallbackSpeechSynthesis(spokenText, character).then(cleanup);
         };
 
         setTimeout(() => {
           if (!resolved) cleanup();
-        }, 16000);
+        }, 18000);
 
         audio.play().catch(() => {
-          this.fallbackSpeechSynthesis(text).then(cleanup);
+          this.fallbackSpeechSynthesis(spokenText, character).then(cleanup);
         });
       } catch (err) {
-        this.fallbackSpeechSynthesis(text).then(resolve);
+        this.fallbackSpeechSynthesis(spokenText, character).then(resolve);
       }
     });
   }
 
-  fallbackSpeechSynthesis(text) {
+  fallbackSpeechSynthesis(text, character = 'cebolinha') {
     return new Promise((resolve) => {
       if (!('speechSynthesis' in window) || !this.soundEnabled) return resolve();
       try {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'pt-BR';
-        utter.rate = 0.98;
-        utter.pitch = 1.0;
-        const voice = this.getBestPortugueseVoice();
-        if (voice) utter.voice = voice;
+
+        if (character === 'cebolinha') {
+          utter.pitch = 1.35; // Voz de garoto travesso (Cebolinha)
+          utter.rate = 1.05;
+          const maleVoice = this.getBestPortugueseVoice();
+          if (maleVoice) utter.voice = maleVoice;
+        } else {
+          utter.pitch = 1.25; // Voz enérgica da Mônica
+          utter.rate = 1.08;
+          const femaleVoice = this.getBestFemaleVoice();
+          if (femaleVoice) utter.voice = femaleVoice;
+        }
+
         utter.onend = () => resolve();
         utter.onerror = () => resolve();
         window.speechSynthesis.speak(utter);
@@ -615,8 +665,8 @@ class TelaoApp {
         try { window.soundManager.playCorrect(); } catch(e) {}
       }
 
-      // Voice Narration: "A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!"
-      this.speakAnnouncement("A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!");
+      // Cebolinha comemora feliz em bom humor
+      this.playAudioOrSpeak("A lesposta tá colétaaaa! Tolta na cala desse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
 
       // Trigger Tortada Animation on screen
       setTimeout(() => {
@@ -629,8 +679,8 @@ class TelaoApp {
         try { window.soundManager.playIncorrect(); } catch(e) {}
       }
 
-      // Voice Narration: "Resposta está erradaaaaa, leva tortada bebê!"
-      this.speakAnnouncement("Resposta está erradaaaaa, leva tortada bebê!");
+      // Mônica briga divertida com Sansão e torta
+      this.playAudioOrSpeak("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
 
       // Trigger Tortada Animation on screen
       setTimeout(() => {
@@ -639,9 +689,9 @@ class TelaoApp {
     }
   }
 
-  speakAnnouncement(text) {
+  speakAnnouncement(text, character = 'cebolinha') {
     if (!this.soundEnabled) return;
-    this.playAudioOrSpeak(text);
+    this.playAudioOrSpeak(text, character);
   }
 
   showTortadaAnimation(victimName) {
@@ -649,7 +699,7 @@ class TelaoApp {
     const victimEl = document.getElementById('tortadaVictimName');
     if (!overlay) return;
 
-    victimEl.innerText = `Levou tortada na cara: ${victimName || 'Participante'}!`;
+    victimEl.innerHTML = `🥧💥🐰 <strong>${victimName || 'Participante'}</strong> levou tortada na cara e coelhada da Mônica!`;
     overlay.classList.add('active');
 
     // Splat sound
@@ -659,7 +709,7 @@ class TelaoApp {
 
     setTimeout(() => {
       overlay.classList.remove('active');
-    }, 3500);
+    }, 4000);
   }
 
   onCompetitionFinished(payload) {

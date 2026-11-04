@@ -3173,41 +3173,59 @@ class EmbryoApp {
 
     // Dr. Odonto mascot voice announcement on correct or incorrect
     if (result.isCorrect) {
-      this.speakMascotAnnouncement("A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!");
+      this.speakMascotAnnouncement("A lesposta tá colétaaaa! Tolta nesse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
     } else {
-      this.speakMascotAnnouncement("Resposta está erradaaaaa, leva tortada bebê!");
+      this.speakMascotAnnouncement("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
     }
 
     this.renderQse(this.currentRoom);
   }
 
-  speakMascotAnnouncement(text) {
+  toCebolinha(text) {
+    if (!text) return '';
+    return text
+      .replace(/rr/gi, 'l')
+      .replace(/RR/gi, 'L')
+      .replace(/r([a-záéíóúâêîôûãõ])/gi, (m, v) => (m[0] === 'R' ? 'L' : 'l') + v)
+      .replace(/([ptbcfgdv])r/gi, (m, c) => c + (m[1] === 'R' ? 'L' : 'l'))
+      .replace(/r([bcdfghjklmnpqrstvwxyz])/gi, (m, c) => (m[0] === 'R' ? 'L' : 'l') + c);
+  }
+
+  speakMascotAnnouncement(text, character = 'cebolinha') {
     try {
       if (this.mascotAudio) {
         try { this.mascotAudio.pause(); } catch (e) {}
         this.mascotAudio = null;
       }
-      const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
+      const audio = new Audio(`/api/tts?text=${encodeURIComponent(spokenText)}`);
+      audio.preservesPitch = false;
+      audio.playbackRate = (character === 'cebolinha') ? 1.15 : 1.10;
       this.mascotAudio = audio;
       audio.play().catch(() => {
-        this.fallbackMascotSpeech(text);
+        this.fallbackMascotSpeech(spokenText, character);
       });
     } catch (e) {
-      this.fallbackMascotSpeech(text);
+      this.fallbackMascotSpeech(text, character);
     }
   }
 
-  fallbackMascotSpeech(text) {
+  fallbackMascotSpeech(text, character = 'cebolinha') {
     if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
-      utterance.pitch = 1.0;
-      utterance.rate = 0.98;
+      if (character === 'cebolinha') {
+        utterance.pitch = 1.35;
+        utterance.rate = 1.05;
+        const maleVoice = this.getBestMalePtBrVoice();
+        if (maleVoice) utterance.voice = maleVoice;
+      } else {
+        utterance.pitch = 1.25;
+        utterance.rate = 1.08;
+      }
       utterance.volume = 1.0;
-      const maleVoice = this.getBestMalePtBrVoice();
-      if (maleVoice) utterance.voice = maleVoice;
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn('Speech announcement error:', e);
