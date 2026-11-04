@@ -3182,12 +3182,28 @@ class EmbryoApp {
   }
 
   speakMascotAnnouncement(text) {
+    try {
+      if (this.mascotAudio) {
+        try { this.mascotAudio.pause(); } catch (e) {}
+        this.mascotAudio = null;
+      }
+      const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+      this.mascotAudio = audio;
+      audio.play().catch(() => {
+        this.fallbackMascotSpeech(text);
+      });
+    } catch (e) {
+      this.fallbackMascotSpeech(text);
+    }
+  }
+
+  fallbackMascotSpeech(text) {
     if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
-      utterance.pitch = 0.90;
+      utterance.pitch = 1.0;
       utterance.rate = 0.98;
       utterance.volume = 1.0;
       const maleVoice = this.getBestMalePtBrVoice();

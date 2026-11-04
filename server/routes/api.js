@@ -39,6 +39,65 @@ module.exports = function(roomManager) {
     });
   });
 
+  // High-Definition Studio TTS Audio Streaming (Google Neural Audio)
+  router.get('/tts', async (req, res) => {
+    try {
+      const text = (req.query.text || '').trim();
+      if (!text) return res.status(400).send('Texto vazio.');
+
+      const https = require('https');
+
+      function fetchChunk(chunk) {
+        return new Promise((resolve, reject) => {
+          const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=' + encodeURIComponent(chunk);
+          const request = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } }, (response) => {
+            if (response.statusCode !== 200) return reject(new Error('TTS status ' + response.statusCode));
+            const bufs = [];
+            response.on('data', d => bufs.push(d));
+            response.on('end', () => resolve(Buffer.concat(bufs)));
+          });
+          request.on('error', reject);
+          request.setTimeout(5000, () => {
+            request.destroy();
+            reject(new Error('TTS timeout'));
+          });
+        });
+      }
+
+      function splitText(str, maxLen = 140) {
+        const parts = [];
+        const words = str.split(/\s+/);
+        let cur = '';
+        for (const w of words) {
+          if ((cur + ' ' + w).trim().length <= maxLen) {
+            cur = (cur + ' ' + w).trim();
+          } else {
+            if (cur) parts.push(cur);
+            cur = w;
+          }
+        }
+        if (cur) parts.push(cur);
+        return parts;
+      }
+
+      const chunks = splitText(text, 140);
+      const buffers = [];
+      for (const chunk of chunks) {
+        const buf = await fetchChunk(chunk);
+        buffers.push(buf);
+      }
+
+      const finalBuf = Buffer.concat(buffers);
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', finalBuf.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(finalBuf);
+    } catch (err) {
+      console.warn('TTS streaming fallback warning:', err.message);
+      res.status(502).json({ error: 'Erro ao gerar áudio TTS: ' + err.message });
+    }
+  });
+
   // Get questions bank (questions with options, strictly protected for admin only)
   router.get('/questions', (req, res) => {
     const authHeader = req.headers.authorization;

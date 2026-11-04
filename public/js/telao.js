@@ -442,10 +442,12 @@ class TelaoApp {
     const voice = this.getBestPortugueseVoice();
     const letters = ['A', 'B', 'C', 'D'];
 
-    // Clean question to not say "Quem sou eu?" at the start or throughout the prompt
+    // Clean question to not say "Quem sou eu?" or "Atenção participante" at the start
     let cleanQuestion = (q.question || '')
       .replace(/^(\s*quem\s+sou\s+eu\s*[\?:!\-—,\.]?\s*)+/gi, '')
       .replace(/(\s*quem\s+sou\s+eu\s*[\?:!\-—,\.]?\s*)+$/gi, '')
+      .replace(/^(\s*atenção\s+participantes?\s*[\?:!\-—,\.]?\s*)+/gi, '')
+      .replace(/(\s*atenção\s+participantes?\s*[\?:!\-—,\.]?\s*)+$/gi, '')
       .trim();
 
     // Construct speech parts: Speaks ONLY the question text directly, then alternatives, and "Quem sou eu?" ONLY at the end!
@@ -460,7 +462,7 @@ class TelaoApp {
 
     let currentPart = 0;
 
-    const speakNext = () => {
+    const speakNext = async () => {
       if (!this.isNarrating || currentPart >= parts.length) {
         this.isNarrating = false;
         this.setNarratorVisual(false, 'Narração finalizada!');
@@ -470,37 +472,84 @@ class TelaoApp {
       }
 
       const item = parts[currentPart];
-      const utter = new SpeechSynthesisUtterance(item.text);
-      if (voice) utter.voice = voice;
-      utter.lang = 'pt-BR';
-      // Human male settings: lower pitch for deep, resonant, natural male pacing
-      utter.rate = 0.96;
-      utter.pitch = 0.90;
+      this.resetOptionCards();
+      if (item.cardIdx >= 0) {
+        const card = document.getElementById(`optionCard${item.cardIdx}`);
+        if (card) card.classList.add('narrating');
+      }
 
-      utter.onstart = () => {
-        this.resetOptionCards();
-        if (item.cardIdx >= 0) {
-          const card = document.getElementById(`optionCard${item.cardIdx}`);
-          if (card) card.classList.add('narrating');
-        }
-      };
+      await this.playAudioOrSpeak(item.text);
 
-      utter.onend = () => {
-        currentPart++;
-        // Small pause between options
-        setTimeout(speakNext, 200);
-      };
-
-      utter.onerror = (e) => {
-        console.error('Speech synthesis error:', e);
-        currentPart++;
-        speakNext();
-      };
-
-      window.speechSynthesis.speak(utter);
+      if (!this.isNarrating) return;
+      currentPart++;
+      setTimeout(speakNext, 250);
     };
 
     speakNext();
+  }
+
+  playAudioOrSpeak(text) {
+    return new Promise((resolve) => {
+      if (!this.soundEnabled) return resolve();
+
+      if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
+      if (this.currentAudio) {
+        try { this.currentAudio.pause(); } catch (e) {}
+        this.currentAudio = null;
+      }
+
+      // 1. Prioritize Studio Quality Google Neural Voice (/api/tts)
+      try {
+        const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+        this.currentAudio = audio;
+        let resolved = false;
+
+        const cleanup = () => {
+          if (!resolved) {
+            resolved = true;
+            this.currentAudio = null;
+            resolve();
+          }
+        };
+
+        audio.onended = cleanup;
+        audio.onerror = () => {
+          this.fallbackSpeechSynthesis(text).then(cleanup);
+        };
+
+        setTimeout(() => {
+          if (!resolved) cleanup();
+        }, 16000);
+
+        audio.play().catch(() => {
+          this.fallbackSpeechSynthesis(text).then(cleanup);
+        });
+      } catch (err) {
+        this.fallbackSpeechSynthesis(text).then(resolve);
+      }
+    });
+  }
+
+  fallbackSpeechSynthesis(text) {
+    return new Promise((resolve) => {
+      if (!('speechSynthesis' in window) || !this.soundEnabled) return resolve();
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'pt-BR';
+        utter.rate = 0.98;
+        utter.pitch = 1.0;
+        const voice = this.getBestPortugueseVoice();
+        if (voice) utter.voice = voice;
+        utter.onend = () => resolve();
+        utter.onerror = () => resolve();
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        resolve();
+      }
+    });
   }
 
   setNarratorVisual(isActive, text) {
@@ -591,19 +640,8 @@ class TelaoApp {
   }
 
   speakAnnouncement(text) {
-    if (!('speechSynthesis' in window) || !this.soundEnabled) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'pt-BR';
-      utter.rate = 0.98;
-      utter.pitch = 0.92;
-      const voice = this.getBestPortugueseVoice();
-      if (voice) utter.voice = voice;
-      window.speechSynthesis.speak(utter);
-    } catch (e) {
-      console.warn('Speech announcement error:', e);
-    }
+    if (!this.soundEnabled) return;
+    this.playAudioOrSpeak(text);
   }
 
   showTortadaAnimation(victimName) {
