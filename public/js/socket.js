@@ -191,7 +191,11 @@ const socketClient = {
       if (!this.isConnected || !this.socket) {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
-      this.socket.emit('qse_buzz_in', { roomId, participantId }, resolve);
+      const timer = setTimeout(() => resolve({ error: 'Timeout ao apertar o botão.' }), 3500);
+      this.socket.emit('qse_buzz_in', { roomId, participantId }, (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      });
     });
   },
 
@@ -200,7 +204,11 @@ const socketClient = {
       if (!this.isConnected || !this.socket) {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
-      this.socket.emit('qse_submit_answer', { roomId, participantId, optionIndex }, resolve);
+      const timer = setTimeout(() => resolve({ error: 'Timeout ao enviar resposta.' }), 4000);
+      this.socket.emit('qse_submit_answer', { roomId, participantId, optionIndex }, (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      });
     });
   },
 
@@ -209,7 +217,11 @@ const socketClient = {
       if (!this.isConnected || !this.socket) {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
-      this.socket.emit('qse_admin_action', { roomId, action, adminToken, data }, resolve);
+      const timer = setTimeout(() => resolve({ error: 'Timeout na ação do anfitrião.' }), 2500);
+      this.socket.emit('qse_admin_action', { roomId, action, adminToken, data }, (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      });
     });
   },
 
@@ -218,7 +230,11 @@ const socketClient = {
       if (!this.isConnected || !this.socket) {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
-      this.socket.emit('qse_trigger_tortada', { roomId, adminToken, targetName }, resolve);
+      const timer = setTimeout(() => resolve({ error: 'Timeout ao acionar tortada.' }), 3000);
+      this.socket.emit('qse_trigger_tortada', { roomId, adminToken, targetName }, (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      });
     });
   }
 };

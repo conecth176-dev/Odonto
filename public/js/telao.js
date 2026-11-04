@@ -532,21 +532,21 @@ class TelaoApp {
         // Converte para a pronúncia do Cebolinha trocando R por L
         const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
         const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : '🐰 Mônica';
-        this.setNarratorVisual(true, `${charTag}: "${spokenText}"`);
+        this.setNarratorVisual(true, `${charTag}: "${spokenText}"`, character);
 
         const utter = new SpeechSynthesisUtterance(spokenText);
         utter.lang = 'pt-BR';
 
         if (character === 'cebolinha') {
-          // Tom e velocidade característicos do garoto travesso (Cebolinha)
-          utter.pitch = 1.35;
+          // Tom do Cebolinha (Angélica Santos / Paulo Cavalcante): agudo, nasal e travesso
+          utter.pitch = 1.45;
           utter.rate = 1.05;
           const maleVoice = this.getBestPortugueseVoice();
           if (maleVoice) utter.voice = maleVoice;
         } else {
-          // Tom e velocidade característicos da Mônica (garota enérgica e brava)
-          utter.pitch = 1.25;
-          utter.rate = 1.08;
+          // Tom da Mônica (Marli Bortoletto): voz decidida, enérgica e animada
+          utter.pitch = 1.30;
+          utter.rate = 1.10;
           const femaleVoice = this.getBestFemaleVoice();
           if (femaleVoice) utter.voice = femaleVoice;
         }
@@ -577,14 +577,29 @@ class TelaoApp {
     });
   }
 
-  setNarratorVisual(isActive, text) {
+  setNarratorVisual(isActive, text, character = 'cebolinha') {
     const waves = document.getElementById('audioWaves');
     const statusText = document.getElementById('narratorStatusText');
+    const avatar = document.querySelector('.narrator-avatar');
+    const bar = document.getElementById('narratorBar');
+
     if (waves) {
       if (isActive) waves.classList.add('active');
       else waves.classList.remove('active');
     }
     if (statusText) statusText.innerText = text;
+    if (avatar) {
+      avatar.innerText = (character === 'monica') ? '🐰' : '🧅';
+    }
+    if (bar) {
+      if (character === 'monica') {
+        bar.style.borderColor = 'rgba(244, 114, 182, 0.7)';
+        bar.style.boxShadow = '0 0 20px rgba(244, 114, 182, 0.3)';
+      } else {
+        bar.style.borderColor = 'rgba(52, 211, 153, 0.7)';
+        bar.style.boxShadow = '0 0 20px rgba(52, 211, 153, 0.3)';
+      }
+    }
   }
 
   notifyNarrationFinished() {

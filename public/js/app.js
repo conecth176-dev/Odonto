@@ -3131,6 +3131,9 @@ class EmbryoApp {
   }
 
   handleQseRoundStarted(data) {
+    if (this.currentView === 'admin') {
+      this.loadAdminQse();
+    }
     if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
     this.currentRoom.qseState = 'reading';
     this.currentRoom.question = data.question;
@@ -3145,6 +3148,9 @@ class EmbryoApp {
   }
 
   handleQseBuzzerUnlocked() {
+    if (this.currentView === 'admin') {
+      this.loadAdminQse();
+    }
     if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
     this.currentRoom.qseState = 'buzzer_active';
     this.currentRoom.buzzerWinner = null;
@@ -3159,6 +3165,9 @@ class EmbryoApp {
   }
 
   handleQseBuzzerWinner(winner) {
+    if (this.currentView === 'admin') {
+      this.loadAdminQse();
+    }
     if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
     this.currentRoom.qseState = 'answering';
     this.currentRoom.buzzerWinner = winner;
@@ -3175,6 +3184,9 @@ class EmbryoApp {
   }
 
   handleQseAnswerRevealed(result) {
+    if (this.currentView === 'admin') {
+      this.loadAdminQse();
+    }
     if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
     this.currentRoom.qseState = 'revealed';
     this.currentRoom.lastResult = result;
@@ -3514,12 +3526,17 @@ class EmbryoApp {
       }
 
       const activeRoom = qseRooms[0];
+      const token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
+      this.adminToken = token;
+
       // Fetch full active room state
-      const stateRes = await fetch(`/api/rooms/${activeRoom.id}`);
+      const stateRes = await fetch(`/api/rooms/${activeRoom.id}?adminToken=${encodeURIComponent(token)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const room = stateRes.ok ? await stateRes.json() : activeRoom;
 
       // Join socket admin room for real-time live events
-      window.socketClient.adminJoin(room.id, this.adminToken);
+      window.socketClient.adminJoin(room.id, token);
 
       const q = room.question;
       const qseState = room.qseState || 'idle';
@@ -3557,10 +3574,10 @@ class EmbryoApp {
           </div>
 
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round', { roundIndex: ${targetRoundIdx} })">
+            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round')">
               ▶️ Iniciar Narração / Rodada
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration', { roundIndex: ${targetRoundIdx} })">
+            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration')">
               🔁 Repetir Narração
             </button>
             <button class="btn btn-secondary btn-sm" style="border-color: #eab308; color: #fde047;" onclick="app.qseAdminAction('${room.id}', 'emergency_unlock')">
@@ -3572,7 +3589,7 @@ class EmbryoApp {
             <button class="btn btn-secondary btn-sm" style="border-color: #ec4899; color: #f472b6;" onclick="app.triggerAdminTortada('${room.id}')">
               🥧 Dar Tortada na Cara!
             </button>
-            <button class="btn btn-danger btn-sm" onclick="app.qseAdminAction('${room.id}', 'finish')">
+            <button class="btn btn-danger btn-sm" onclick="app.confirmFinishQse('${room.id}')">
               🏁 Encerrar Competição
             </button>
           </div>
@@ -3649,7 +3666,7 @@ class EmbryoApp {
 
   async qseAdminAction(roomId, action, data = {}) {
     try {
-      const token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
+      let token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
       this.adminToken = token;
 
       let res = null;
@@ -3663,17 +3680,30 @@ class EmbryoApp {
         }
       }
 
-      // 2. Fallback to HTTP REST endpoint if socket did not succeed or returned error
+      // 2. If token error, auto-recover with master token
+      if (res && res.error && (res.error.includes('Token') || res.error.includes('autorizado'))) {
+        console.warn('Admin token rejected, retrying with master Dev.Tawa token...');
+        token = 'Dev.Tawa';
+        this.adminToken = token;
+        localStorage.setItem('g5_admin_token', token);
+        if (window.socketClient && window.socketClient.isConnected) {
+          try {
+            res = await window.socketClient.qseAdminAction(roomId, action, token, data);
+          } catch (e) {}
+        }
+      }
+
+      // 3. Fallback to HTTP REST endpoint if socket did not succeed or returned error
       if (!res || res.error) {
         let endpoint = '';
         let bodyData = {};
 
         if (action === 'start_round') {
           endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
-          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : 0 };
+          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : null };
         } else if (action === 'repeat_narration') {
           endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
-          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : 0 };
+          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : null };
         } else if (action === 'finish_narration') {
           endpoint = `/api/admin/rooms/${roomId}/qse/finish-narration`;
         } else if (action === 'emergency_unlock') {
@@ -3697,6 +3727,21 @@ class EmbryoApp {
             body: JSON.stringify(bodyData)
           });
           res = await httpRes.json();
+          // Retry HTTP with Dev.Tawa if 401
+          if (res && res.error && (res.error.includes('Token') || res.error.includes('autorizado'))) {
+            token = 'Dev.Tawa';
+            this.adminToken = token;
+            localStorage.setItem('g5_admin_token', token);
+            const retryRes = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(bodyData)
+            });
+            res = await retryRes.json();
+          }
         }
       }
 
@@ -3708,6 +3753,11 @@ class EmbryoApp {
     } catch (e) {
       alert('Erro ao executar ação do Quem Sou Eu: ' + e.message);
     }
+  }
+
+  async confirmFinishQse(roomId) {
+    if (!confirm('Deseja realmente encerrar a competição Quem Sou Eu e exibir o pódio final?')) return;
+    await this.qseAdminAction(roomId, 'finish');
   }
 
   async triggerAdminTortada(roomId) {

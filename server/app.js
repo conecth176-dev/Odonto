@@ -228,8 +228,18 @@ io.on('connection', (socket) => {
 
       let res = { success: true };
       if (action === 'start_round') {
-        const roundIndex = data && data.roundIndex !== undefined ? Math.max(0, data.roundIndex) : 0;
-        res = roomManager.startQseRound(roomId, roundIndex);
+        const room = roomManager.getRoom(roomId);
+        let roundIndex = (data && data.roundIndex !== undefined && data.roundIndex !== null) ? data.roundIndex : null;
+        if (roundIndex === null && room) {
+          if (room.currentQuestionIndex === -1) {
+            roundIndex = 0;
+          } else if (room.qseState === 'revealed') {
+            roundIndex = room.currentQuestionIndex + 1;
+          } else {
+            roundIndex = Math.max(0, room.currentQuestionIndex);
+          }
+        }
+        res = roomManager.startQseRound(roomId, roundIndex !== null ? roundIndex : 0);
       } else if (action === 'repeat_narration') {
         const room = roomManager.getRoom(roomId);
         if (room) {

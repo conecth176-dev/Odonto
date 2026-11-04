@@ -23,7 +23,27 @@ module.exports = function(roomManager) {
   router.get('/rooms/:id', (req, res) => {
     const room = roomManager.getRoom(req.params.id);
     if (!room) return res.status(404).json({ error: 'Sala não encontrada.' });
-    res.json(roomManager.getSanitizedRoomState(req.params.id));
+
+    const authHeader = req.headers.authorization;
+    let token = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query && req.query.adminToken) {
+      token = req.query.adminToken;
+    }
+    const { isValidAdminToken } = require('../auth');
+    const isAdmin = isValidAdminToken(token);
+
+    const sanitized = roomManager.getSanitizedRoomState(req.params.id);
+    if (isAdmin && room.mode === 'quem_sou_eu') {
+      const currentQ = (room.currentQuestionIndex >= 0 && room.questions) ? room.questions[room.currentQuestionIndex] : null;
+      return res.json({
+        ...sanitized,
+        question: currentQ || sanitized.question
+      });
+    }
+
+    res.json(sanitized);
   });
 
   // Get default categories and questions count
@@ -218,7 +238,19 @@ module.exports = function(roomManager) {
   });
 
   router.post('/admin/rooms/:id/qse/start-round', adminAuthMiddleware, (req, res) => {
-    const roundIndex = req.body.roundIndex !== undefined ? Math.max(0, req.body.roundIndex) : 0;
+    const room = roomManager.getRoom(req.params.id);
+    if (!room || room.mode !== 'quem_sou_eu') return res.status(404).json({ error: 'Sala inválida.' });
+
+    let roundIndex = req.body.roundIndex;
+    if (roundIndex === undefined || roundIndex === null) {
+      if (room.currentQuestionIndex === -1) {
+        roundIndex = 0;
+      } else if (room.qseState === 'revealed') {
+        roundIndex = room.currentQuestionIndex + 1;
+      } else {
+        roundIndex = Math.max(0, room.currentQuestionIndex);
+      }
+    }
     const result = roomManager.startQseRound(req.params.id, roundIndex);
     if (result.error) return res.status(400).json(result);
     res.json(result);
