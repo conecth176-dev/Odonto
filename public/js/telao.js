@@ -478,18 +478,20 @@ class TelaoApp {
     const parts = [
       // 1. Cebolinha lê a pergunta com o clássico sotaque trocando R por L
       { character: 'cebolinha', text: cleanQuestion, cardIdx: -1 },
-      // 2. Mônica corta com bom humor
-      { character: 'monica', text: 'Sai da frente, Cebolinha! Deixa que eu leio as alternativas!', cardIdx: -1 },
+      // 2. Mônica interrompe bravinha
+      { character: 'monica', text: 'Pára tudo, Cebolinha! Cala a boca e deixa que a dona da rua lê essas alternativas!', cardIdx: -1 },
       // 3. Cebolinha insiste na alternativa A
-      { character: 'cebolinha', text: `Alternativa A: ${q.options[0]}`, cardIdx: 0 },
+      { character: 'cebolinha', text: `Mas o plano infalível é meu! Alternativa A: ${q.options[0]}`, cardIdx: 0 },
       // 4. Mônica lê alternativa B
-      { character: 'monica', text: `Alternativa B: ${q.options[1]}`, cardIdx: 1 },
+      { character: 'monica', text: `Cala a boca, seu dentuço! Eu leio a B! Alternativa B: ${q.options[1]}`, cardIdx: 1 },
       // 5. Cebolinha lê alternativa C
-      { character: 'cebolinha', text: `Alternativa C: ${q.options[2]}`, cardIdx: 2 },
+      { character: 'cebolinha', text: `Então eu leio a C! Alternativa C: ${q.options[2]}`, cardIdx: 2 },
       // 6. Mônica lê alternativa D
-      { character: 'monica', text: `Alternativa D: ${q.options[3]}`, cardIdx: 3 },
+      { character: 'monica', text: `E eu leio a D! Alternativa D: ${q.options[3]}`, cardIdx: 3 },
       // 7. Cebolinha encerra animado com o "Quem sou eu?" no final!
-      { character: 'cebolinha', text: `Quem sou eu? Plepalem-se... TÁ VALENDO!`, cardIdx: -1 }
+      { character: 'cebolinha', text: `Quem sou eu? Plepalem-se... TÁ VALENDO!`, cardIdx: -1 },
+      // 8. Mônica reforça no final
+      { character: 'monica', text: `Apertem o botão no celular agora!`, cardIdx: -1 }
     ];
 
     let currentPart = 0;
@@ -514,7 +516,7 @@ class TelaoApp {
 
       if (!this.isNarrating) return;
       currentPart++;
-      setTimeout(speakNext, 300);
+      setTimeout(speakNext, 350);
     };
 
     speakNext();
@@ -522,81 +524,54 @@ class TelaoApp {
 
   playAudioOrSpeak(text, character = 'cebolinha') {
     return new Promise((resolve) => {
-      if (!this.soundEnabled) return resolve();
+      if (!this.soundEnabled || !('speechSynthesis' in window)) return resolve();
 
-      if ('speechSynthesis' in window) {
-        try { window.speechSynthesis.cancel(); } catch (e) {}
-      }
-      if (this.currentAudio) {
-        try { this.currentAudio.pause(); } catch (e) {}
-        this.currentAudio = null;
-      }
-
-      // Converte para a pronúncia do Cebolinha trocando R por L
-      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
-      const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : '🐰 Mônica';
-      this.setNarratorVisual(true, `${charTag}: "${spokenText}"`);
-
-      // 1. Prioritize Studio Quality Google Neural Voice (/api/tts)
-      try {
-        const audio = new Audio(`/api/tts?text=${encodeURIComponent(spokenText)}`);
-        this.currentAudio = audio;
-        let resolved = false;
-
-        const cleanup = () => {
-          if (!resolved) {
-            resolved = true;
-            this.currentAudio = null;
-            resolve();
-          }
-        };
-
-        // Efeito de velocidade e tom estilo desenho animado
-        audio.preservesPitch = false;
-        audio.playbackRate = (character === 'cebolinha') ? 1.15 : 1.10;
-
-        audio.onended = cleanup;
-        audio.onerror = () => {
-          this.fallbackSpeechSynthesis(spokenText, character).then(cleanup);
-        };
-
-        setTimeout(() => {
-          if (!resolved) cleanup();
-        }, 18000);
-
-        audio.play().catch(() => {
-          this.fallbackSpeechSynthesis(spokenText, character).then(cleanup);
-        });
-      } catch (err) {
-        this.fallbackSpeechSynthesis(spokenText, character).then(resolve);
-      }
-    });
-  }
-
-  fallbackSpeechSynthesis(text, character = 'cebolinha') {
-    return new Promise((resolve) => {
-      if (!('speechSynthesis' in window) || !this.soundEnabled) return resolve();
       try {
         window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
+
+        // Converte para a pronúncia do Cebolinha trocando R por L
+        const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
+        const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : '🐰 Mônica';
+        this.setNarratorVisual(true, `${charTag}: "${spokenText}"`);
+
+        const utter = new SpeechSynthesisUtterance(spokenText);
         utter.lang = 'pt-BR';
 
         if (character === 'cebolinha') {
-          utter.pitch = 1.35; // Voz de garoto travesso (Cebolinha)
+          // Tom e velocidade característicos do garoto travesso (Cebolinha)
+          utter.pitch = 1.35;
           utter.rate = 1.05;
           const maleVoice = this.getBestPortugueseVoice();
           if (maleVoice) utter.voice = maleVoice;
         } else {
-          utter.pitch = 1.25; // Voz enérgica da Mônica
+          // Tom e velocidade característicos da Mônica (garota enérgica e brava)
+          utter.pitch = 1.25;
           utter.rate = 1.08;
           const femaleVoice = this.getBestFemaleVoice();
           if (femaleVoice) utter.voice = femaleVoice;
         }
 
-        utter.onend = () => resolve();
-        utter.onerror = () => resolve();
+        let finished = false;
+        const done = () => {
+          if (!finished) {
+            finished = true;
+            resolve();
+          }
+        };
+
+        utter.onend = done;
+        utter.onerror = (e) => {
+          console.warn('Speech error:', e);
+          done();
+        };
+
+        // Safety timeout so speech never blocks
+        const maxTime = Math.max(3000, Math.min(22000, spokenText.length * 110));
+        setTimeout(done, maxTime);
+
         window.speechSynthesis.speak(utter);
-      } catch (e) {
+      } catch (err) {
+        console.warn('SpeechSynthesis error:', err);
         resolve();
       }
     });

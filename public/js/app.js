@@ -1902,6 +1902,22 @@ class EmbryoApp {
     return ptVoices.find(v => v.lang === 'pt-BR') || ptVoices[0];
   }
 
+  getBestFemalePtBrVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    if (voices.length === 0) return null;
+
+    const ptVoices = voices.filter(v => v.lang && (v.lang === 'pt-BR' || v.lang.startsWith('pt')));
+    if (ptVoices.length === 0) return null;
+
+    const femaleNames = ['maria', 'francisca', 'leticia', 'heloisa', 'luciana', 'female', 'mulher', 'zira', 'fernanda', 'yara', 'raquel'];
+    const female = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return femaleNames.some(f => name.includes(f));
+    });
+    return female || ptVoices[0];
+  }
+
   speakOdontoTop3(text) {
     if (!('speechSynthesis' in window)) return;
     try {
@@ -3192,39 +3208,25 @@ class EmbryoApp {
   }
 
   speakMascotAnnouncement(text, character = 'cebolinha') {
-    try {
-      if (this.mascotAudio) {
-        try { this.mascotAudio.pause(); } catch (e) {}
-        this.mascotAudio = null;
-      }
-      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
-      const audio = new Audio(`/api/tts?text=${encodeURIComponent(spokenText)}`);
-      audio.preservesPitch = false;
-      audio.playbackRate = (character === 'cebolinha') ? 1.15 : 1.10;
-      this.mascotAudio = audio;
-      audio.play().catch(() => {
-        this.fallbackMascotSpeech(spokenText, character);
-      });
-    } catch (e) {
-      this.fallbackMascotSpeech(text, character);
-    }
-  }
-
-  fallbackMascotSpeech(text, character = 'cebolinha') {
     if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
+      const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.lang = 'pt-BR';
+
       if (character === 'cebolinha') {
-        utterance.pitch = 1.35;
+        utterance.pitch = 1.35; // Tom de garoto travesso (Cebolinha)
         utterance.rate = 1.05;
         const maleVoice = this.getBestMalePtBrVoice();
         if (maleVoice) utterance.voice = maleVoice;
       } else {
-        utterance.pitch = 1.25;
+        utterance.pitch = 1.25; // Tom enérgico e bravo da Mônica
         utterance.rate = 1.08;
+        const femaleVoice = this.getBestFemalePtBrVoice();
+        if (femaleVoice) utterance.voice = femaleVoice;
       }
+
       utterance.volume = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch (e) {
