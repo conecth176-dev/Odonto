@@ -420,6 +420,166 @@ const qseQuestions = [
     ],
     correctAnswer: 0,
     scientificExplanation: 'A superfecundação exige coitos com indivíduos distintos dentro da estreita janela em que dois ovócitos de uma mesma ovulação ainda retêm viabilidade funcional e capacidade de fusão espermática.'
+  },
+  {
+    id: 'qse-25',
+    theme: 'Gêmeos siameses',
+    category: 'Gêmeos siameses',
+    difficulty: 'Média',
+    points: 20,
+    question: 'QUEM SOU EU? Sou a forma mais comum de gêmeos unidos, representando cerca de 70% dos casos, onde os conceptos encontram-se conectados face a face pela região do tórax anterior e abdômen superior, compartilhando pericárdio ou fígado. Quem sou eu?',
+    options: [
+      'Toracópagos / Onfalópagos',
+      'Pigópagos',
+      'Isquiópagos',
+      'Parápagos'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'Toracópagos e onfalópagos representam a união toracoabdominal anterior decorrente do fechamento incompleto da parede anterior do embrião com fusão do celoma embrionário.'
+  },
+  {
+    id: 'qse-26',
+    theme: 'Gêmeos parasitas',
+    category: 'Gêmeos parasitas',
+    difficulty: 'Difícil',
+    points: 30,
+    question: 'QUEM SOU EU? Sou uma apresentação extraordinária de gêmeo parasita em que a cabeça acessória do feto não viável encontra-se fundida ao crânio do gêmeo hospedeiro viável. Quem sou eu?',
+    options: [
+      'Craniopagus parasiticus',
+      'Holoprosencefalia alobar',
+      'Diprosopia craniana',
+      'Ciclopia associada a teratoma'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'Craniopagus parasiticus é uma condição raríssima onde o autossito carrega uma cabeça parasitária rudimentar conectada na calvária ou vértex.'
+  },
+  {
+    id: 'qse-27',
+    theme: 'Superfetação',
+    category: 'Superfetação',
+    difficulty: 'Média',
+    points: 20,
+    question: 'QUEM SOU EU? Para que eu ocorra, é obrigatório que falhem três mecanismos fisiológicos normais da gravidez: a inibição da ovulação pelo corpo lúteo, o tampão mucoso cervical e a oclusão da cavidade uterina pela decídua capsular. Quem sou eu?',
+    options: [
+      'Superfetação verdadeira',
+      'Gravidez ectópica cornual',
+      'Mola hidatiforme parcial',
+      'Superfecundação bivitelina'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'A superfetação desafia a biologia reprodutiva pois exige superação simultânea da barreira hormonal progestágena ovariana, anatômica cervical e decídua endometrial.'
+  },
+  {
+    id: 'qse-28',
+    theme: 'Feto papiráceo',
+    category: 'Feto papiráceo',
+    difficulty: 'Difícil',
+    points: 30,
+    question: 'QUEM SOU EU? Posso ser a consequência extrema e tardia de uma Síndrome de Transfusão Feto-Fetal (STFF) grave em gestações monocoriônicas, na qual o concepto doador sofre hipovolemia crônica, oligoidrâmnio acentuado e parada de desenvolvimento. Quem sou eu?',
+    options: [
+      'Feto papiráceo pós-STFF',
+      'Gêmeo acárdico (TRAP sequence)',
+      'Fetus in fetu mediastinal',
+      'Síndrome do gêmeo desaparecido precoce'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'Em placentas monocoriônicas com anastomoses arteriovenosas desbalanceadas, a anemia e desidratação crônica do concepto doador podem levar à morte intrauterina e sua mumificação compressiva em feto papiráceo.'
+  },
+  {
+    id: 'qse-29',
+    theme: 'Síndrome do gêmeo desaparecido',
+    category: 'Síndrome do gêmeo desaparecido',
+    difficulty: 'Média',
+    points: 20,
+    question: 'QUEM SOU EU? Estima-se que até 20% a 30% de todas as gestações gemelares concebidas naturalmente iniciam com dois sacos gestacionais, mas apenas um feto evolui para o nascimento porque o outro sofre involução antes da 10ª semana. Quem sou eu?',
+    options: [
+      'Síndrome do gêmeo desaparecido (Vanishing Twin)',
+      'Gravidez molar anembrionada',
+      'Feto papiráceo tardio',
+      'Superfecundação homopaternal'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'A síndrome do gêmeo evanescente ocorre precocemente no primeiro trimestre com rápida lise celular enzimática e absorção pelo sinciciotrofoblasto e decídua materna sem sequelas no sobrevivente.'
+  },
+  {
+    id: 'qse-30',
+    theme: 'Fetus in fetu',
+    category: 'Fetus in fetu',
+    difficulty: 'Média',
+    points: 20,
+    question: 'QUEM SOU EU? No exame tomográfico e radiográfico pós-natal de uma massa retroperitoneal infantil, revelo ossos longos bem definidos, esqueleto axial metamérico rudimentar e até brotos digitais contidos em uma cápsula líquida semelhante ao saco amniótico. Quem sou eu?',
+    options: [
+      'Fetus in fetu',
+      'Teratoma cístico maduro',
+      'Neuroblastoma congênito',
+      'Nefroma mesoblástico'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'A presença de metameria axial esquelética com simetria bilateral e elementos organoides identifica inequivocamente o fetus in fetu em relação aos teratomas indiferenciados.'
+  },
+  {
+    id: 'qse-31',
+    theme: 'Quimerismo humano',
+    category: 'Quimerismo humano',
+    difficulty: 'Difícil',
+    points: 30,
+    question: 'QUEM SOU EU? Sou um tipo específico de quimerismo em que gêmeos dizigóticos adquirem duas populações de hemácias com tipagens sanguíneas ABO diferentes devido a conexões vasculares placentárias transitórias que compartilharam células-tronco hematopoiéticas. Quem sou eu?',
+    options: [
+      'Quimerismo sanguíneo / hematopoiético',
+      'Microquimerismo fetal materno',
+      'Quimerismo tetragamético por fusão',
+      'Mosaicismo por inativação do cromossomo X'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'No quimerismo hematopoiético, a troca de células progenitoras hematopoiéticas entre gêmeos pela circulação placentária produz um indivíduo com tolerância imunológica e sangue com dupla tipagem antigênica ABO.'
+  },
+  {
+    id: 'qse-32',
+    theme: 'Teratomas',
+    category: 'Teratomas',
+    difficulty: 'Fácil',
+    points: 10,
+    question: 'QUEM SOU EU? Sou o tumor congênito mais comum diagnosticado em recém-nascidos, localizado na região coccígea e originado de remanescentes pluripotentes da linha primitiva caudal que não sofreram regressão fisiológica. Quem sou eu?',
+    options: [
+      'Teratoma sacrococcígeo',
+      'Mielomeningocele sacral',
+      'Cisto pilonidal embrionário',
+      'Odontoma mandibular'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'O teratoma sacrococcígeo surge de células totipotentes da eminência caudal e da linha primitiva remanescente após o final da gastrulação embrionária.'
+  },
+  {
+    id: 'qse-33',
+    theme: 'Nascimento empelicado',
+    category: 'Nascimento empelicado',
+    difficulty: 'Fácil',
+    points: 10,
+    question: 'QUEM SOU EU? Popularmente chamado de nascimento com véu ou manto da sorte, ocorro com frequência estimada de 1 para cada 80.000 partos e sou considerado inofensivo ao neonato se a bolsa for prontamente aberta após o desprendimento. Quem sou eu?',
+    options: [
+      'Nascimento empelicado',
+      'Prolapso de cordão umbilical',
+      'Descolamento prematuro de placenta',
+      'Apresentação pélvica composta'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'O nascimento empelicado é uma condição benigna onde a integridade mecânica das membranas córion-âmnio permanece preservada durante todo o trajeto de parto.'
+  },
+  {
+    id: 'qse-34',
+    theme: 'Superfecundação heteropaternal',
+    category: 'Superfecundação heteropaternal',
+    difficulty: 'Média',
+    points: 20,
+    question: 'QUEM SOU EU? Na genética forense e na determinação de paternidade, a genotipagem dos meus conceptos exclui a probabilidade de um mesmo pai biológico ao evidenciar alelos paternos mutuamente exclusivos em marcadores STR independentes. Quem sou eu?',
+    options: [
+      'Superfecundação heteropaternal confirmada por DNA',
+      'Mosaicismo gonadal paterno',
+      'Quimerismo de mórula artificial',
+      'Gêmeos monozigóticos discordantes'
+    ],
+    correctAnswer: 0,
+    scientificExplanation: 'A evidência inequívoca da superfecundação heteropaternal reside na análise de múltiplos marcadores STR onde cada concepto herda obrigatoriamente um conjunto de alelos paternos de progenitores distintos.'
   }
 ];
 
