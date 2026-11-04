@@ -582,6 +582,18 @@ class TelaoApp {
           utter.rate = 1.05;
           const maleVoice = this.getBestPortugueseVoice();
           if (maleVoice) utter.voice = maleVoice;
+        } else if (character === 'magali') {
+          // Tom da Magali: meigo, alegre e esfomeada
+          utter.pitch = 1.40;
+          utter.rate = 1.05;
+          const femaleVoice = this.getBestFemaleVoice();
+          if (femaleVoice) utter.voice = femaleVoice;
+        } else if (character === 'cascao') {
+          // Tom do Cascão: esperto, moleque e animado
+          utter.pitch = 1.15;
+          utter.rate = 1.08;
+          const maleVoice = this.getBestPortugueseVoice();
+          if (maleVoice) utter.voice = maleVoice;
         } else {
           // Tom da Mônica: voz decidida, enérgica e animada
           utter.pitch = 1.30;
@@ -769,49 +781,89 @@ class TelaoApp {
     }, 4000);
   }
 
-  onCompetitionFinished(payload) {
+  async onCompetitionFinished(payload) {
+    this.stopNarration();
     const stageMain = document.querySelector('.telao-stage');
     const questionBox = document.getElementById('questionBox');
     const optionsGrid = document.getElementById('optionsGrid');
-    const narratorBar = document.getElementById('narratorBar');
     const statusBanner = document.getElementById('statusBanner');
     const podiumContainer = document.getElementById('podiumContainer');
+    const podiumTeamBanner = document.getElementById('podiumTeamBanner');
     const podiumSteps = document.getElementById('podiumSteps');
 
     if (questionBox) questionBox.style.display = 'none';
     if (optionsGrid) optionsGrid.style.display = 'none';
-    if (narratorBar) narratorBar.style.display = 'none';
     if (statusBanner) statusBanner.style.display = 'none';
 
-    if (podiumContainer && podiumSteps) {
-      podiumContainer.style.display = 'flex';
-      const list = payload.leaderboard || [];
-      const p1 = list[0] || { name: '---', score: 0 };
-      const p2 = list[1] || { name: '---', score: 0 };
-      const p3 = list[2] || { name: '---', score: 0 };
+    const teamScores = payload.teamScores || {
+      team1: 0,
+      team2: 0,
+      winningTeam: 'Equipe 1'
+    };
+    const winningTeam = teamScores.winningTeam || 'Equipe 1';
 
-      podiumSteps.innerHTML = `
-        <div class="podium-step step-2">
-          <div class="pos-medal">🥈</div>
-          <div class="user-name">${p2.name}</div>
-          <div class="user-score">${p2.score} pts</div>
-        </div>
-        <div class="podium-step step-1">
-          <div class="pos-medal">👑🥇</div>
-          <div class="user-name">${p1.name}</div>
-          <div class="user-score">${p1.score} pts</div>
-        </div>
-        <div class="podium-step step-3">
-          <div class="pos-medal">🥉</div>
-          <div class="user-name">${p3.name}</div>
-          <div class="user-score">${p3.score} pts</div>
-        </div>
-      `;
+    if (podiumContainer) {
+      podiumContainer.style.display = 'flex';
+
+      if (podiumTeamBanner) {
+        podiumTeamBanner.innerHTML = `
+          <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(244, 114, 182, 0.2)); border: 2px solid #fbbf24; border-radius: 20px; padding: 1.2rem 2.5rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 0 35px rgba(251, 191, 36, 0.35);">
+            <div style="font-size: 1.1rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">🍉 Placar Final das Equipes 🧦</div>
+            <div style="font-size: 2.3rem; font-weight: 900; color: #fff; margin: 0.5rem 0; font-family: 'Outfit', sans-serif;">
+              ${winningTeam === 'Empate' ? '🤝 EMPATE ENTRE AS EQUIPES!' : `🏆 GRANDE CAMPEÃ: ${winningTeam.toUpperCase()}! 🏆`}
+            </div>
+            <div style="display: flex; justify-content: center; gap: 2.5rem; font-size: 1.35rem; font-weight: 800; margin-top: 0.5rem;">
+              <span style="color: #f87171;">🔴 Equipe 1: ${teamScores.team1} pts</span>
+              <span style="color: #60a5fa;">🔵 Equipe 2: ${teamScores.team2} pts</span>
+            </div>
+          </div>
+        `;
+      }
+
+      if (podiumSteps) {
+        const list = payload.leaderboard || [];
+        const p1 = list[0] || { name: '---', score: 0 };
+        const p2 = list[1] || { name: '---', score: 0 };
+        const p3 = list[2] || { name: '---', score: 0 };
+
+        podiumSteps.innerHTML = `
+          <div class="podium-step step-2">
+            <div class="pos-medal">🥈</div>
+            <div class="user-name">${p2.name}</div>
+            <div class="user-score">${p2.score} pts</div>
+          </div>
+          <div class="podium-step step-1">
+            <div class="pos-medal">👑🥇</div>
+            <div class="user-name">${p1.name}</div>
+            <div class="user-score">${p1.score} pts</div>
+          </div>
+          <div class="podium-step step-3">
+            <div class="pos-medal">🥉</div>
+            <div class="user-name">${p3.name}</div>
+            <div class="user-score">${p3.score} pts</div>
+          </div>
+        `;
+      }
     }
 
     if (window.soundManager) {
       try { window.soundManager.playTrophy(); } catch(e) {}
     }
+
+    // Sequência de Áudio: Magali anuncia que o Cascão dará o resultado final -> Cascão parabeniza e diz a equipe vencedora!
+    const magaliSpeech = "Gente, essa disputa foi emocionante demais, me deu até fominha de melancia! Mas agora o Cascão vai revelar qual equipe foi a grande campeã e dar os parabéns pra todo mundo!";
+    await this.playAudioOrSpeak(magaliSpeech, 'magali');
+
+    let cascaoSpeech = "";
+    if (winningTeam === 'Equipe 1') {
+      cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 1! Meus parabéns, galera da Equipe 1! Vocês deram um verdadeiro show e arrasaram!";
+    } else if (winningTeam === 'Equipe 2') {
+      cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 2! Meus parabéns, galera da Equipe 2! Vocês deram um verdadeiro show e arrasaram!";
+    } else {
+      cascaoSpeech = "É isso aí, Magali! E olha só que loucura: deu EMPATE! A Equipe 1 e a Equipe 2 foram tão bem que terminaram iguaizinhas! Parabéns pra todo mundo, vocês foram incríveis demais!";
+    }
+
+    await this.playAudioOrSpeak(cascaoSpeech, 'cascao');
   }
 
   resetOptionCards() {

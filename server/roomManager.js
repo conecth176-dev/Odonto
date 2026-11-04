@@ -644,6 +644,27 @@ class RoomManager {
     room.qseState = 'finished';
     this.calculateQseLeaderboard(roomId);
 
+    let team1Score = 0;
+    let team2Score = 0;
+    Object.values(room.participants || {}).forEach(p => {
+      const isTeam2 = (p.team === 'Equipe 2' || String(p.team).toLowerCase().includes('2'));
+      if (isTeam2) {
+        team2Score += (p.score || 0);
+      } else {
+        team1Score += (p.score || 0);
+      }
+    });
+
+    let winningTeam = 'Equipe 1';
+    if (team2Score > team1Score) winningTeam = 'Equipe 2';
+    else if (team1Score === team2Score) winningTeam = 'Empate';
+
+    const teamScores = {
+      team1: team1Score,
+      team2: team2Score,
+      winningTeam
+    };
+
     const hasWinner = room.leaderboard.some(p => (p.score || 0) > 0);
     const historyItem = {
       roomId: room.id,
@@ -653,6 +674,7 @@ class RoomManager {
       totalQuestions: room.questions.length,
       finishedAt: new Date().toISOString(),
       leaderboard: room.leaderboard,
+      teamScores,
       hasWinner,
       champion: hasWinner ? room.leaderboard[0] : null,
       participants: room.participants
@@ -660,13 +682,14 @@ class RoomManager {
 
     db.update('history', hist => [historyItem, ...(hist || [])]);
     this.saveRooms();
-    this.io.to(roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
-    this.io.to('admin_' + roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
-    this.io.to('telao_' + roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
+    const finishPayload = { leaderboard: room.leaderboard, hasWinner, teamScores };
+    this.io.to(roomId).emit('qse_finished', finishPayload);
+    this.io.to('admin_' + roomId).emit('qse_finished', finishPayload);
+    this.io.to('telao_' + roomId).emit('qse_finished', finishPayload);
     this.broadcastRoomState(roomId);
     this.broadcastRoomList();
 
-    return { success: true, leaderboard: room.leaderboard };
+    return { success: true, leaderboard: room.leaderboard, teamScores };
   }
 
   handleDisconnect(socketId) {
