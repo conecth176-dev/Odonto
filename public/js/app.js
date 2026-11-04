@@ -514,8 +514,8 @@ class EmbryoApp {
                 Entrar na Sala 🚪 →
               </button>
             `)}
-            ${r.mode === 'quem_sou_eu' ? `
-              <button class="btn btn-secondary btn-block btn-sm" style="margin-top: 0.45rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.open('/telao.html?room=${r.id}', '_blank')">
+            ${(r.mode === 'quem_sou_eu' && this.adminToken) ? `
+              <button class="btn btn-secondary btn-block btn-sm" style="margin-top: 0.45rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="app.openTelao('${r.id}')">
                 🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
               </button>
             ` : ''}
@@ -3505,7 +3505,7 @@ class EmbryoApp {
           </div>
 
           <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #06b6d4); font-weight: 800;" onclick="window.open('/telao.html?room=${room.id}', '_blank')">
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #06b6d4); font-weight: 800;" onclick="app.openTelao('${room.id}')">
               🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
             </button>
             <button class="btn btn-danger btn-sm" onclick="app.deleteQseRoom('${room.id}')">
@@ -3692,6 +3692,35 @@ class EmbryoApp {
     if (modeSelect) modeSelect.value = 'quem_sou_eu';
     const nameInput = document.getElementById('newRoomName');
     if (nameInput) nameInput.value = 'Competição Quem Sou Eu? — Grupo 5';
+  }
+
+  async openTelao(roomId) {
+    let token = this.adminToken || localStorage.getItem('g5_admin_token');
+
+    if (!token) {
+      const pass = prompt('🔒 Acesso Restrito ao Telão!\nDigite a senha de administrador/anfitrião para abrir o Telão:');
+      if (!pass) return;
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass.trim() })
+        });
+        const data = await res.json();
+        if (data && data.token) {
+          token = data.token;
+          this.adminToken = data.token;
+          localStorage.setItem('g5_admin_token', data.token);
+        } else {
+          return alert('Senha de administrador incorreta! Apenas anfitriões têm acesso ao Telão.');
+        }
+      } catch (e) {
+        return alert('Erro ao autenticar: ' + e.message);
+      }
+    }
+
+    window.open(`/telao.html?room=${encodeURIComponent(roomId)}&adminToken=${encodeURIComponent(token)}`, '_blank');
   }
 
   // --- Helper utility ---

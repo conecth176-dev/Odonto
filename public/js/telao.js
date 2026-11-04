@@ -17,17 +17,158 @@ class TelaoApp {
     this.init();
   }
 
-  init() {
+  async init() {
     const urlParams = new URLSearchParams(window.location.search);
     this.roomId = urlParams.get('room') || urlParams.get('id');
 
+    // Admin authentication protection
+    const isAuthenticated = await this.checkAdminAuth();
+    if (!isAuthenticated) return;
+
     if (!this.roomId) {
-      this.promptSelectRoom();
+      await this.promptSelectRoom();
       return;
     }
 
     this.initSocket();
     this.initSpeech();
+  }
+
+  async checkAdminAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let token = urlParams.get('adminToken') || localStorage.getItem('g5_admin_token');
+
+    if (token) {
+      try {
+        const verifyRes = await fetch(`/api/admin/verify?adminToken=${encodeURIComponent(token)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (verifyRes.ok) {
+          const vData = await verifyRes.json();
+          if (vData.authenticated) {
+            this.adminToken = token;
+            localStorage.setItem('g5_admin_token', token);
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn('Admin token verification error:', e);
+      }
+    }
+
+    this.renderAdminLockScreen();
+    return false;
+  }
+
+  renderAdminLockScreen() {
+    let lockOverlay = document.getElementById('telaoAdminLockModal');
+    if (!lockOverlay) {
+      lockOverlay = document.createElement('div');
+      lockOverlay.id = 'telaoAdminLockModal';
+      lockOverlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #030712 100%);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        backdrop-filter: blur(25px);
+      `;
+      document.body.appendChild(lockOverlay);
+    }
+
+    lockOverlay.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid rgba(251, 191, 36, 0.4); border-radius: 28px; padding: 2.5rem; max-width: 520px; width: 100%; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 25px rgba(251, 191, 36, 0.2);">
+        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));">🔒🖥️</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; color: #fbbf24; margin: 0 0 0.5rem; font-weight: 900;">
+          ACESSO RESTRITO AO TELÃO
+        </h2>
+        <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.8rem;">
+          Esta tela de projeção é exclusiva para o <strong>Anfitrião / Administrador</strong> da competição Quem Sou Eu. Digite a senha do painel para desbloquear o Telão.
+        </p>
+
+        <form id="telaoUnlockForm" onsubmit="event.preventDefault(); window.telaoApp.handleUnlockSubmit();" style="display: flex; flex-direction: column; gap: 1rem;">
+          <input 
+            type="password" 
+            id="telaoAdminPassInput" 
+            placeholder="Senha de Administrador" 
+            autofocus
+            style="width: 100%; padding: 1rem 1.25rem; font-size: 1.1rem; border-radius: 14px; border: 2px solid rgba(56, 189, 248, 0.4); background: rgba(30, 41, 59, 0.7); color: #fff; text-align: center; letter-spacing: 2px; outline: none; box-sizing: border-box;"
+          />
+          <div id="telaoLockError" style="display: none; color: #ef4444; font-weight: 700; font-size: 0.9rem;"></div>
+          
+          <button 
+            type="submit" 
+            style="background: linear-gradient(135deg, #0284c7, #06b6d4); color: #fff; padding: 1rem; font-size: 1.1rem; font-weight: 800; border: none; border-radius: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);"
+          >
+            <span>Desbloquear Telão</span> 🔓
+          </button>
+
+          <button 
+            type="button" 
+            onclick="window.location.href='/'"
+            style="background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; padding: 0.75rem; font-size: 0.9rem; font-weight: 600; border-radius: 12px; cursor: pointer;"
+          >
+            Voltar à Plataforma Inicial 🚪
+          </button>
+        </form>
+      </div>
+    `;
+
+    setTimeout(() => {
+      const input = document.getElementById('telaoAdminPassInput');
+      if (input) input.focus();
+    }, 150);
+  }
+
+  async handleUnlockSubmit() {
+    const input = document.getElementById('telaoAdminPassInput');
+    const errEl = document.getElementById('telaoLockError');
+    if (!input) return;
+
+    const pass = input.value.trim();
+    if (!pass) {
+      if (errEl) {
+        errEl.innerText = 'Digite a senha de administrador.';
+        errEl.style.display = 'block';
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass })
+      });
+      const data = await res.json();
+      if (data && data.token) {
+        this.adminToken = data.token;
+        localStorage.setItem('g5_admin_token', data.token);
+
+        const lockOverlay = document.getElementById('telaoAdminLockModal');
+        if (lockOverlay) lockOverlay.remove();
+
+        if (!this.roomId) {
+          await this.promptSelectRoom();
+        } else {
+          this.initSocket();
+          this.initSpeech();
+        }
+      } else {
+        if (errEl) {
+          errEl.innerText = data.error || 'Senha incorreta. Acesso restrito.';
+          errEl.style.display = 'block';
+        }
+      }
+    } catch (e) {
+      if (errEl) {
+        errEl.innerText = 'Erro ao verificar: ' + e.message;
+        errEl.style.display = 'block';
+      }
+    }
   }
 
   async promptSelectRoom() {
@@ -67,7 +208,12 @@ class TelaoApp {
 
     this.socket.on('connect', () => {
       console.log('Telão conectado via WebSocket');
-      this.socket.emit('telao_join_room', { roomId: this.roomId }, (res) => {
+      this.socket.emit('telao_join_room', { roomId: this.roomId, adminToken: this.adminToken }, (res) => {
+        if (res && res.error) {
+          console.warn('Acesso ao Telão rejeitado pelo servidor:', res.error);
+          this.renderAdminLockScreen();
+          return;
+        }
         if (res && res.room) {
           this.updateState(res.room);
         }

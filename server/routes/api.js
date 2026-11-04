@@ -77,13 +77,16 @@ module.exports = function(roomManager) {
 
   router.get('/admin/verify', (req, res) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (!token && req.query && req.query.adminToken) {
+      token = req.query.adminToken;
+    }
     const { isValidAdminToken } = require('../auth');
 
     if (isValidAdminToken(token)) {
       return res.json({ authenticated: true });
     }
-    return res.status(401).json({ authenticated: false });
+    return res.status(401).json({ authenticated: false, error: 'Acesso restrito ao Administrador.' });
   });
 
   router.post('/admin/change-password', adminAuthMiddleware, (req, res) => {

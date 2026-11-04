@@ -146,9 +146,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Telão: Join room as spectator / display
-  socket.on('telao_join_room', ({ roomId }, callback) => {
+  // Telão: Join room as spectator / display (Admin Only)
+  socket.on('telao_join_room', ({ roomId, adminToken }, callback) => {
     try {
+      if (!isValidAdminToken(adminToken)) {
+        return callback && callback({ error: 'Acesso restrito: Apenas o Administrador / Anfitrião pode abrir o Telão.' });
+      }
       socket.join('telao_' + roomId);
       socket.join(roomId);
       const roomState = roomManager.getSanitizedRoomState(roomId, null);
