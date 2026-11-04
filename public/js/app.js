@@ -9,7 +9,7 @@ class EmbryoApp {
     this.currentRoom = null;
     this.currentParticipant = null;
     this.currentTeam = null;
-    this.adminToken = localStorage.getItem('g5_admin_token') || null;
+    this.adminToken = null; // Sempre exige autenticação com senha ao entrar no Painel Admin
     this.adminSelectedRoomId = null;
     this.adminRoomData = null;
 
@@ -33,9 +33,10 @@ class EmbryoApp {
       this.fetchRooms();
     });
 
-    // Limpa salas fantasmas antigas do localStorage para sempre iniciar com tela limpa
+    // Limpa salas fantasmas e tokens antigos para sempre exigir senha ao entrar no Painel Admin
     try {
       localStorage.removeItem('g5_local_rooms');
+      localStorage.removeItem('g5_admin_token');
     } catch (e) {}
 
     this.setupEventListeners();
@@ -2323,34 +2324,24 @@ class EmbryoApp {
   }
 
   // --- Admin View ---
-  async openAdminView() {
-    if (this.adminToken) {
-      try {
-        const verifyRes = await fetch('/api/admin/verify', {
-          headers: { 'Authorization': `Bearer ${this.adminToken}` }
-        });
-        if (!verifyRes.ok) {
-          this.adminToken = null;
-          localStorage.removeItem('g5_admin_token');
-        }
-      } catch (e) {}
-    }
-
-    if (this.adminToken) {
+  async openAdminView(forcePrompt = true) {
+    if (!forcePrompt && this.adminToken) {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       this.switchView('admin');
       this.loadAdminDashboard();
-    } else {
-      this.adminLoginTarget = 'admin';
-      const titleEl = document.querySelector('#adminLoginModal .modal-title');
-      const subEl = document.querySelector('#adminLoginModal .modal-subtitle');
-      if (titleEl) titleEl.innerText = '🔒 Acesso Administrativo';
-      if (subEl) subEl.innerText = 'Exclusivo para anfitriões e apresentadores do Grupo 5';
-      const input = document.getElementById('adminPasswordInput');
-      if (input) input.value = '';
-      this.openModal('adminLoginModal');
-      setTimeout(() => { if (input) input.focus(); }, 150);
+      return;
     }
+
+    // Sempre exige a senha administrativa ao acessar o Painel Admin
+    this.adminLoginTarget = 'admin';
+    const titleEl = document.querySelector('#adminLoginModal .modal-title');
+    const subEl = document.querySelector('#adminLoginModal .modal-subtitle');
+    if (titleEl) titleEl.innerText = '🔒 Acesso Administrativo';
+    if (subEl) subEl.innerText = 'Exclusivo para anfitriões e apresentadores do Grupo 5';
+    const input = document.getElementById('adminPasswordInput');
+    if (input) input.value = '';
+    this.openModal('adminLoginModal');
+    setTimeout(() => { if (input) input.focus(); }, 150);
   }
 
   async handleAdminLogin() {
@@ -3528,7 +3519,10 @@ class EmbryoApp {
       }
 
       const activeRoom = qseRooms[0];
-      const token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
+      const token = this.adminToken || localStorage.getItem('g5_admin_token');
+      if (!token) {
+        return this.openAdminView(true);
+      }
       this.adminToken = token;
 
       // Fetch full active room state
