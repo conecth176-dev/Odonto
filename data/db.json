@@ -1,7 +1,7 @@
 {
   "admin": {
     "passwordHash": "$2b$10$rDIs.nTi0zsMaDrw5nYrXuBk9/JFtBmxbWWZ6OfTXXXSDmaU.7u5W",
-    "lastLogin": "2026-11-04T20:27:06.594Z"
+    "lastLogin": "2026-11-04T20:34:21.808Z"
   },
   "settings": {
     "defaultTimeLimit": 180,
@@ -4198,9 +4198,9 @@
     }
   ],
   "rooms": {
-    "room_qse_523b3a39": {
-      "id": "room_qse_523b3a39",
-      "code": "QSE-266",
+    "room_qse_61e66d45": {
+      "id": "room_qse_61e66d45",
+      "code": "QSE-481",
       "name": "Desafio Quem Sou Eu — Turma Odonto G5",
       "description": "Raciocínio clínico rápido com botão individual e telão",
       "mode": "quem_sou_eu",
@@ -4208,84 +4208,36 @@
       "enableTortada": true,
       "questions": [
         {
-          "id": "qse-11",
-          "theme": "Síndrome do gêmeo desaparecido",
-          "category": "Síndrome do gêmeo desaparecido",
+          "id": "qse-15",
+          "theme": "Quimerismo humano",
+          "category": "Quimerismo humano",
           "difficulty": "Fácil",
           "points": 10,
-          "question": "QUEM SOU EU? Sou detectado como um segundo saco gestacional no ultrassom inicial de 6 semanas, mas semanas depois desapareço completamente sem deixar restos físicos visíveis, sendo totalmente reabsorvido pelo organismo materno ou pela placenta. Quem sou eu?",
+          "question": "QUEM SOU EU? Sou um indivíduo único formado pela fusão de dois embriões geneticamente distintos nos estágios iniciais de mórula ou blastocisto, possuindo duas linhagens de DNA totalmente diferentes no mesmo organismo. Quem sou eu?",
           "options": [
-            "Superfetação precoce",
-            "Fetus in fetu retroperitoneal",
-            "Feto papiráceo",
-            "Síndrome do gêmeo desaparecido (vanishing twin)"
+            "Mosaico genético",
+            "Gêmeo siamês",
+            "Quimera humana (Quimerismo tetragamético)",
+            "Mutante monozigótico"
           ],
-          "correctAnswer": 3,
-          "scientificExplanation": "A síndrome do gêmeo evanescente ocorre no 1º trimestre, onde a morte celular programada e enzimas líticas levam à completa reabsorção tecidual do embrião."
+          "correctAnswer": 2,
+          "scientificExplanation": "O quimerismo tetragamético resulta da fusão precoce de dois zigotos independentes que se unem para formar um único ser vivo com duas populações celulares geneticamente distintas."
         },
         {
-          "id": "qse-01",
-          "theme": "Gêmeos siameses",
-          "category": "Gêmeos siameses",
-          "difficulty": "Fácil",
-          "points": 10,
-          "question": "QUEM SOU EU? Sou um fenômeno em que dois conceptos monocoriônicos e monoamnióticos compartilham tecidos ou órgãos corporais após a divisão incompleta do disco embrionário bilaminar por volta do décimo terceiro dia pós-fertilização. Quem sou eu?",
+          "id": "qse-06",
+          "theme": "Superfecundação heteropaternal",
+          "category": "Superfecundação heteropaternal",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Na análise de DNA e tipagem genética de arcada dentária, demonstro que dois conceptos nascidos do mesmo parto compartilham apenas 25% de consanguinidade média (meio-irmãos) ao invés de 50%. Quem sou eu?",
           "options": [
-            "Feto papiráceo",
-            "Superfetação",
-            "Gêmeos dizigóticos",
-            "Gêmeos siameses (conjoined twins)"
+            "Gêmeos monozigóticos espelhados",
+            "Superfecundação heteropaternal",
+            "Quimera microquimérica",
+            "Feto papiráceo"
           ],
-          "correctAnswer": 3,
-          "scientificExplanation": "Gêmeos siameses originam-se da fissão incompleta do disco embrionário monoamniótico-monocoriônico após o 13º dia de desenvolvimento, resultando na união de partes anatômicas compartilhadas."
-        },
-        {
-          "id": "qse-17",
-          "theme": "Teratomas",
-          "category": "Teratomas",
-          "difficulty": "Fácil",
-          "points": 10,
-          "question": "QUEM SOU EU? Sou um tumor originado de células germinativas pluripotentes primordiais que derivam dos três folhetos embrionários (ectoderme, mesoderme e endoderme), podendo conter dentes formados, esmalte, cabelos e cartilagem. Quem sou eu?",
-          "options": [
-            "Teratoma",
-            "Odontoma composto",
-            "Ameloblastoma",
-            "Cisto radicular"
-          ],
-          "correctAnswer": 0,
-          "scientificExplanation": "Teratomas contêm tecidos maduros ou imaturos derivados de todos os três folhetos germinativos devido à pluripotência desregulada das células germinativas migrantes."
-        },
-        {
-          "id": "qse-07",
-          "theme": "Superfetação",
-          "category": "Superfetação",
-          "difficulty": "Fácil",
-          "points": 10,
-          "question": "QUEM SOU EU? Sou o fenômeno extraordinário e raríssimo em humanos no qual ocorre uma segunda ovulação e fertilização quando a mulher já está grávida, implantando um novo embrião com idade gestacional semanas mais jovem. Quem sou eu?",
-          "options": [
-            "Gêmeos evanescentes",
-            "Superfecundação",
-            "Mola hidatiforme",
-            "Superfetação"
-          ],
-          "correctAnswer": 3,
-          "scientificExplanation": "A superfetação exige a quebra de três barreiras fisiológicas: nova ovulação durante a gestação, passagem de espermatozoides pelo muco cervical espessado e implantação no endométrio já ocupado."
-        },
-        {
-          "id": "qse-03",
-          "theme": "Gêmeos parasitas",
-          "category": "Gêmeos parasitas",
-          "difficulty": "Fácil",
-          "points": 10,
-          "question": "QUEM SOU EU? Sou uma condição em que um dos conceptos para de se desenvolver completamente e permanece como uma massa rudimentar externa anexada ao corpo do gêmeo autossito (hospedeiro), dependendo totalmente da sua circulação sanguínea. Quem sou eu?",
-          "options": [
-            "Superfecundação homopaternal",
-            "Quimerismo tetragamético",
-            "Nascimento empelicado",
-            "Gêmeo parasita (heterópagos)"
-          ],
-          "correctAnswer": 3,
-          "scientificExplanation": "Gêmeos parasitas (heterópagos) ocorrem quando um concepto assimétrico e severamente malformado permanece aderido externamente ao gêmeo dominante viável (autossito)."
+          "correctAnswer": 1,
+          "scientificExplanation": "Como os conceptos compartilham apenas o pool genético materno e possuem genomas paternos distintos, seu grau de parentesco biológico equivale ao de meio-irmãos."
         },
         {
           "id": "qse-18",
@@ -4296,12 +4248,44 @@
           "question": "QUEM SOU EU? No complexo craniofacial e nos teratomas ovarianos/cervicais, posso desenvolver dentes completos com polpa, dentina e esmalte ectópico, devido à indução recíproca entre epitélio odontogênico e ectomesênquima presente na minha massa tumoral. Quem sou eu?",
           "options": [
             "Teratoma maduro cístico (cisto dermoide)",
-            "Feto papiráceo",
             "Mixoma odontogênico",
-            "Granuloma piogênico"
+            "Granuloma piogênico",
+            "Feto papiráceo"
           ],
           "correctAnswer": 0,
           "scientificExplanation": "A presença de tecidos dentários em teratomas comprova a capacidade autônoma das cascatas de sinalização (BMP, FGF, Wnt) de induzir amelogênese e odontogênese mesmo fora da cavidade bucal."
+        },
+        {
+          "id": "qse-22",
+          "theme": "Teratomas",
+          "category": "Teratomas",
+          "difficulty": "Difícil",
+          "points": 30,
+          "question": "QUEM SOU EU? Sou uma complicação rara em que um teratoma ovariano ou mediastinal maduro secreta anticorpos contra receptores NMDA ou hormônios tireoidianos (struma ovarii), gerando manifestações neuropsiquiátricas graves e xerostomia na odontologia. Quem sou eu?",
+          "options": [
+            "Síndrome de Apert",
+            "Hiperplasia gengival medicamentosa",
+            "Encefalite paraneoplásica associada a teratoma",
+            "Síndrome de Sjögren congênita"
+          ],
+          "correctAnswer": 2,
+          "scientificExplanation": "Teratomas podem abrigar tecido cerebral ectópico que induz a produção de autoanticorpos contra receptores NMDA neuronais, provocando encefalite autoimune paraneoplásica."
+        },
+        {
+          "id": "qse-16",
+          "theme": "Quimerismo humano",
+          "category": "Quimerismo humano",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Na Odontologia Legal, posso fazer com que o DNA coletado na saliva da mucosa jugal aponte um perfil genético, enquanto o sangue periférico aponte outro perfil incompatível, confundindo exames de DNA forense. Quem sou eu?",
+          "options": [
+            "Agenesia dentária múltipla",
+            "Quimerismo humano",
+            "Displasia cleidocraniana",
+            "Superfetação tardia"
+          ],
+          "correctAnswer": 1,
+          "scientificExplanation": "Indivíduos quiméricos possuem células ectodérmicas (epitélio bucal) com genoma derivado de um zigoto e mesodérmicas (leucócitos sanguíneos) derivadas do outro zigoto original."
         },
         {
           "id": "qse-14",
@@ -4311,45 +4295,45 @@
           "points": 20,
           "question": "QUEM SOU EU? O critério histopatológico e anatômico essencial que me diferencia de um teratoma comum é a presença de um eixo espinhal rudimentar (vértebras com metameria segmentada) e organização metamerica de tecidos. Quem sou eu?",
           "options": [
+            "Fetus in fetu",
             "Hamartoma odontogênico",
-            "Teratoma sacrococcígeo",
             "Cisto tireoglosso",
-            "Fetus in fetu"
+            "Teratoma sacrococcígeo"
           ],
-          "correctAnswer": 3,
+          "correctAnswer": 0,
           "scientificExplanation": "A identificação de coluna vertebral estruturada e simetria axial primária é o critério patognomônico de Willis para classificar a massa como Fetus in Fetu e não como teratoma."
         },
         {
-          "id": "qse-02",
-          "theme": "Gêmeos siameses",
-          "category": "Gêmeos siameses",
-          "difficulty": "Média",
-          "points": 20,
-          "question": "QUEM SOU EU? Sou uma classificação de gêmeos siameses unidos pela cabeça, compartilhando calvária e porções do encéfalo e circulação dural, com grande relevância cirúrgica craniofacial e odontológica. Quem sou eu?",
-          "options": [
-            "Isquiópagos",
-            "Onfalópagos",
-            "Toracópagos",
-            "Craniópagos"
-          ],
-          "correctAnswer": 3,
-          "scientificExplanation": "Craniópagos representam os gêmeos siameses unidos pela região craniana, exigindo complexo planejamento interdisciplinar envolvendo cirurgia bucomaxilofacial e neurocirurgia."
-        },
-        {
-          "id": "qse-04",
-          "theme": "Gêmeos parasitas",
-          "category": "Gêmeos parasitas",
+          "id": "qse-23",
+          "theme": "Fetus in fetu",
+          "category": "Fetus in fetu",
           "difficulty": "Difícil",
           "points": 30,
-          "question": "QUEM SOU EU? Sou a forma de gêmeo parasita anexada especificamente à mandíbula, maxila ou soalho bucal do autossito, apresentando dentes ectópicos, osso alveolar e cartilagem rudimentar. Na odontologia, meu nome técnico é epignato. Quem sou eu?",
+          "question": "QUEM SOU EU? Ao contrário dos teratomas comuns que são verdadeiras neoplasias com risco de malignização em 10% dos casos, tenho natureza hamartomatosa benigna derivada de uma embriogênese anômala interrompida com revestimento amniótico próprio. Quem sou eu?",
           "options": [
-            "Feto acárdico amorfo",
-            "Craniófago posterior",
-            "Teratoma sacro-coccígeo",
-            "Epignathus (Gêmeo parasita orofacial)"
+            "Cordoma sacral",
+            "Corioblastoma",
+            "Fetus in fetu",
+            "Tumor de Wilms"
           ],
-          "correctAnswer": 3,
-          "scientificExplanation": "O Epignathus é um gêmeo parasita/teratoma teratóide inserido no complexo craniofacial, especificamente no palato ou mandíbula, com presença de estruturas orais ectópicas."
+          "correctAnswer": 2,
+          "scientificExplanation": "Fetus in fetu é um concepto malformado encapsulado, raramente exibindo transformação maligna, distinguindo-se oncologicamente dos teratomas verdadeiros."
+        },
+        {
+          "id": "qse-08",
+          "theme": "Superfetação",
+          "category": "Superfetação",
+          "difficulty": "Difícil",
+          "points": 30,
+          "question": "QUEM SOU EU? No ultrassom e na odontogênese, meus conceptos apresentam discrepâncias cronológicas reais de biometria e cronologia de mineralização dos germes dentários de 3 a 5 semanas, provando que foram concebidos em ciclos menstruais diferentes. Quem sou eu?",
+          "options": [
+            "Síndrome de transfusão feto-fetal",
+            "Restrição de crescimento intrauterino seletiva (RCIU)",
+            "Superfetação verdadeira",
+            "Quimerismo de linhagem celular"
+          ],
+          "correctAnswer": 2,
+          "scientificExplanation": "Diferente da RCIU, onde há desnutrição de concepto síncrono, na superfetação há verdadeira assincronia biológica de idade gestacional e maturidade de órgãos."
         },
         {
           "id": "qse-21",
@@ -4366,62 +4350,78 @@
           ],
           "correctAnswer": 1,
           "scientificExplanation": "As linhas de Blaschko representam as vias anatômicas de proliferação celular clonal da crista neural e ectoderme durante a embriogênese, visualizáveis em casos de quimerismo."
+        },
+        {
+          "id": "qse-10",
+          "theme": "Feto papiráceo",
+          "category": "Feto papiráceo",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Diferente do gêmeo desaparecido (que some no primeiro trimestre por reabsorção lítica celular), meu esqueleto calcificado e remanescentes cranianos persistem e são entregues na placenta ao final do parto. Quem sou eu?",
+          "options": [
+            "Feto papiráceo",
+            "Feto macerado asséptico",
+            "Gêmeo parasita endocraniano",
+            "Mola embrionária"
+          ],
+          "correctAnswer": 0,
+          "scientificExplanation": "Como a morte ocorre após a osteogênese e mineralização esquelética (geralmente > 12-14 semanas), o tecido ósseo não pode ser reabsorvido por autólise, tornando-se pergamináceo."
         }
       ],
       "currentQuestionIndex": 0,
       "qseState": "finished",
       "buzzerWinner": {
-        "id": "qse_4986f6846e5f",
-        "participantId": "qse_4986f6846e5f",
+        "id": "qse_171ca77491b5",
+        "participantId": "qse_171ca77491b5",
         "name": "Ludymyla Coimbra",
         "participantName": "Ludymyla Coimbra",
-        "buzzedAt": 1793824027437,
-        "elapsedMs": 6
+        "buzzedAt": 1793824462615,
+        "elapsedMs": 5
       },
-      "buzzerUnlockedAt": 1793824027431,
+      "buzzerUnlockedAt": 1793824462610,
       "lastResult": {
-        "participantId": "qse_4986f6846e5f",
+        "participantId": "qse_171ca77491b5",
         "participantName": "Ludymyla Coimbra",
-        "chosenOption": 3,
-        "optionIndex": 3,
-        "correctAnswer": 3,
+        "chosenOption": 2,
+        "optionIndex": 2,
+        "correctAnswer": 2,
         "isCorrect": true,
         "points": 10,
         "pointsAwarded": 10,
-        "scientificExplanation": "A síndrome do gêmeo evanescente ocorre no 1º trimestre, onde a morte celular programada e enzimas líticas levam à completa reabsorção tecidual do embrião.",
+        "scientificExplanation": "O quimerismo tetragamético resulta da fusão precoce de dois zigotos independentes que se unem para formar um único ser vivo com duas populações celulares geneticamente distintas.",
         "tortadaOptIn": true,
         "tortadaAction": "give_pie"
       },
       "participants": {
-        "qse_4986f6846e5f": {
-          "id": "qse_4986f6846e5f",
+        "qse_171ca77491b5": {
+          "id": "qse_171ca77491b5",
           "name": "Ludymyla Coimbra",
-          "socketId": "sAcYNpEFzFd65Cw0AAAA",
+          "socketId": "OW5xPQ47cjP4XGodAAAA",
           "score": 10,
           "correctCount": 1,
           "errorCount": 0,
           "optInTortada": true,
           "tortadaOptIn": true,
           "isConnected": true,
-          "joinedAt": "2026-11-04T20:27:07.381Z"
+          "joinedAt": "2026-11-04T20:34:22.579Z"
         },
-        "qse_eb27b320a28b": {
-          "id": "qse_eb27b320a28b",
+        "qse_9801ce9a6555": {
+          "id": "qse_9801ce9a6555",
           "name": "Tawa Estrela",
-          "socketId": "16OJDzvhrlecgZZkAAAB",
+          "socketId": "Z0Q_VADW8jeBDePcAAAB",
           "score": 0,
           "correctCount": 0,
           "errorCount": 0,
           "optInTortada": true,
           "tortadaOptIn": true,
           "isConnected": true,
-          "joinedAt": "2026-11-04T20:27:07.418Z"
+          "joinedAt": "2026-11-04T20:34:22.599Z"
         }
       },
       "teams": {},
       "leaderboard": [
         {
-          "id": "qse_4986f6846e5f",
+          "id": "qse_171ca77491b5",
           "name": "Ludymyla Coimbra",
           "score": 10,
           "correctCount": 1,
@@ -4431,7 +4431,7 @@
           "position": 1
         },
         {
-          "id": "qse_eb27b320a28b",
+          "id": "qse_9801ce9a6555",
           "name": "Tawa Estrela",
           "score": 0,
           "correctCount": 0,
@@ -4442,10 +4442,260 @@
         }
       ],
       "historyRounds": [],
-      "createdAt": "2026-11-04T20:27:07.282Z"
+      "createdAt": "2026-11-04T20:34:22.503Z"
     }
   },
   "history": [
+    {
+      "roomId": "room_qse_61e66d45",
+      "code": "QSE-481",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "mode": "quem_sou_eu",
+      "totalQuestions": 10,
+      "finishedAt": "2026-11-04T20:34:22.625Z",
+      "leaderboard": [
+        {
+          "id": "qse_171ca77491b5",
+          "name": "Ludymyla Coimbra",
+          "score": 10,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_9801ce9a6555",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "qse_171ca77491b5",
+        "name": "Ludymyla Coimbra",
+        "score": 10,
+        "correctCount": 1,
+        "errorCount": 0,
+        "tortadaOptIn": true,
+        "isConnected": true,
+        "position": 1
+      },
+      "participants": {
+        "qse_171ca77491b5": {
+          "id": "qse_171ca77491b5",
+          "name": "Ludymyla Coimbra",
+          "socketId": "OW5xPQ47cjP4XGodAAAA",
+          "score": 10,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:22.579Z"
+        },
+        "qse_9801ce9a6555": {
+          "id": "qse_9801ce9a6555",
+          "name": "Tawa Estrela",
+          "socketId": "Z0Q_VADW8jeBDePcAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:22.599Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_809750cf",
+      "code": "G5-146",
+      "name": "Torneio Solo Teste",
+      "mode": "solo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:34:21.942Z",
+      "leaderboard": [
+        {
+          "id": "part_2515333a8d76",
+          "name": "Estudante Alfa",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "accuracy": 100,
+          "totalCorrectTime": 0.009,
+          "position": 1
+        },
+        {
+          "id": "part_b5a58f859620",
+          "name": "Estudante Beta",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "accuracy": 0,
+          "totalCorrectTime": 0,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "part_2515333a8d76",
+        "name": "Estudante Alfa",
+        "score": 30,
+        "answeredCount": 1,
+        "correctCount": 1,
+        "accuracy": 100,
+        "totalCorrectTime": 0.009,
+        "position": 1
+      },
+      "teams": {},
+      "participants": {
+        "part_2515333a8d76": {
+          "id": "part_2515333a8d76",
+          "name": "Estudante Alfa",
+          "socketId": "jjZrVmOmgb-f0WrUAAAA",
+          "role": "solo",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "totalCorrectTime": 0.009,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:21.884Z"
+        },
+        "part_b5a58f859620": {
+          "id": "part_b5a58f859620",
+          "name": "Estudante Beta",
+          "socketId": "zLgxU5mrNhAC0PzIAAAB",
+          "role": "solo",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "totalCorrectTime": 0,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:21.894Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_c35b1d5c",
+      "code": "G5-964",
+      "name": "Torneio E2E Teste em Duplas",
+      "mode": "duo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:34:20.992Z",
+      "leaderboard": [
+        {
+          "id": "DP-3305",
+          "code": "DP-3305",
+          "name": "Dupla Odonto Vencedora",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "accuracy": 100,
+          "totalCorrectTime": 0.019999999999999997,
+          "members": [
+            {
+              "id": "part_efd358a9b401",
+              "name": "Carlos (Integrante A)",
+              "role": "A",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            },
+            {
+              "id": "part_818b77a0c3ce",
+              "name": "Daniela (Integrante B)",
+              "role": "B",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            }
+          ],
+          "position": 1
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "DP-3305",
+        "code": "DP-3305",
+        "name": "Dupla Odonto Vencedora",
+        "score": 40,
+        "answeredCount": 2,
+        "correctCount": 2,
+        "accuracy": 100,
+        "totalCorrectTime": 0.019999999999999997,
+        "members": [
+          {
+            "id": "part_efd358a9b401",
+            "name": "Carlos (Integrante A)",
+            "role": "A",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          },
+          {
+            "id": "part_818b77a0c3ce",
+            "name": "Daniela (Integrante B)",
+            "role": "B",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          }
+        ],
+        "position": 1
+      },
+      "teams": {
+        "DP-3305": {
+          "code": "DP-3305",
+          "name": "Dupla Odonto Vencedora",
+          "passwordHash": "$2b$10$gh9Go8ICgSsBJ8.wuaavY.5tjxidIvcwhpmWVLbeBWgjNiRhnWiAm",
+          "memberA": "part_efd358a9b401",
+          "memberB": "part_818b77a0c3ce",
+          "score": 40,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "totalCorrectTime": 0.019999999999999997,
+          "createdAt": "2026-11-04T20:34:20.758Z"
+        }
+      },
+      "participants": {
+        "part_efd358a9b401": {
+          "id": "part_efd358a9b401",
+          "name": "Carlos (Integrante A)",
+          "teamCode": "DP-3305",
+          "role": "member_A",
+          "socketId": "a8HIso8q_c5y6cc4AAAA",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:20.758Z"
+        },
+        "part_818b77a0c3ce": {
+          "id": "part_818b77a0c3ce",
+          "name": "Daniela (Integrante B)",
+          "teamCode": "DP-3305",
+          "role": "member_B",
+          "socketId": "sQDrnblrxH9vZHAbAAAB",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:34:20.857Z"
+        }
+      }
+    },
     {
       "roomId": "room_qse_523b3a39",
       "code": "QSE-266",

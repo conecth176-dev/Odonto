@@ -266,19 +266,41 @@ class TelaoApp {
 
   getBestPortugueseVoice() {
     if (!('speechSynthesis' in window)) return null;
-    const voices = window.speechSynthesis.getVoices();
-    // Prefer pt-BR voices: natural Google, Microsoft, Luciana, Daniel, Felipe
-    const ptVoices = voices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR');
-    if (ptVoices.length === 0) return voices.find(v => v.lang.startsWith('pt')) || null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    if (voices.length === 0) return null;
 
-    const naturalVoice = ptVoices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('Natural') || 
-      v.name.includes('Daniel') || 
-      v.name.includes('Luciana') ||
-      v.name.includes('Francisca')
-    );
-    return naturalVoice || ptVoices[0];
+    // Filter Brazilian Portuguese and Portuguese voices
+    const ptVoices = voices.filter(v => v.lang && (v.lang === 'pt-BR' || v.lang.startsWith('pt')));
+    if (ptVoices.length === 0) return null;
+
+    // Known male Brazilian voices (Microsoft Daniel, Antonio, Julio, Felipe, Fabio, Google pt-BR male, etc.)
+    const maleNames = ['antonio', 'daniel', 'julio', 'felipe', 'fabio', 'ricardo', 'thiago', 'male', 'homem', 'pt-br-x-afs'];
+    const femaleNames = ['maria', 'francisca', 'leticia', 'heloisa', 'luciana', 'female', 'mulher', 'zira', 'fernanda', 'yara', 'raquel'];
+
+    // 1. Natural / Neural Brazilian Male voice (Edge / Windows 11 / Chrome online)
+    const naturalMale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      const isMale = maleNames.some(m => name.includes(m));
+      const isNatural = name.includes('natural') || name.includes('neural') || name.includes('online');
+      return isMale && isNatural;
+    });
+    if (naturalMale) return naturalMale;
+
+    // 2. Explicit male pt-BR voice
+    const anyMale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return maleNames.some(m => name.includes(m));
+    });
+    if (anyMale) return anyMale;
+
+    // 3. Avoid known robotic female voices (Maria, Francisca, Luciana, etc.)
+    const nonFemale = ptVoices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      return !femaleNames.some(f => name.includes(f));
+    });
+    if (nonFemale) return nonFemale;
+
+    return ptVoices.find(v => v.lang === 'pt-BR') || ptVoices[0];
   }
 
   toggleSound() {
@@ -415,20 +437,25 @@ class TelaoApp {
 
     window.speechSynthesis.cancel();
     this.isNarrating = true;
-    this.setNarratorVisual(true, 'Apresentadora narrando a pergunta...');
+    this.setNarratorVisual(true, 'Apresentador narrando a pergunta...');
 
     const voice = this.getBestPortugueseVoice();
     const letters = ['A', 'B', 'C', 'D'];
 
-    // Construct speech parts
+    // Clean question to not say "Quem sou eu?" at the start or throughout the prompt
+    let cleanQuestion = (q.question || '')
+      .replace(/^(\s*quem\s+sou\s+eu\s*[\?:!\-—,\.]?\s*)+/gi, '')
+      .replace(/(\s*quem\s+sou\s+eu\s*[\?:!\-—,\.]?\s*)+$/gi, '')
+      .trim();
+
+    // Construct speech parts: Speaks ONLY the question text directly, then alternatives, and "Quem sou eu?" ONLY at the end!
     const parts = [
-      { text: `Atenção participantes! Quem Sou Eu?`, cardIdx: -1 },
-      { text: `${q.question}`, cardIdx: -1 },
+      { text: `${cleanQuestion}`, cardIdx: -1 },
       { text: `Alternativa A: ${q.options[0]}`, cardIdx: 0 },
       { text: `Alternativa B: ${q.options[1]}`, cardIdx: 1 },
       { text: `Alternativa C: ${q.options[2]}`, cardIdx: 2 },
       { text: `Alternativa D: ${q.options[3]}`, cardIdx: 3 },
-      { text: `Preparem-se... Está valendo!`, cardIdx: -1 }
+      { text: `Quem sou eu? Preparem-se... Está valendo!`, cardIdx: -1 }
     ];
 
     let currentPart = 0;
@@ -446,8 +473,9 @@ class TelaoApp {
       const utter = new SpeechSynthesisUtterance(item.text);
       if (voice) utter.voice = voice;
       utter.lang = 'pt-BR';
-      utter.rate = 1.05; // Lively presenter tempo
-      utter.pitch = 1.05;
+      // Human male settings: lower pitch for deep, resonant, natural male pacing
+      utter.rate = 0.96;
+      utter.pitch = 0.90;
 
       utter.onstart = () => {
         this.resetOptionCards();
@@ -568,8 +596,8 @@ class TelaoApp {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'pt-BR';
-      utter.rate = 1.05;
-      utter.pitch = 1.1;
+      utter.rate = 0.98;
+      utter.pitch = 0.92;
       const voice = this.getBestPortugueseVoice();
       if (voice) utter.voice = voice;
       window.speechSynthesis.speak(utter);

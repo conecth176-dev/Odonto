@@ -3187,8 +3187,8 @@ class EmbryoApp {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
-      utterance.pitch = 0.95;
-      utterance.rate = 1.05;
+      utterance.pitch = 0.90;
+      utterance.rate = 0.98;
       utterance.volume = 1.0;
       const maleVoice = this.getBestMalePtBrVoice();
       if (maleVoice) utterance.voice = maleVoice;
