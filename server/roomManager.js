@@ -62,7 +62,11 @@ class RoomManager {
     return { ...question, options: newOptions, correctAnswer: newCorrectAnswer };
   }
 
-  createRoom({ name, description, mode, timeLimit, formula, questionIds, revealExplanation, tieBreaker, questionCount, difficulty }) {
+  createRoom({ name, description, mode, timeLimit, formula, questionIds, revealExplanation, tieBreaker, questionCount, difficulty, enableTortada }) {
+    if (mode === 'quem_sou_eu') {
+      return this.createQseRoom({ name, description, questionCount, difficulty, enableTortada });
+    }
+
     const allQuestions = db.get('questions') || [];
     let selectedQuestions = [];
 
@@ -328,6 +332,331 @@ class RoomManager {
       participant,
       room: this.getSanitizedRoomState(roomId, participantId)
     };
+  }
+
+  // --- QUEM SOU EU? (Minigame Presencial com Celulares & Telão) ---
+
+  createQseRoom({ name, description, questionCount, difficulty, enableTortada }) {
+    const allQuestions = db.get('qse_questions') || require('./qseQuestionsData');
+    let pool = [...allQuestions];
+
+    if (difficulty && difficulty !== 'all') {
+      const normDiff = difficulty.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const filtered = pool.filter(q => {
+        const qd = (q.difficulty || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return qd.includes(normDiff);
+      });
+      if (filtered.length > 0) pool = filtered;
+    }
+
+    const countVal = (questionCount === 'all') ? pool.length : (parseInt(questionCount) || 12);
+    const targetCount = Math.min(countVal, pool.length);
+
+    let selected = this._shuffle(pool).slice(0, targetCount);
+    selected = selected.map(q => this._shuffleOptions(q));
+
+    const roomId = 'room_qse_' + crypto.randomBytes(4).toString('hex');
+    const roomCode = ('QSE-' + Math.floor(100 + Math.random() * 900)).toUpperCase();
+
+    const newRoom = {
+      id: roomId,
+      code: roomCode,
+      name: name || 'Quem Sou Eu? 🧠🥧 — Competição ao Vivo',
+      description: description || 'Minigame presencial de perguntas e respostas com buzzer no celular e tortada na cara!',
+      mode: 'quem_sou_eu',
+      status: 'lobby',
+      enableTortada: enableTortada !== false,
+      questions: selected,
+      currentQuestionIndex: -1,
+      qseState: 'lobby', // 'lobby' | 'reading' | 'buzzer_active' | 'answering' | 'revealed' | 'finished'
+      buzzerWinner: null,
+      buzzerUnlockedAt: null,
+      lastResult: null,
+      participants: {},
+      teams: {},
+      leaderboard: [],
+      historyRounds: [],
+      createdAt: new Date().toISOString()
+    };
+
+    this.rooms[roomId] = newRoom;
+    this.saveRooms();
+    this.broadcastRoomList();
+    return newRoom;
+  }
+
+  joinQseRoom(roomId, participantName, socketId = null, optInTortada = true) {
+    const room = this.rooms[roomId];
+    if (!room) return { error: 'Sala não encontrada.' };
+    if (room.mode !== 'quem_sou_eu') return { error: 'Esta sala não é do minigame Quem Sou Eu.' };
+    if (room.status === 'finished') return { error: 'Esta competição já foi finalizada.' };
+    if (room.status !== 'lobby') {
+      return { error: '⚠️ Sala Inicializada! A competição já começou e a entrada de novos participantes está bloqueada.' };
+    }
+    if (!participantName || !participantName.trim()) {
+      return { error: 'Por favor, informe seu nome.' };
+    }
+
+    const participantId = 'qse_' + crypto.randomBytes(6).toString('hex');
+    const participant = {
+      id: participantId,
+      name: participantName.trim(),
+      socketId,
+      score: 0,
+      correctCount: 0,
+      errorCount: 0,
+      optInTortada: optInTortada !== false,
+      tortadaOptIn: optInTortada !== false,
+      isConnected: true,
+      joinedAt: new Date().toISOString()
+    };
+
+    room.participants[participantId] = participant;
+    this.calculateQseLeaderboard(roomId);
+    this.saveRooms();
+    this.broadcastRoomState(roomId);
+    this.broadcastRoomList();
+
+    return {
+      success: true,
+      participant,
+      room: this.getSanitizedRoomState(roomId, participantId)
+    };
+  }
+
+  calculateQseLeaderboard(roomId) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return;
+
+    let items = Object.values(room.participants).map(p => ({
+      id: p.id,
+      name: p.name,
+      score: p.score || 0,
+      correctCount: p.correctCount || 0,
+      errorCount: p.errorCount || 0,
+      tortadaOptIn: p.tortadaOptIn !== false,
+      isConnected: p.isConnected !== false
+    }));
+
+    // Ranking por maior pontuação, mais acertos, menos erros
+    items.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+      return a.errorCount - b.errorCount;
+    });
+
+    room.leaderboard = items.map((item, idx) => ({
+      ...item,
+      position: idx + 1
+    }));
+  }
+
+  startQseRound(roomId, questionIndex = null) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+
+    const nextIdx = (questionIndex !== null) ? questionIndex : (room.currentQuestionIndex + 1);
+    if (nextIdx >= room.questions.length) {
+      return this.finishQseCompetition(roomId);
+    }
+
+    room.status = 'in_progress';
+    room.currentQuestionIndex = nextIdx;
+    room.qseState = 'reading'; // IA lendo pergunta e alternativas
+    room.buzzerWinner = null;
+    room.buzzerUnlockedAt = null;
+    room.lastResult = null;
+
+    this.saveRooms();
+    this.io.to(roomId).emit('qse_round_started', {
+      questionIndex: nextIdx,
+      totalQuestions: room.questions.length,
+      question: this.getSanitizedRoomState(roomId).question
+    });
+    this.broadcastRoomState(roomId);
+    return { success: true, questionIndex: nextIdx };
+  }
+
+  finishQseNarration(roomId) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    if (room.qseState !== 'reading') return { error: 'Narração não está em andamento.' };
+
+    room.qseState = 'buzzer_active';
+    room.buzzerUnlockedAt = Date.now();
+    room.buzzerWinner = null;
+
+    this.saveRooms();
+    this.io.to(roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO!'
+    });
+    this.io.to('admin_' + roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO!'
+    });
+    this.io.to('telao_' + roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO!'
+    });
+    this.broadcastRoomState(roomId);
+    return { success: true, unlockedAt: room.buzzerUnlockedAt };
+  }
+
+  emergencyUnlockQseBuzzer(roomId) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+
+    room.qseState = 'buzzer_active';
+    room.buzzerUnlockedAt = Date.now();
+    room.buzzerWinner = null;
+
+    this.saveRooms();
+    this.io.to(roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO! (Liberação Manual)'
+    });
+    this.io.to('admin_' + roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO! (Liberação Manual)'
+    });
+    this.io.to('telao_' + roomId).emit('qse_buzzer_released', {
+      unlockedAt: room.buzzerUnlockedAt,
+      message: 'VALENDO! (Liberação Manual)'
+    });
+    this.broadcastRoomState(roomId);
+    return { success: true, unlockedAt: room.buzzerUnlockedAt };
+  }
+
+  buzzInQse(roomId, participantId) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    if (room.qseState !== 'buzzer_active') {
+      return { error: 'O botão de resposta ainda não está liberado!' };
+    }
+
+    const participant = room.participants[participantId];
+    if (!participant) return { error: 'Participante não registrado.' };
+
+    // ATOMIC LOCK: Primeiro clique válido trava imediatamente
+    room.qseState = 'answering';
+    const now = Date.now();
+    const elapsedMs = Math.max(1, now - (room.buzzerUnlockedAt || now));
+
+    room.buzzerWinner = {
+      id: participant.id,
+      participantId: participant.id,
+      name: participant.name,
+      participantName: participant.name,
+      buzzedAt: now,
+      elapsedMs
+    };
+
+    this.saveRooms();
+    this.io.to(roomId).emit('qse_buzzer_winner', room.buzzerWinner);
+    this.io.to('admin_' + roomId).emit('qse_buzzer_winner', room.buzzerWinner);
+    this.io.to('telao_' + roomId).emit('qse_buzzer_winner', room.buzzerWinner);
+    this.broadcastRoomState(roomId);
+
+    return { success: true, isWinner: true, elapsedMs, winner: room.buzzerWinner, buzzerWinner: room.buzzerWinner };
+  }
+
+  submitQseAnswer(roomId, participantId, optionIndex) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    if (room.qseState !== 'answering') return { error: 'Não é o momento de responder.' };
+    if (!room.buzzerWinner || room.buzzerWinner.id !== participantId) {
+      return { error: 'Apenas quem apertou o botão primeiro tem direito a responder!' };
+    }
+
+    const currentQ = room.questions[room.currentQuestionIndex];
+    if (!currentQ) return { error: 'Pergunta não encontrada.' };
+
+    const optIdx = parseInt(optionIndex);
+    const isCorrect = (optIdx === currentQ.correctAnswer);
+    const points = isCorrect ? (currentQ.points || 10) : 0;
+    const participant = room.participants[participantId];
+
+    if (isCorrect) {
+      participant.score = (participant.score || 0) + points;
+      participant.correctCount = (participant.correctCount || 0) + 1;
+    } else {
+      participant.errorCount = (participant.errorCount || 0) + 1;
+    }
+
+    room.qseState = 'revealed';
+    room.lastResult = {
+      participantId: participant.id,
+      participantName: participant.name,
+      chosenOption: optIdx,
+      optionIndex: optIdx,
+      correctAnswer: currentQ.correctAnswer,
+      isCorrect,
+      points,
+      pointsAwarded: points,
+      scientificExplanation: currentQ.scientificExplanation,
+      tortadaOptIn: participant.tortadaOptIn !== false,
+      tortadaAction: !room.enableTortada ? 'none' : (isCorrect ? 'give_pie' : (participant.tortadaOptIn ? 'take_pie' : 'refused'))
+    };
+
+    this.calculateQseLeaderboard(roomId);
+    this.saveRooms();
+
+    this.io.to(roomId).emit('qse_answer_revealed', room.lastResult);
+    this.io.to('admin_' + roomId).emit('qse_answer_revealed', room.lastResult);
+    this.io.to('telao_' + roomId).emit('qse_answer_revealed', room.lastResult);
+    this.broadcastRoomState(roomId);
+
+    return { success: true, result: room.lastResult };
+  }
+
+  triggerQseTortada(roomId, targetName = '') {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+
+    const payload = {
+      targetName: targetName || (room.lastResult ? room.lastResult.participantName : 'Participante'),
+      timestamp: Date.now()
+    };
+
+    this.io.to(roomId).emit('qse_tortada_triggered', payload);
+    this.io.to('admin_' + roomId).emit('qse_tortada_triggered', payload);
+    this.io.to('telao_' + roomId).emit('qse_tortada_triggered', payload);
+
+    return { success: true, payload };
+  }
+
+  finishQseCompetition(roomId) {
+    const room = this.rooms[roomId];
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+
+    room.status = 'finished';
+    room.qseState = 'finished';
+    this.calculateQseLeaderboard(roomId);
+
+    const hasWinner = room.leaderboard.some(p => (p.score || 0) > 0);
+    const historyItem = {
+      roomId: room.id,
+      code: room.code,
+      name: room.name,
+      mode: 'quem_sou_eu',
+      totalQuestions: room.questions.length,
+      finishedAt: new Date().toISOString(),
+      leaderboard: room.leaderboard,
+      hasWinner,
+      champion: hasWinner ? room.leaderboard[0] : null,
+      participants: room.participants
+    };
+
+    db.update('history', hist => [historyItem, ...(hist || [])]);
+    this.saveRooms();
+    this.io.to(roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
+    this.io.to('admin_' + roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
+    this.io.to('telao_' + roomId).emit('qse_finished', { leaderboard: room.leaderboard, hasWinner });
+    this.broadcastRoomState(roomId);
+    this.broadcastRoomList();
+
+    return { success: true, leaderboard: room.leaderboard };
   }
 
   handleDisconnect(socketId) {
@@ -789,6 +1118,8 @@ class RoomManager {
       : null;
 
     const isRoundClosed = !room.currentRound || room.currentRound.isClosed || room.status === 'explanation' || room.status === 'finished';
+    const isQseClosed = room.mode === 'quem_sou_eu' && (room.qseState === 'revealed' || room.qseState === 'finished' || room.status === 'finished');
+    const shouldRevealAnswer = (room.mode === 'quem_sou_eu') ? isQseClosed : isRoundClosed;
 
     let sanitizedQuestion = null;
     if (currentQ) {
@@ -801,11 +1132,11 @@ class RoomManager {
         question: currentQ.question,
         options: currentQ.options,
         // Only disclose correctAnswer, explanation, and difference AFTER round is closed!
-        correctAnswer: isRoundClosed ? currentQ.correctAnswer : null,
-        scientificExplanation: isRoundClosed ? currentQ.scientificExplanation : null,
-        curiosity: isRoundClosed ? currentQ.curiosity : null,
-        difference: isRoundClosed ? currentQ.difference : null,
-        reference: isRoundClosed ? currentQ.reference : null
+        correctAnswer: shouldRevealAnswer ? currentQ.correctAnswer : null,
+        scientificExplanation: shouldRevealAnswer ? currentQ.scientificExplanation : null,
+        curiosity: shouldRevealAnswer ? currentQ.curiosity : null,
+        difference: shouldRevealAnswer ? currentQ.difference : null,
+        reference: shouldRevealAnswer ? currentQ.reference : null
       };
     }
 
@@ -822,6 +1153,9 @@ class RoomManager {
           myTurn = (me.role === room.currentRound.activeDuoRole);
           myAnswer = room.currentRound.answers[me.teamCode] || null;
         }
+      } else if (room.mode === 'quem_sou_eu') {
+        myTurn = (room.buzzerWinner && room.buzzerWinner.participantId === viewingParticipantId);
+        myAnswer = (room.lastResult && room.lastResult.participantId === viewingParticipantId) ? room.lastResult : null;
       } else if (room.currentRound) {
         myTurn = true;
         myAnswer = room.currentRound.answers[viewingParticipantId] || null;
@@ -831,6 +1165,15 @@ class RoomManager {
     // Answers summary for admin or after close
     const answersCount = room.currentRound ? Object.keys(room.currentRound.answers).length : 0;
     const totalExpected = room.mode === 'duo' ? Object.keys(room.teams).length : Object.keys(room.participants).length;
+
+    const participantsList = Object.values(room.participants || {}).map(p => ({
+      id: p.id,
+      name: p.name,
+      score: p.score || 0,
+      correctCount: p.correctCount || 0,
+      optInTortada: p.optInTortada || false,
+      isConnected: p.isConnected !== false
+    }));
 
     return {
       id: room.id,
@@ -860,8 +1203,16 @@ class RoomManager {
       leaderboard: room.leaderboard || [],
       participantsCount: Object.keys(room.participants || {}).length,
       teamsCount: Object.keys(room.teams || {}).length,
+      participantsList,
+      // Quem Sou Eu specific state fields
+      qseState: room.qseState || null,
+      buzzerWinner: room.buzzerWinner || null,
+      buzzerUnlockedAt: room.buzzerUnlockedAt || null,
+      lastResult: room.lastResult || null,
+      enableTortada: room.enableTortada || false,
+      isBuzzerWinner: !!(me && room.buzzerWinner && room.buzzerWinner.participantId === me.id),
       // User-specific contextual flags
-      me: me ? { id: me.id, name: me.name, role: me.role, teamCode: me.teamCode } : null,
+      me: me ? { id: me.id, name: me.name, role: me.role, teamCode: me.teamCode, score: me.score || 0, optInTortada: me.optInTortada || false } : null,
       myTeam: myTeam ? { code: myTeam.code, name: myTeam.name, memberA: myTeam.memberA, memberB: myTeam.memberB } : null,
       myTurn,
       myAnswer
@@ -885,14 +1236,22 @@ class RoomManager {
       }
     }
 
+    const currentQ = (room.currentQuestionIndex >= 0 && room.questions[room.currentQuestionIndex])
+      ? room.questions[room.currentQuestionIndex]
+      : null;
+
     // Also broadcast general admin / spectator view to room channel
     const genericState = this.getSanitizedRoomState(roomId, null);
     this.io.to('admin_' + roomId).emit('admin_room_state_update', {
       ...genericState,
       fullAnswers: room.currentRound ? room.currentRound.answers : {},
+      currentQuestionRaw: currentQ,
       participants: room.participants,
       teams: room.teams
     });
+
+    // Also broadcast to Telão
+    this.io.to('telao_' + roomId).emit('telao_state_update', genericState);
   }
 }
 

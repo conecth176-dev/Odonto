@@ -74,6 +74,43 @@ const socketClient = {
           window.app.handleAdminRoomStateUpdate(adminState);
         }
       });
+
+      // Quem Sou Eu Event Listeners
+      this.socket.on('qse_round_started', (data) => {
+        if (window.app && window.app.handleQseRoundStarted) {
+          window.app.handleQseRoundStarted(data);
+        }
+      });
+
+      this.socket.on('qse_buzzer_unlocked', (data) => {
+        if (window.app && window.app.handleQseBuzzerUnlocked) {
+          window.app.handleQseBuzzerUnlocked(data);
+        }
+      });
+
+      this.socket.on('qse_buzzer_winner', (winner) => {
+        if (window.app && window.app.handleQseBuzzerWinner) {
+          window.app.handleQseBuzzerWinner(winner);
+        }
+      });
+
+      this.socket.on('qse_answer_revealed', (result) => {
+        if (window.app && window.app.handleQseAnswerRevealed) {
+          window.app.handleQseAnswerRevealed(result);
+        }
+      });
+
+      this.socket.on('qse_tortada_triggered', (payload) => {
+        if (window.app && window.app.handleQseTortadaTriggered) {
+          window.app.handleQseTortadaTriggered(payload);
+        }
+      });
+
+      this.socket.on('qse_finished', (payload) => {
+        if (window.app && window.app.handleQseFinished) {
+          window.app.handleQseFinished(payload);
+        }
+      });
     } catch (e) {
       console.warn('Socket init failed (running in offline mode):', e);
       this.isConnected = false;
@@ -131,6 +168,51 @@ const socketClient = {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
       this.socket.emit('admin_join_room', { roomId, adminToken }, resolve);
+    });
+  },
+
+  joinQse(roomId, participantName, optInTortada) {
+    return new Promise((resolve) => {
+      if (!this.isConnected || !this.socket) {
+        return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
+      }
+      this.socket.emit('join_qse_room', { roomId, participantName, optInTortada }, resolve);
+    });
+  },
+
+  buzzInQse(roomId, participantId) {
+    return new Promise((resolve) => {
+      if (!this.isConnected || !this.socket) {
+        return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
+      }
+      this.socket.emit('qse_buzz_in', { roomId, participantId }, resolve);
+    });
+  },
+
+  submitQseAnswer(roomId, participantId, optionIndex) {
+    return new Promise((resolve) => {
+      if (!this.isConnected || !this.socket) {
+        return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
+      }
+      this.socket.emit('qse_submit_answer', { roomId, participantId, optionIndex }, resolve);
+    });
+  },
+
+  qseAdminAction(roomId, action, adminToken, data) {
+    return new Promise((resolve) => {
+      if (!this.isConnected || !this.socket) {
+        return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
+      }
+      this.socket.emit('qse_admin_action', { roomId, action, adminToken, data }, resolve);
+    });
+  },
+
+  triggerTortada(roomId, adminToken, targetName) {
+    return new Promise((resolve) => {
+      if (!this.isConnected || !this.socket) {
+        return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
+      }
+      this.socket.emit('qse_trigger_tortada', { roomId, adminToken, targetName }, resolve);
     });
   }
 };

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const defaultQuestions = require('./questionsData');
+const defaultQseQuestions = require('./qseQuestionsData');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -14,17 +15,17 @@ class Database {
   constructor() {
     this.data = {
       admin: {
-        // default admin password: adminembrio2026
-        passwordHash: '$2a$10$Q7eY0bU9gGgE2.uC8YI8vOq3YJ0E94F8r2vXW.N5F1X5Q472cK26.', // will be initialized below
+        passwordHash: '$2a$10$Q7eY0bU9gGgE2.uC8YI8vOq3YJ0E94F8r2vXW.N5F1X5Q472cK26.',
         lastLogin: null
       },
       settings: {
         defaultTimeLimit: 180,
-        defaultFormula: 'standard', // standard: maxPts * (1 - 0.5 * timeUsed / timeTotal)
+        defaultFormula: 'standard',
         revealScientificExplanation: true,
         tieBreaker: 'most_correct_then_fastest'
       },
       questions: [],
+      qse_questions: [],
       rooms: {},
       history: []
     };
@@ -39,14 +40,25 @@ class Database {
         this.data = { ...this.data, ...parsed };
       }
       
-      // Ensure default questions exist and update if new questions were added
+      // Reiniciar sempre sem salas antigas: só exibe as salas que forem criadas ativamente
+      this.data.rooms = {};
+
+      // Ensure default regular questions exist
       if (!this.data.questions || this.data.questions.length < defaultQuestions.length) {
         this.data.questions = defaultQuestions;
       }
+
+      // Ensure default Quem Sou Eu questions exist
+      if (!this.data.qse_questions || this.data.qse_questions.length < defaultQseQuestions.length) {
+        this.data.qse_questions = defaultQseQuestions;
+      }
+
       this.save();
     } catch (err) {
       console.error('Error loading database, initializing defaults:', err);
+      this.data.rooms = {};
       this.data.questions = defaultQuestions;
+      this.data.qse_questions = defaultQseQuestions;
       this.save();
     }
   }

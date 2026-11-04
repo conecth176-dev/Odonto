@@ -169,6 +169,15 @@
   </main>
 
   <!-- ======================================================================
+       VIEW: QUEM SOU EU? (MOBILE BUZZER & PLAYER INTERFACE)
+       ====================================================================== -->
+  <main id="view-qse" class="container" style="display: none; padding-top: 1.5rem;">
+    <div id="qseContent" style="max-width: 650px; margin: 0 auto;">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
        VIEW: STUDY BANK (QUESTÕES & FUNDAMENTAÇÃO CIENTÍFICA)
        ====================================================================== -->
   <main id="view-bank" class="container" style="display: none; padding-top: 2rem;">
@@ -195,6 +204,9 @@
         <nav style="display: flex; flex-direction: column; gap: 0.4rem;">
           <a class="admin-nav-item active" id="adminNav-rooms" onclick="app.showAdminTab('rooms')">
             <span>🎮 Salas e Competições</span>
+          </a>
+          <a class="admin-nav-item" id="adminNav-qse" onclick="app.showAdminTab('qse')">
+            <span>🧠🥧 QUEM SOU EU? (Minigame)</span>
           </a>
           <a class="admin-nav-item" id="adminNav-questions" onclick="app.showAdminTab('questions')">
             <span>📚 Banco de Perguntas</span>
@@ -279,6 +291,13 @@
         <div id="adminPane-history" class="admin-tab-pane" style="display: none;">
           <div id="adminHistoryContainer">
             <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Tab 4: QUEM SOU EU Live Controls & Management -->
+        <div id="adminPane-qse" class="admin-tab-pane" style="display: none;">
+          <div id="adminQseContainer">
+            <!-- Dynamically populated by app.js -->
           </div>
         </div>
       </section>
@@ -474,6 +493,31 @@
           </form>
         </div>
       </div>
+
+      <!-- Section QUEM SOU EU -->
+      <div id="qseJoinSection" style="display: none;">
+        <form id="qseJoinForm">
+          <div class="form-group">
+            <label class="form-label" for="qseParticipantName">Seu Nome / Apelido</label>
+            <input type="text" id="qseParticipantName" class="form-input" placeholder="Ex: Maria Luiza" required autocomplete="name">
+            <p class="form-hint">Seu nome aparecerá na tela quando você for o mais rápido no botão!</p>
+          </div>
+
+          <div class="form-group" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 0.8rem 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #fbbf24; font-weight: 700;">
+              <input type="checkbox" id="qseOptInTortada" style="width: 18px; height: 18px; accent-color: #f59e0b;" checked>
+              <span>Aceito participar da Tortada na Cara 🥧 (Opcional)</span>
+            </label>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.35rem 0 0 26px;">
+              Dinâmica interativa do seminário: quem acerta pode dar tortada, quem erra recebe tortada!
+            </p>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #f59e0b, #ec4899); border: none; font-size: 1.05rem; padding: 0.85rem;">
+            Entrar no Quem Sou Eu 🧠🥧
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -540,6 +584,7 @@
             <select id="newRoomMode" class="form-select">
               <option value="solo">Modo Solo (Individual)</option>
               <option value="duo">Modo Dupla (Alternância de Integrantes)</option>
+              <option value="quem_sou_eu">Modo QUEM SOU EU? 🧠🥧 (Botão no Celular + Telão)</option>
             </select>
           </div>
 
@@ -552,6 +597,16 @@
               <option value="60">60 segundos (Rápido)</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group" id="qseRoomSettingsWrap" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #fbbf24; font-weight: 700; font-size: 0.95rem;">
+            <input type="checkbox" id="newRoomEnableTortada" checked style="width: 18px; height: 18px; accent-color: #f59e0b;">
+            <span>🥧 Habilitar dinâmica "Tortada na Cara" para a rodada</span>
+          </label>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.3rem 0 0 26px;">
+            Permite animações de tortada na cara no telão e nos celulares durante a competição presencial.
+          </p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">

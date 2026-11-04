@@ -33,14 +33,9 @@ class EmbryoApp {
       this.fetchRooms();
     });
 
-    // Limpa salas fantasmas antigas do localStorage
+    // Limpa salas fantasmas antigas do localStorage para sempre iniciar com tela limpa
     try {
-      const stored = localStorage.getItem('g5_local_rooms');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const filtered = (parsed || []).filter(r => r.id !== 'room_solo_offline' && r.code !== 'SOLO-G5');
-        localStorage.setItem('g5_local_rooms', JSON.stringify(filtered));
-      }
+      localStorage.removeItem('g5_local_rooms');
     } catch (e) {}
 
     this.setupEventListeners();
@@ -106,6 +101,15 @@ class EmbryoApp {
       this.handleDuoJoinSubmit();
     });
 
+    // Quem Sou Eu join form
+    const qseForm = document.getElementById('qseJoinForm');
+    if (qseForm) {
+      qseForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleQseJoinSubmit();
+      });
+    }
+
     // Duo tabs in join modal
     document.getElementById('tabCreateTeam').addEventListener('click', () => {
       document.getElementById('tabCreateTeam').classList.add('active');
@@ -153,7 +157,7 @@ class EmbryoApp {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
     this.currentView = viewName;
-    const views = ['home', 'lobby', 'arena', 'results', 'admin', 'bank'];
+    const views = ['home', 'lobby', 'arena', 'results', 'admin', 'bank', 'qse'];
     views.forEach(v => {
       const el = document.getElementById(`view-${v}`);
       if (el) el.style.display = (v === viewName) ? 'block' : 'none';
@@ -454,9 +458,15 @@ class EmbryoApp {
         finished: '🏁 Finalizada'
       };
       const statusClass = isStarted ? 'status-in_progress' : `status-${r.status}`;
-      const modeLabel = r.mode === 'duo' ? '👥 Modo Dupla' : '👤 Modo Solo';
-      const badgeClass = r.mode === 'duo' ? 'badge-duo' : 'badge-solo';
-      const countLabel = r.mode === 'duo' ? `${r.teamCount || 0} duplas` : `${r.participantCount || 0} alunos`;
+      let modeLabel = r.mode === 'duo' ? '👥 Modo Dupla' : '👤 Modo Solo';
+      let badgeClass = r.mode === 'duo' ? 'badge-duo' : 'badge-solo';
+      let countLabel = r.mode === 'duo' ? `${r.teamCount || 0} duplas` : `${r.participantCount || 0} alunos`;
+
+      if (r.mode === 'quem_sou_eu') {
+        modeLabel = '🧠🥧 QUEM SOU EU?';
+        badgeClass = 'badge-qse';
+        countLabel = `${r.participantCount || 0} competidores`;
+      }
 
       return `
         <div class="glass room-card" style="${isStarted ? 'border-color: rgba(239, 68, 68, 0.4);' : ''}">
@@ -504,6 +514,11 @@ class EmbryoApp {
                 Entrar na Sala 🚪 →
               </button>
             `)}
+            ${r.mode === 'quem_sou_eu' ? `
+              <button class="btn btn-secondary btn-block btn-sm" style="margin-top: 0.45rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.open('/telao.html?room=${r.id}', '_blank')">
+                🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
+              </button>
+            ` : ''}
           </div>
         </div>
       `;
@@ -522,13 +537,23 @@ class EmbryoApp {
     this.targetJoinMode = mode;
 
     document.getElementById('joinModalTitle').innerText = roomName;
-    document.getElementById('joinModalSubtitle').innerText = mode === 'duo' ? 'Competição Cooperativa em Duplas' : 'Competição Individual Solo';
+    document.getElementById('joinModalSubtitle').innerText = mode === 'duo' ? 'Competição Cooperativa em Duplas' : (mode === 'quem_sou_eu' ? 'Minigame Interativo com Botão e Telão 🧠🥧' : 'Competição Individual Solo');
 
     if (mode === 'solo') {
       document.getElementById('soloJoinSection').style.display = 'block';
       document.getElementById('duoJoinSection').style.display = 'none';
+      if (document.getElementById('qseJoinSection')) document.getElementById('qseJoinSection').style.display = 'none';
+    } else if (mode === 'quem_sou_eu') {
+      document.getElementById('soloJoinSection').style.display = 'none';
+      document.getElementById('duoJoinSection').style.display = 'none';
+      if (document.getElementById('qseJoinSection')) document.getElementById('qseJoinSection').style.display = 'block';
     } else {
       document.getElementById('soloJoinSection').style.display = 'none';
+      document.getElementById('duoJoinSection').style.display = 'block';
+      if (document.getElementById('qseJoinSection')) document.getElementById('qseJoinSection').style.display = 'none';
+      // Default to create team tab
+      document.getElementById('tabCreateTeam').click();
+    }
       document.getElementById('duoJoinSection').style.display = 'block';
       // Default to create team tab
       document.getElementById('tabCreateTeam').click();
@@ -875,6 +900,13 @@ class EmbryoApp {
     }
     if (roomState.myTeam) {
       this.currentTeam = roomState.myTeam;
+    }
+
+    // Branch for QUEM SOU EU minigame
+    if (roomState.mode === 'quem_sou_eu') {
+      this.switchView('qse');
+      this.renderQse(roomState);
+      return;
     }
 
     if (roomState.status === 'lobby') {
@@ -2366,6 +2398,7 @@ class EmbryoApp {
     if (tabBtn) tabBtn.classList.add('active');
     if (tabPane) tabPane.style.display = 'block';
 
+    if (tabName === 'qse') this.loadAdminQse();
     if (tabName === 'questions') this.loadAdminQuestions();
     if (tabName === 'history') this.loadAdminHistory();
   }
@@ -2699,6 +2732,7 @@ class EmbryoApp {
     const questionCount = qCountEl ? qCountEl.value : 15;
     const diffEl = document.getElementById('newRoomDifficulty');
     const difficulty = diffEl ? diffEl.value : 'all';
+    const enableTortada = document.getElementById('newRoomEnableTortada') ? document.getElementById('newRoomEnableTortada').checked : true;
 
     if (!name) return alert('Informe o nome da competição.');
 
@@ -2711,7 +2745,7 @@ class EmbryoApp {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.adminToken}`
           },
-          body: JSON.stringify({ name, description, mode, timeLimit, revealExplanation, questionCount, difficulty })
+          body: JSON.stringify({ name, description, mode, timeLimit, revealExplanation, questionCount, difficulty, enableTortada })
         });
         const contentType = res.headers.get('content-type') || '';
         if (res.ok && contentType.includes('application/json')) {
@@ -3036,6 +3070,512 @@ class EmbryoApp {
     } catch (e) {
       container.innerHTML = `<div class="glass" style="padding: 2rem; text-align: center;"><p style="color: var(--text-dim); margin: 0;">Nenhuma competição encerrada registrada no histórico ainda.</p></div>`;
     }
+  }
+
+  // =========================================================================
+  // MINIGAME: QUEM SOU EU? 🧠🥧 (CLIENT IMPLEMENTATION)
+  // =========================================================================
+
+  async handleQseJoinSubmit() {
+    const nameInput = document.getElementById('qseParticipantName');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const optIn = document.getElementById('qseOptInTortada') ? document.getElementById('qseOptInTortada').checked : true;
+
+    if (!name) return alert('Por favor, informe seu nome ou apelido para o jogo.');
+
+    const res = await window.socketClient.joinQse(this.targetJoinRoomId, name, optIn);
+    if (res.error) {
+      return alert(res.error);
+    }
+
+    this.saveSession(this.targetJoinRoomId, res.participant.id);
+    this.currentParticipant = res.participant;
+    this.closeModal('joinModal');
+    this.handleRoomStateUpdate(res.room);
+  }
+
+  handleQseRoundStarted(data) {
+    if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
+    this.currentRoom.qseState = 'reading';
+    this.currentRoom.question = data.question;
+    this.currentRoom.currentQuestionIndex = data.roundIndex;
+    this.currentRoom.buzzerWinner = null;
+    this.currentRoom.lastResult = null;
+
+    if (window.soundManager && typeof window.soundManager.playStart === 'function') {
+      try { window.soundManager.playStart(); } catch(e) {}
+    }
+    this.renderQse(this.currentRoom);
+  }
+
+  handleQseBuzzerUnlocked() {
+    if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
+    this.currentRoom.qseState = 'buzzer_active';
+    this.currentRoom.buzzerWinner = null;
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate([80, 40, 80]); } catch(e) {}
+    }
+    if (window.soundManager && typeof window.soundManager.playStart === 'function') {
+      try { window.soundManager.playStart(); } catch(e) {}
+    }
+    this.renderQse(this.currentRoom);
+  }
+
+  handleQseBuzzerWinner(winner) {
+    if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
+    this.currentRoom.qseState = 'answering';
+    this.currentRoom.buzzerWinner = winner;
+    const isMe = this.currentParticipant && (winner.participantId === this.currentParticipant.id);
+    this.currentRoom.isBuzzerWinner = isMe;
+
+    if (isMe && navigator.vibrate) {
+      try { navigator.vibrate([150, 60, 200]); } catch(e) {}
+    }
+    if (window.soundManager && typeof window.soundManager.playCountdownTick === 'function') {
+      try { window.soundManager.playCountdownTick(); } catch(e) {}
+    }
+    this.renderQse(this.currentRoom);
+  }
+
+  handleQseAnswerRevealed(result) {
+    if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
+    this.currentRoom.qseState = 'revealed';
+    this.currentRoom.lastResult = result;
+
+    const isMe = this.currentParticipant && (result.participantId === this.currentParticipant.id);
+    if (window.soundManager) {
+      try {
+        if (result.isCorrect) window.soundManager.playCorrect();
+        else window.soundManager.playIncorrect();
+      } catch(e) {}
+    }
+
+    this.renderQse(this.currentRoom);
+  }
+
+  handleQseTortadaTriggered(payload) {
+    alert(`🥧💥 TORTADA NA CARA!\n${payload.targetName || 'Um participante'} levou uma tortada na cara!`);
+    if (window.soundManager && typeof window.soundManager.playIncorrect === 'function') {
+      try { window.soundManager.playIncorrect(); } catch(e) {}
+    }
+  }
+
+  handleQseFinished(payload) {
+    if (!this.currentRoom || this.currentRoom.mode !== 'quem_sou_eu') return;
+    this.currentRoom.qseState = 'finished';
+    this.currentRoom.status = 'finished';
+    this.currentRoom.leaderboard = payload.leaderboard || [];
+
+    if (window.soundManager && typeof window.soundManager.playTrophy === 'function') {
+      try { window.soundManager.playTrophy(); } catch(e) {}
+    }
+    this.renderQse(this.currentRoom);
+  }
+
+  async buzzInQse() {
+    if (!this.currentRoom || this.currentRoom.qseState !== 'buzzer_active') return;
+    if (!this.currentParticipant) return alert('Você não está identificado nesta sala.');
+
+    const res = await window.socketClient.buzzInQse(this.currentRoom.id, this.currentParticipant.id);
+    if (res && res.error) {
+      console.warn('Buzzer rejected:', res.error);
+    }
+  }
+
+  async submitQseAnswer(optionIndex) {
+    if (!this.currentRoom || this.currentRoom.qseState !== 'answering') return;
+    if (!this.currentParticipant) return;
+
+    const res = await window.socketClient.submitQseAnswer(this.currentRoom.id, this.currentParticipant.id, optionIndex);
+    if (res && res.error) {
+      alert(res.error);
+    }
+  }
+
+  // Mobile Participant Arena View for QUEM SOU EU?
+  renderQse(room) {
+    const container = document.getElementById('qseContent');
+    if (!container) return;
+
+    const me = this.currentParticipant || room.me || { name: 'Participante', score: 0 };
+    const myScore = (me.score !== undefined) ? me.score : ((room.participantsList || []).find(p => p.id === me.id)?.score || 0);
+    const roundIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? room.currentQuestionIndex : 0;
+    const totalQ = room.totalQuestions || (room.questions ? room.questions.length : 10);
+    const q = room.question;
+
+    const qseState = room.qseState || (room.status === 'finished' ? 'finished' : 'idle');
+    const isWinner = room.buzzerWinner && me && (room.buzzerWinner.participantId === me.id);
+    const winnerName = room.buzzerWinner ? room.buzzerWinner.participantName : '';
+
+    // Finished View
+    if (qseState === 'finished') {
+      const topList = room.leaderboard || [];
+      const myRank = topList.findIndex(p => p.id === me.id);
+      container.innerHTML = `
+        <div class="glass" style="padding: 2.2rem 1.5rem; text-align: center; border: 2px solid #fbbf24;">
+          <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">👑🏆</div>
+          <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: #fbbf24; margin: 0 0 0.5rem;">COMPETIÇÃO FINALIZADA!</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">Parabéns a todos os participantes do Grupo 5 de Embriologia!</p>
+
+          <div style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Sua Pontuação Final</div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: #38bdf8; font-family: var(--font-display);">${myScore} Pontos</div>
+            <div style="font-size: 1rem; color: #fbbf24; font-weight: 700; margin-top: 0.3rem;">
+              ${myRank >= 0 ? `Sua Colocação: ${myRank + 1}º Lugar` : 'Competidor Participante'}
+            </div>
+          </div>
+
+          <h3 style="font-size: 1.15rem; color: #fff; margin-bottom: 0.8rem; text-align: left;">🏆 Pódio da Competição</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; text-align: left; margin-bottom: 1.5rem;">
+            ${topList.slice(0, 5).map((p, idx) => `
+              <div class="glass" style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${idx === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(30, 41, 59, 0.5)'};">
+                <span style="font-weight: 700; color: #fff;">
+                  ${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`} ${this.escapeHtml(p.name)}
+                </span>
+                <span style="font-weight: 800; color: #38bdf8; font-family: var(--font-display);">${p.score || 0} pts</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <button class="btn btn-secondary btn-block" onclick="app.clearSession(); app.switchView('home'); app.fetchRooms();">
+            Voltar ao Início 🚪
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // Active Game Mobile Screen
+    container.innerHTML = `
+      <!-- Mobile Participant Header -->
+      <div class="glass" style="padding: 1.1rem 1.3rem; margin-bottom: 1.2rem; border-radius: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.4rem;">🧠🥧</span>
+            <span class="room-code-tag">${room.code || 'SALA'}</span>
+          </div>
+          <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 0.3rem 0.8rem; border-radius: 999px; font-weight: 800; color: #38bdf8; font-size: 0.95rem;">
+            ${myScore} pts
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
+          <span>Competidor: <strong style="color: #fff;">${this.escapeHtml(me.name)}</strong></span>
+          <span>Rodada: <strong style="color: #fbbf24;">${roundIdx + 1} de ${totalQ}</strong></span>
+        </div>
+      </div>
+
+      <!-- Question Prompt Card -->
+      <div class="glass" style="padding: 1.4rem 1.3rem; margin-bottom: 1.3rem; border-radius: 22px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+          <span style="background: rgba(6, 182, 212, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 999px; letter-spacing: 0.5px;">
+            ${q ? (q.theme || q.category || 'Embriologia') : 'Aguardando Pergunta'}
+          </span>
+          <span style="color: #c084fc; font-weight: 800; font-size: 0.8rem;">
+            ${q ? `${q.points || 20} pts (${q.difficulty || 'Médio'})` : ''}
+          </span>
+        </div>
+
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: #fbbf24; margin: 0 0 0.5rem;">QUEM SOU EU?</h3>
+        <p style="font-size: 1.05rem; line-height: 1.45; color: #f8fafc; font-weight: 600; margin: 0;">
+          ${q ? this.escapeHtml(q.question) : 'O anfitrião iniciará a rodada em instantes. Acompanhe a narração da IA pelo telão!'}
+        </p>
+      </div>
+
+      <!-- Alternatives List Preview -->
+      ${(q && q.options && q.options.length === 4) ? `
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; margin-bottom: 1.5rem;">
+          ${q.options.map((opt, i) => {
+            const letter = ['A', 'B', 'C', 'D'][i];
+            const isChosen = room.lastResult && room.lastResult.optionIndex === i;
+            const isCorrect = room.lastResult && room.lastResult.correctAnswer === i;
+            let borderStyle = 'rgba(255, 255, 255, 0.1)';
+            let bgStyle = 'rgba(30, 41, 59, 0.45)';
+
+            if (qseState === 'revealed') {
+              if (isCorrect) {
+                borderStyle = '#10b981';
+                bgStyle = 'rgba(16, 185, 129, 0.2)';
+              } else if (isChosen) {
+                borderStyle = '#ef4444';
+                bgStyle = 'rgba(239, 68, 68, 0.2)';
+              }
+            }
+
+            return `
+              <div class="glass" style="padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.8rem; border-color: ${borderStyle}; background: ${bgStyle}; border-radius: 14px;">
+                <span style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-family: var(--font-display); flex-shrink: 0;">
+                  ${letter}
+                </span>
+                <span style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0; line-height: 1.35;">
+                  ${this.escapeHtml(opt)}
+                </span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+
+      <!-- THE GIANT BUZZER BUTTON SECTION (Dynamic States) -->
+      <div style="margin-top: 1rem;">
+        ${qseState === 'idle' || qseState === 'lobby' ? `
+          <button class="buzzer-giant-btn buzzer-locked" disabled>
+            <span style="font-size: 2.2rem;">🔒</span>
+            <span>AGUARDE A PERGUNTA</span>
+            <span style="font-size: 0.75rem; text-transform: none; color: #94a3b8; font-weight: 600;">O anfitrião iniciará a rodada</span>
+          </button>
+        ` : qseState === 'reading' ? `
+          <button class="buzzer-giant-btn buzzer-listening" disabled>
+            <span style="font-size: 2.2rem;">🎧🎙️</span>
+            <span>OUÇA COM ATENÇÃO!</span>
+            <span style="font-size: 0.75rem; text-transform: none; color: #c084fc; font-weight: 700;">A IA está narrando as alternativas no telão</span>
+          </button>
+        ` : qseState === 'buzzer_active' ? `
+          <button class="buzzer-giant-btn buzzer-ready" onclick="app.buzzInQse()">
+            <span style="font-size: 2.4rem;">⚡🔔⚡</span>
+            <span>APERTE PARA RESPONDER!</span>
+            <span style="font-size: 0.8rem; text-transform: none; color: #fff; font-weight: 800;">TOQUE RÁPIDO PARA GANHAR A RESPOSTA!</span>
+          </button>
+        ` : qseState === 'answering' ? (
+          isWinner ? `
+            <div class="glass" style="padding: 1.5rem; text-align: center; border: 2px solid #10b981; border-radius: 24px; background: rgba(16, 185, 129, 0.12);">
+              <div style="font-size: 2.2rem; margin-bottom: 0.3rem;">🎯👑</div>
+              <h3 style="font-family: var(--font-display); font-size: 1.35rem; color: #34d399; margin: 0 0 0.4rem;">VOCÊ FOI O PRIMEIRO!</h3>
+              <p style="color: #fff; font-size: 0.95rem; font-weight: 700; margin-bottom: 1.2rem;">Toque na alternativa correta abaixo para responder:</p>
+
+              <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+                ${['A', 'B', 'C', 'D'].map((letra, idx) => `
+                  <button class="btn btn-primary btn-block" style="padding: 0.9rem; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-start; gap: 0.8rem; text-align: left;" onclick="app.submitQseAnswer(${idx})">
+                    <span style="background: rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">${letra}</span>
+                    <span>${q && q.options ? this.escapeHtml(q.options[idx]) : letra}</span>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          ` : `
+            <button class="buzzer-giant-btn buzzer-other-won" disabled>
+              <span style="font-size: 2.2rem;">⏳</span>
+              <span>OUTRO FOI MAIS RÁPIDO!</span>
+              <span style="font-size: 0.8rem; text-transform: none; color: #fca5a5; font-weight: 700;">
+                ${this.escapeHtml(winnerName || 'Outro participante')} está respondendo...
+              </span>
+            </button>
+          `
+        ) : qseState === 'revealed' ? `
+          <div class="glass" style="padding: 1.5rem; text-align: center; border-radius: 24px; border: 2px solid ${room.lastResult && room.lastResult.isCorrect ? '#10b981' : '#ef4444'};">
+            ${room.lastResult && room.lastResult.isCorrect ? `
+              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">🎉✅</div>
+              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #34d399; margin: 0 0 0.3rem;">RESPOSTA CORRETA!</h3>
+              <p style="color: #a7f3d0; font-size: 0.95rem; font-weight: 700; margin: 0;">
+                ${this.escapeHtml(room.lastResult.participantName)} acertou e garantiu +${room.lastResult.pointsAwarded} pontos!
+              </p>
+            ` : `
+              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">❌</div>
+              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #f87171; margin: 0 0 0.3rem;">RESPOSTA INCORRETA!</h3>
+              <p style="color: #fecaca; font-size: 0.95rem; font-weight: 700; margin: 0;">
+                ${this.escapeHtml(room.lastResult ? room.lastResult.participantName : 'Participante')} não pontuou nesta rodada.
+              </p>
+            `}
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">Aguarde o anfitrião liberar a próxima rodada no telão.</p>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // --- Admin Quem Sou Eu Live Dashboard ---
+  async loadAdminQse() {
+    const container = document.getElementById('adminQseContainer');
+    if (!container) return;
+
+    container.innerHTML = `<div class="glass" style="padding: 2rem; text-align: center;"><p style="color: var(--text-muted);">Carregando minigame Quem Sou Eu...</p></div>`;
+
+    try {
+      const res = await fetch('/api/rooms');
+      const allRooms = res.ok ? await res.json() : [];
+      const qseRooms = (allRooms || []).filter(r => r.mode === 'quem_sou_eu');
+
+      if (qseRooms.length === 0) {
+        container.innerHTML = `
+          <div class="glass" style="padding: 2.5rem; text-align: center; border: 2px dashed rgba(251, 191, 36, 0.4);">
+            <div style="font-size: 3rem; margin-bottom: 0.8rem;">🧠🥧</div>
+            <h3 style="color: #fff; font-size: 1.4rem; font-family: var(--font-display); margin: 0 0 0.5rem;">Nenhuma Sala Quem Sou Eu Ativa</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 1.5rem;">
+              Crie uma sala de competição interativa para que os alunos disputem no botão do celular e acompanhem pelo telão do auditório.
+            </p>
+            <button class="btn btn-primary" onclick="app.openCreateQseRoomModal()">
+              + Criar Sala Quem Sou Eu 🎮
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const activeRoom = qseRooms[0];
+      // Fetch full active room state
+      const stateRes = await fetch(`/api/rooms/${activeRoom.id}`);
+      const room = stateRes.ok ? await stateRes.json() : activeRoom;
+
+      // Join socket admin room for real-time live events
+      window.socketClient.adminJoin(room.id, this.adminToken);
+
+      const q = room.question;
+      const qseState = room.qseState || 'idle';
+      const roundIdx = room.currentQuestionIndex !== undefined ? room.currentQuestionIndex : 0;
+      const totalQ = room.totalQuestions || 10;
+      const participants = room.participantsList || [];
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span class="room-code-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: #f59e0b;">${room.code}</span>
+              <h3 style="color: #fff; font-size: 1.4rem; font-family: var(--font-display); margin: 0;">${this.escapeHtml(room.name)}</h3>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0.3rem 0 0;">
+              Controle ao vivo da competição presencial com narração IA e disputa no celular
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #06b6d4); font-weight: 800;" onclick="window.open('/telao.html?room=${room.id}', '_blank')">
+              🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="app.deleteQseRoom('${room.id}')">
+              Excluir Sala 🗑️
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Controls Bar -->
+        <div class="glass" style="padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(15, 23, 42, 0.75);">
+          <div style="font-size: 0.8rem; color: #fbbf24; text-transform: uppercase; font-weight: 800; margin-bottom: 0.8rem;">
+            ⚡ Comandos ao Vivo do Anfitrião (Rodada ${roundIdx + 1} de ${totalQ})
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round', { roundIndex: ${roundIdx} })">
+              ▶️ Iniciar Narração / Rodada
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration')">
+              🔁 Repetir Narração
+            </button>
+            <button class="btn btn-secondary btn-sm" style="border-color: #eab308; color: #fde047;" onclick="app.qseAdminAction('${room.id}', 'emergency_unlock')">
+              🔓 Liberar Botões Manualmente (Emergência)
+            </button>
+            <button class="btn btn-secondary btn-sm" style="border-color: #10b981; color: #34d399;" onclick="app.qseAdminAction('${room.id}', 'advance_round')">
+              ⏩ Avançar Próxima Pergunta
+            </button>
+            <button class="btn btn-secondary btn-sm" style="border-color: #ec4899; color: #f472b6;" onclick="app.triggerAdminTortada('${room.id}')">
+              🥧 Dar Tortada na Cara!
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="app.qseAdminAction('${room.id}', 'finish')">
+              🏁 Encerrar Competição
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Question Card with Protected Correct Answer -->
+        <div style="display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start;">
+          <div class="glass" style="padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+              <span style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+                ${q ? (q.theme || 'Fenômeno Embriológico') : 'Pergunta'}
+              </span>
+              <span style="color: #fbbf24; font-weight: 800; font-size: 0.9rem;">
+                Status do Botão: ${qseState === 'buzzer_active' ? '⚡ LIBERADO' : qseState === 'reading' ? '🎧 NARRANDO' : qseState === 'answering' ? '🚨 RESPONDENDO' : '🔒 BLOQUEADO'}
+              </span>
+            </div>
+
+            <h4 style="font-size: 1.25rem; color: #fff; margin: 0 0 1rem; line-height: 1.4;">
+              ${q ? this.escapeHtml(q.question) : 'Nenhuma pergunta carregada.'}
+            </h4>
+
+            ${(q && q.options) ? `
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem;">
+                ${q.options.map((opt, i) => {
+                  const letter = ['A', 'B', 'C', 'D'][i];
+                  const isCorrect = (q.correctAnswer === i);
+                  return `
+                    <div style="padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid ${isCorrect ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 41, 59, 0.4)'}; display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 0.95rem; color: ${isCorrect ? '#a7f3d0' : '#e2e8f0'}; font-weight: ${isCorrect ? '800' : '500'};">
+                        <strong>${letter})</strong> ${this.escapeHtml(opt)}
+                      </span>
+                      ${isCorrect ? `<span style="color: #34d399; font-weight: 800; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); padding: 0.2rem 0.5rem; border-radius: 6px;">🔒 GABARITO (Anfitrião)</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+
+            ${room.buzzerWinner ? `
+              <div style="background: rgba(6, 182, 212, 0.15); border: 1px solid #06b6d4; border-radius: 12px; padding: 0.85rem 1rem; color: #fff;">
+                🚨 <strong>${this.escapeHtml(room.buzzerWinner.participantName)}</strong> apertou primeiro e tem o direito de responder!
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Connected Participants Sidebar -->
+          <div class="glass" style="padding: 1.25rem;">
+            <h4 style="color: #fff; font-size: 1.1rem; margin: 0 0 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+              👥 Competidores Conectados (${participants.length})
+            </h4>
+
+            ${participants.length === 0 ? `
+              <p style="color: var(--text-dim); font-size: 0.85rem; text-align: center; margin: 1.5rem 0;">Nenhum participante conectado ainda.</p>
+            ` : `
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto;">
+                ${participants.map(p => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.5); border-radius: 8px;">
+                    <div>
+                      <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">${this.escapeHtml(p.name)}</span>
+                      ${p.optInTortada ? `<span style="font-size: 0.8rem;" title="Participa da tortada">🥧</span>` : ''}
+                    </div>
+                    <span style="font-weight: 800; color: #38bdf8; font-family: var(--font-display);">${p.score || 0} pts</span>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      container.innerHTML = `<div class="glass" style="padding: 2rem; color: #f87171;">Erro ao carregar Quem Sou Eu: ${e.message}</div>`;
+    }
+  }
+
+  async qseAdminAction(roomId, action, data = {}) {
+    try {
+      const res = await window.socketClient.qseAdminAction(roomId, action, this.adminToken, data);
+      if (res && res.error) {
+        alert('Erro na ação: ' + res.error);
+      } else {
+        await this.loadAdminQse();
+      }
+    } catch (e) {
+      alert('Erro ao executar ação do Quem Sou Eu: ' + e.message);
+    }
+  }
+
+  async triggerAdminTortada(roomId) {
+    const victim = prompt('Nome de quem vai levar a tortada na cara (deixe em branco para o último que respondeu):');
+    if (victim === null) return;
+    await window.socketClient.triggerTortada(roomId, this.adminToken, victim.trim());
+  }
+
+  async deleteQseRoom(roomId) {
+    if (!confirm('Deseja realmente excluir esta sala do Quem Sou Eu?')) return;
+    await this.deleteAdminRoom(roomId);
+    await this.loadAdminQse();
+  }
+
+  openCreateQseRoomModal() {
+    this.openCreateRoomModal();
+    const modeSelect = document.getElementById('newRoomMode');
+    if (modeSelect) modeSelect.value = 'quem_sou_eu';
+    const nameInput = document.getElementById('newRoomName');
+    if (nameInput) nameInput.value = 'Competição Quem Sou Eu? — Grupo 5';
   }
 
   // --- Helper utility ---

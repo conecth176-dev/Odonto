@@ -28,6 +28,9 @@ app.use('/api', createApiRouter(roomManager));
 // SPA fallback for direct navigation (e.g. /admin, /bank)
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
+    if (req.path === '/telao' || req.path === '/telao.html') {
+      return res.sendFile(path.join(__dirname, '..', 'public', 'telao.html'));
+    }
     return res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
   }
   next();
@@ -116,6 +119,140 @@ io.on('connection', (socket) => {
     try {
       const result = roomManager.submitAnswer(roomId, participantId, optionIndex);
       if (callback) callback(result);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Join room
+  socket.on('join_qse_room', ({ roomId, participantName, optInTortada }, callback) => {
+    try {
+      if (!roomId || !participantName) {
+        return callback && callback({ error: 'Dados incompletos para ingressar no Quem Sou Eu.' });
+      }
+
+      const res = roomManager.joinQseRoom(roomId, participantName, socket.id, !!optInTortada);
+      if (res.error) {
+        return callback && callback(res);
+      }
+
+      socket.join(roomId);
+      socket.participantId = res.participant.id;
+      socket.roomId = roomId;
+
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Telão: Join room as spectator / display
+  socket.on('telao_join_room', ({ roomId }, callback) => {
+    try {
+      socket.join('telao_' + roomId);
+      socket.join(roomId);
+      const roomState = roomManager.getSanitizedRoomState(roomId, null);
+      if (callback) callback({ success: true, room: roomState });
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: AI narration finished on Telão
+  socket.on('qse_finish_narration', ({ roomId }, callback) => {
+    try {
+      const res = roomManager.finishQseNarration(roomId);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Participant buzzes in (atomic lock)
+  socket.on('qse_buzz_in', ({ roomId, participantId }, callback) => {
+    try {
+      const pId = participantId || socket.participantId;
+      const res = roomManager.buzzInQse(roomId, pId);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Answer submission by buzzer winner
+  socket.on('qse_submit_answer', ({ roomId, participantId, optionIndex }, callback) => {
+    try {
+      const pId = participantId || socket.participantId;
+      const res = roomManager.submitQseAnswer(roomId, pId, optionIndex);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Emergency unlock by admin
+  socket.on('qse_emergency_unlock', ({ roomId, adminToken }, callback) => {
+    try {
+      if (!isValidAdminToken(adminToken)) {
+        return callback && callback({ error: 'Token de administrador inválido.' });
+      }
+      const res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Trigger Tortada na Cara
+  socket.on('qse_trigger_tortada', ({ roomId, adminToken, targetName }, callback) => {
+    try {
+      if (!isValidAdminToken(adminToken)) {
+        return callback && callback({ error: 'Token de administrador inválido.' });
+      }
+      const res = roomManager.triggerQseTortada(roomId, targetName);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Quem Sou Eu: Admin Actions
+  socket.on('qse_admin_action', ({ roomId, action, adminToken, data }, callback) => {
+    try {
+      if (!isValidAdminToken(adminToken)) {
+        return callback && callback({ error: 'Token de administrador inválido.' });
+      }
+
+      let res = { success: true };
+      if (action === 'start_round') {
+        const roundIndex = data && data.roundIndex !== undefined ? data.roundIndex : 0;
+        res = roomManager.startQseRound(roomId, roundIndex);
+      } else if (action === 'repeat_narration') {
+        const room = roomManager.getRoom(roomId);
+        if (room) {
+          res = roomManager.startQseRound(roomId, room.currentQuestionIndex);
+        }
+      } else if (action === 'finish_narration') {
+        res = roomManager.finishQseNarration(roomId);
+      } else if (action === 'emergency_unlock') {
+        res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      } else if (action === 'advance_round') {
+        const room = roomManager.getRoom(roomId);
+        if (room) {
+          const nextIdx = room.currentQuestionIndex + 1;
+          if (nextIdx < room.questions.length) {
+            res = roomManager.startQseRound(roomId, nextIdx);
+          } else {
+            res = roomManager.finishQseCompetition(roomId);
+          }
+        }
+      } else if (action === 'trigger_tortada') {
+        res = roomManager.triggerQseTortada(roomId, data && data.targetName);
+      } else if (action === 'finish') {
+        res = roomManager.finishQseCompetition(roomId);
+      }
+
+      if (callback) callback(res);
     } catch (err) {
       if (callback) callback({ error: err.message });
     }

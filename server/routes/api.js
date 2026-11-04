@@ -144,6 +144,137 @@ module.exports = function(roomManager) {
     res.json({ success: true });
   });
 
+  // --- Quem Sou Eu Specific Admin Endpoints ---
+
+  router.post('/admin/rooms/qse', adminAuthMiddleware, (req, res) => {
+    try {
+      const room = roomManager.createQseRoom(req.body);
+      res.json({ success: true, room });
+    } catch (err) {
+      res.status(500).json({ error: 'Erro ao criar sala Quem Sou Eu: ' + err.message });
+    }
+  });
+
+  router.post('/admin/rooms/:id/qse/start-round', adminAuthMiddleware, (req, res) => {
+    const roundIndex = req.body.roundIndex !== undefined ? req.body.roundIndex : 0;
+    const result = roomManager.startQseRound(req.params.id, roundIndex);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  router.post('/admin/rooms/:id/qse/finish-narration', adminAuthMiddleware, (req, res) => {
+    const result = roomManager.finishQseNarration(req.params.id);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  router.post('/admin/rooms/:id/qse/unlock', adminAuthMiddleware, (req, res) => {
+    const result = roomManager.emergencyUnlockQseBuzzer(req.params.id);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  router.post('/admin/rooms/:id/qse/tortada', adminAuthMiddleware, (req, res) => {
+    const result = roomManager.triggerQseTortada(req.params.id, req.body.targetName);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  router.post('/admin/rooms/:id/qse/advance', adminAuthMiddleware, (req, res) => {
+    const room = roomManager.getRoom(req.params.id);
+    if (!room || room.mode !== 'quem_sou_eu') return res.status(404).json({ error: 'Sala inválida.' });
+
+    const nextIdx = room.currentQuestionIndex + 1;
+    if (nextIdx < room.questions.length) {
+      const result = roomManager.startQseRound(req.params.id, nextIdx);
+      res.json(result);
+    } else {
+      const result = roomManager.finishQseCompetition(req.params.id);
+      res.json(result);
+    }
+  });
+
+  router.post('/admin/rooms/:id/qse/finish', adminAuthMiddleware, (req, res) => {
+    const result = roomManager.finishQseCompetition(req.params.id);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  // Get Quem Sou Eu questions bank
+  router.get('/qse/questions', (req, res) => {
+    const authHeader = req.headers.authorization;
+    let token = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query && req.query.adminToken) {
+      token = req.query.adminToken;
+    }
+    const { isValidAdminToken } = require('../auth');
+    const isAdmin = isValidAdminToken(token);
+
+    if (!isAdmin) {
+      return res.status(401).json({ error: 'Acesso restrito ao Administrador.' });
+    }
+
+    const qseQuestions = db.get('qse_questions') || [];
+    res.json(qseQuestions);
+  });
+
+  // Admin Quem Sou Eu Question CRUD
+  router.post('/admin/qse/questions', adminAuthMiddleware, (req, res) => {
+    const { theme, difficulty, points, question, options, correctAnswer, introText } = req.body;
+    if (!question || !options || options.length !== 4 || correctAnswer === undefined) {
+      return res.status(400).json({ error: 'Preencha todos os campos obrigatórios (enunciado, 4 opções e alternativa correta).' });
+    }
+
+    const newQ = {
+      id: 'qse-' + crypto.randomBytes(4).toString('hex'),
+      theme: theme || 'Fenômeno Embriológico',
+      difficulty: difficulty || 'Médio',
+      points: parseInt(points) || (difficulty === 'Difícil' ? 30 : difficulty === 'Médio' ? 20 : 10),
+      question: question.trim(),
+      options: options.map(o => o.trim()),
+      correctAnswer: parseInt(correctAnswer),
+      introText: introText || 'Atenção participantes! Quem Sou Eu?'
+    };
+
+    db.update('qse_questions', list => [...(list || []), newQ]);
+    res.json({ success: true, question: newQ });
+  });
+
+  router.put('/admin/qse/questions/:id', adminAuthMiddleware, (req, res) => {
+    const qId = req.params.id;
+    let found = false;
+
+    db.update('qse_questions', list => {
+      return (list || []).map(q => {
+        if (q.id === qId) {
+          found = true;
+          return {
+            ...q,
+            ...req.body,
+            options: req.body.options ? req.body.options.map(o => o.trim()) : q.options,
+            correctAnswer: req.body.correctAnswer !== undefined ? parseInt(req.body.correctAnswer) : q.correctAnswer,
+            points: req.body.points ? parseInt(req.body.points) : q.points
+          };
+        }
+        return q;
+      });
+    });
+
+    if (found) {
+      res.json({ success: true, message: 'Pergunta atualizada com sucesso!' });
+    } else {
+      res.status(404).json({ error: 'Pergunta não encontrada.' });
+    }
+  });
+
+  router.delete('/admin/qse/questions/:id', adminAuthMiddleware, (req, res) => {
+    const qId = req.params.id;
+    db.update('qse_questions', list => (list || []).filter(q => q.id !== qId));
+    res.json({ success: true, message: 'Pergunta removida com sucesso.' });
+  });
+
   // --- Question Bank CRUD (Admin Only) ---
 
   router.post('/admin/questions', adminAuthMiddleware, (req, res) => {
@@ -237,11 +368,11 @@ module.exports = function(roomManager) {
             lb.position,
             `"${(lb.name || '').replace(/"/g, '""')}"`,
             `"${lb.code || ''}"`,
-            lb.score,
-            lb.answeredCount,
-            lb.correctCount,
-            `${lb.accuracy}%`,
-            lb.totalCorrectTime.toFixed(1)
+            lb.score || 0,
+            lb.answeredCount || 0,
+            lb.correctCount || 0,
+            `${lb.accuracy || 0}%`,
+            lb.totalCorrectTime ? Number(lb.totalCorrectTime).toFixed(1) : '0.0'
           ];
           csv += row.join(',') + '\n';
         });
