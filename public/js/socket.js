@@ -88,6 +88,12 @@ const socketClient = {
         }
       });
 
+      this.socket.on('qse_buzzer_released', (data) => {
+        if (window.app && window.app.handleQseBuzzerUnlocked) {
+          window.app.handleQseBuzzerUnlocked(data);
+        }
+      });
+
       this.socket.on('qse_buzzer_winner', (winner) => {
         if (window.app && window.app.handleQseBuzzerWinner) {
           window.app.handleQseBuzzerWinner(winner);

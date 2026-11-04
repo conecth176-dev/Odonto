@@ -1,7 +1,7 @@
 {
   "admin": {
     "passwordHash": "$2b$10$rDIs.nTi0zsMaDrw5nYrXuBk9/JFtBmxbWWZ6OfTXXXSDmaU.7u5W",
-    "lastLogin": "2026-11-04T20:02:34.126Z"
+    "lastLogin": "2026-11-04T20:22:11.602Z"
   },
   "settings": {
     "defaultTimeLimit": 180,
@@ -4197,8 +4197,755 @@
       "scientificExplanation": "A superfecundação exige coitos com indivíduos distintos dentro da estreita janela em que dois ovócitos de uma mesma ovulação ainda retêm viabilidade funcional e capacidade de fusão espermática."
     }
   ],
-  "rooms": {},
+  "rooms": {
+    "room_qse_16291ffd": {
+      "id": "room_qse_16291ffd",
+      "code": "QSE-508",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "description": "Raciocínio clínico rápido com botão individual e telão",
+      "mode": "quem_sou_eu",
+      "status": "finished",
+      "enableTortada": true,
+      "questions": [
+        {
+          "id": "qse-02",
+          "theme": "Gêmeos siameses",
+          "category": "Gêmeos siameses",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Sou uma classificação de gêmeos siameses unidos pela cabeça, compartilhando calvária e porções do encéfalo e circulação dural, com grande relevância cirúrgica craniofacial e odontológica. Quem sou eu?",
+          "options": [
+            "Isquiópagos",
+            "Onfalópagos",
+            "Craniópagos",
+            "Toracópagos"
+          ],
+          "correctAnswer": 2,
+          "scientificExplanation": "Craniópagos representam os gêmeos siameses unidos pela região craniana, exigindo complexo planejamento interdisciplinar envolvendo cirurgia bucomaxilofacial e neurocirurgia."
+        },
+        {
+          "id": "qse-06",
+          "theme": "Superfecundação heteropaternal",
+          "category": "Superfecundação heteropaternal",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Na análise de DNA e tipagem genética de arcada dentária, demonstro que dois conceptos nascidos do mesmo parto compartilham apenas 25% de consanguinidade média (meio-irmãos) ao invés de 50%. Quem sou eu?",
+          "options": [
+            "Quimera microquimérica",
+            "Superfecundação heteropaternal",
+            "Gêmeos monozigóticos espelhados",
+            "Feto papiráceo"
+          ],
+          "correctAnswer": 1,
+          "scientificExplanation": "Como os conceptos compartilham apenas o pool genético materno e possuem genomas paternos distintos, seu grau de parentesco biológico equivale ao de meio-irmãos."
+        },
+        {
+          "id": "qse-10",
+          "theme": "Feto papiráceo",
+          "category": "Feto papiráceo",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Diferente do gêmeo desaparecido (que some no primeiro trimestre por reabsorção lítica celular), meu esqueleto calcificado e remanescentes cranianos persistem e são entregues na placenta ao final do parto. Quem sou eu?",
+          "options": [
+            "Feto papiráceo",
+            "Mola embrionária",
+            "Gêmeo parasita endocraniano",
+            "Feto macerado asséptico"
+          ],
+          "correctAnswer": 0,
+          "scientificExplanation": "Como a morte ocorre após a osteogênese e mineralização esquelética (geralmente > 12-14 semanas), o tecido ósseo não pode ser reabsorvido por autólise, tornando-se pergamináceo."
+        },
+        {
+          "id": "qse-24",
+          "theme": "Superfecundação heteropaternal",
+          "category": "Superfecundação heteropaternal",
+          "difficulty": "Difícil",
+          "points": 30,
+          "question": "QUEM SOU EU? O meu tempo de janela biológica é limitado pela viabilidade de até 24 horas do ovócito secundário na tuba uterina e pela capacidade de fertilização do sêmen de até 5 dias no trato reprodutor feminino. Quem sou eu?",
+          "options": [
+            "Tempo de clivagem do blastocisto",
+            "Período refratário da gastrulação",
+            "Janela de implantação tardia da superfetação",
+            "Janela de fertilização da superfecundação"
+          ],
+          "correctAnswer": 3,
+          "scientificExplanation": "A superfecundação exige coitos com indivíduos distintos dentro da estreita janela em que dois ovócitos de uma mesma ovulação ainda retêm viabilidade funcional e capacidade de fusão espermática."
+        },
+        {
+          "id": "qse-09",
+          "theme": "Feto papiráceo",
+          "category": "Feto papiráceo",
+          "difficulty": "Fácil",
+          "points": 10,
+          "question": "QUEM SOU EU? Sou o concepto falecido no segundo trimestre de uma gestação múltipla que, pela retenção prolongada e compressão mecânica pelo gêmeo sobrevivente, perde líquido amniótico e se torna achatado e mumificado como pergaminho. Quem sou eu?",
+          "options": [
+            "Fetus in fetu",
+            "Teratoma cístico",
+            "Litopédio",
+            "Feto papiráceo"
+          ],
+          "correctAnswer": 3,
+          "scientificExplanation": "O feto papiráceo resulta da morte intrauterina tardia em gestação múltipla; a reabsorção incompleta e a pressão hidrostática do concepto viável desidratam e comprimem o tecido como papel."
+        },
+        {
+          "id": "qse-16",
+          "theme": "Quimerismo humano",
+          "category": "Quimerismo humano",
+          "difficulty": "Média",
+          "points": 20,
+          "question": "QUEM SOU EU? Na Odontologia Legal, posso fazer com que o DNA coletado na saliva da mucosa jugal aponte um perfil genético, enquanto o sangue periférico aponte outro perfil incompatível, confundindo exames de DNA forense. Quem sou eu?",
+          "options": [
+            "Displasia cleidocraniana",
+            "Superfetação tardia",
+            "Agenesia dentária múltipla",
+            "Quimerismo humano"
+          ],
+          "correctAnswer": 3,
+          "scientificExplanation": "Indivíduos quiméricos possuem células ectodérmicas (epitélio bucal) com genoma derivado de um zigoto e mesodérmicas (leucócitos sanguíneos) derivadas do outro zigoto original."
+        },
+        {
+          "id": "qse-07",
+          "theme": "Superfetação",
+          "category": "Superfetação",
+          "difficulty": "Fácil",
+          "points": 10,
+          "question": "QUEM SOU EU? Sou o fenômeno extraordinário e raríssimo em humanos no qual ocorre uma segunda ovulação e fertilização quando a mulher já está grávida, implantando um novo embrião com idade gestacional semanas mais jovem. Quem sou eu?",
+          "options": [
+            "Gêmeos evanescentes",
+            "Superfetação",
+            "Superfecundação",
+            "Mola hidatiforme"
+          ],
+          "correctAnswer": 1,
+          "scientificExplanation": "A superfetação exige a quebra de três barreiras fisiológicas: nova ovulação durante a gestação, passagem de espermatozoides pelo muco cervical espessado e implantação no endométrio já ocupado."
+        },
+        {
+          "id": "qse-15",
+          "theme": "Quimerismo humano",
+          "category": "Quimerismo humano",
+          "difficulty": "Fácil",
+          "points": 10,
+          "question": "QUEM SOU EU? Sou um indivíduo único formado pela fusão de dois embriões geneticamente distintos nos estágios iniciais de mórula ou blastocisto, possuindo duas linhagens de DNA totalmente diferentes no mesmo organismo. Quem sou eu?",
+          "options": [
+            "Gêmeo siamês",
+            "Quimera humana (Quimerismo tetragamético)",
+            "Mutante monozigótico",
+            "Mosaico genético"
+          ],
+          "correctAnswer": 1,
+          "scientificExplanation": "O quimerismo tetragamético resulta da fusão precoce de dois zigotos independentes que se unem para formar um único ser vivo com duas populações celulares geneticamente distintas."
+        },
+        {
+          "id": "qse-11",
+          "theme": "Síndrome do gêmeo desaparecido",
+          "category": "Síndrome do gêmeo desaparecido",
+          "difficulty": "Fácil",
+          "points": 10,
+          "question": "QUEM SOU EU? Sou detectado como um segundo saco gestacional no ultrassom inicial de 6 semanas, mas semanas depois desapareço completamente sem deixar restos físicos visíveis, sendo totalmente reabsorvido pelo organismo materno ou pela placenta. Quem sou eu?",
+          "options": [
+            "Fetus in fetu retroperitoneal",
+            "Superfetação precoce",
+            "Síndrome do gêmeo desaparecido (vanishing twin)",
+            "Feto papiráceo"
+          ],
+          "correctAnswer": 2,
+          "scientificExplanation": "A síndrome do gêmeo evanescente ocorre no 1º trimestre, onde a morte celular programada e enzimas líticas levam à completa reabsorção tecidual do embrião."
+        },
+        {
+          "id": "qse-23",
+          "theme": "Fetus in fetu",
+          "category": "Fetus in fetu",
+          "difficulty": "Difícil",
+          "points": 30,
+          "question": "QUEM SOU EU? Ao contrário dos teratomas comuns que são verdadeiras neoplasias com risco de malignização em 10% dos casos, tenho natureza hamartomatosa benigna derivada de uma embriogênese anômala interrompida com revestimento amniótico próprio. Quem sou eu?",
+          "options": [
+            "Tumor de Wilms",
+            "Fetus in fetu",
+            "Corioblastoma",
+            "Cordoma sacral"
+          ],
+          "correctAnswer": 1,
+          "scientificExplanation": "Fetus in fetu é um concepto malformado encapsulado, raramente exibindo transformação maligna, distinguindo-se oncologicamente dos teratomas verdadeiros."
+        }
+      ],
+      "currentQuestionIndex": 0,
+      "qseState": "finished",
+      "buzzerWinner": {
+        "id": "qse_704f335897c7",
+        "participantId": "qse_704f335897c7",
+        "name": "Ludymyla Coimbra",
+        "participantName": "Ludymyla Coimbra",
+        "buzzedAt": 1793823732440,
+        "elapsedMs": 5
+      },
+      "buzzerUnlockedAt": 1793823732435,
+      "lastResult": {
+        "participantId": "qse_704f335897c7",
+        "participantName": "Ludymyla Coimbra",
+        "chosenOption": 2,
+        "optionIndex": 2,
+        "correctAnswer": 2,
+        "isCorrect": true,
+        "points": 20,
+        "pointsAwarded": 20,
+        "scientificExplanation": "Craniópagos representam os gêmeos siameses unidos pela região craniana, exigindo complexo planejamento interdisciplinar envolvendo cirurgia bucomaxilofacial e neurocirurgia.",
+        "tortadaOptIn": true,
+        "tortadaAction": "give_pie"
+      },
+      "participants": {
+        "qse_704f335897c7": {
+          "id": "qse_704f335897c7",
+          "name": "Ludymyla Coimbra",
+          "socketId": "9q3lLy5pZo52AEI0AAAA",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:12.396Z"
+        },
+        "qse_c44ad800fde2": {
+          "id": "qse_c44ad800fde2",
+          "name": "Tawa Estrela",
+          "socketId": "A6Mxmzoq-r_xsb2CAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:12.423Z"
+        }
+      },
+      "teams": {},
+      "leaderboard": [
+        {
+          "id": "qse_704f335897c7",
+          "name": "Ludymyla Coimbra",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_c44ad800fde2",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "historyRounds": [],
+      "createdAt": "2026-11-04T20:22:12.319Z"
+    }
+  },
   "history": [
+    {
+      "roomId": "room_qse_16291ffd",
+      "code": "QSE-508",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "mode": "quem_sou_eu",
+      "totalQuestions": 10,
+      "finishedAt": "2026-11-04T20:22:12.452Z",
+      "leaderboard": [
+        {
+          "id": "qse_704f335897c7",
+          "name": "Ludymyla Coimbra",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_c44ad800fde2",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "qse_704f335897c7",
+        "name": "Ludymyla Coimbra",
+        "score": 20,
+        "correctCount": 1,
+        "errorCount": 0,
+        "tortadaOptIn": true,
+        "isConnected": true,
+        "position": 1
+      },
+      "participants": {
+        "qse_704f335897c7": {
+          "id": "qse_704f335897c7",
+          "name": "Ludymyla Coimbra",
+          "socketId": "9q3lLy5pZo52AEI0AAAA",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:12.396Z"
+        },
+        "qse_c44ad800fde2": {
+          "id": "qse_c44ad800fde2",
+          "name": "Tawa Estrela",
+          "socketId": "A6Mxmzoq-r_xsb2CAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:12.423Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_61b56665",
+      "code": "G5-361",
+      "name": "Torneio Solo Teste",
+      "mode": "solo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:22:11.757Z",
+      "leaderboard": [
+        {
+          "id": "part_ec0631825b7d",
+          "name": "Estudante Alfa",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "accuracy": 100,
+          "totalCorrectTime": 0.011,
+          "position": 1
+        },
+        {
+          "id": "part_b3567a81b19d",
+          "name": "Estudante Beta",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "accuracy": 0,
+          "totalCorrectTime": 0,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "part_ec0631825b7d",
+        "name": "Estudante Alfa",
+        "score": 30,
+        "answeredCount": 1,
+        "correctCount": 1,
+        "accuracy": 100,
+        "totalCorrectTime": 0.011,
+        "position": 1
+      },
+      "teams": {},
+      "participants": {
+        "part_ec0631825b7d": {
+          "id": "part_ec0631825b7d",
+          "name": "Estudante Alfa",
+          "socketId": "T1CQ9Bvp4g59KCe4AAAA",
+          "role": "solo",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "totalCorrectTime": 0.011,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:11.695Z"
+        },
+        "part_b3567a81b19d": {
+          "id": "part_b3567a81b19d",
+          "name": "Estudante Beta",
+          "socketId": "HrJSZ5BhEpn2zw0NAAAB",
+          "role": "solo",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "totalCorrectTime": 0,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:11.708Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_fe72c51d",
+      "code": "G5-506",
+      "name": "Torneio E2E Teste em Duplas",
+      "mode": "duo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:22:10.750Z",
+      "leaderboard": [
+        {
+          "id": "DP-2526",
+          "code": "DP-2526",
+          "name": "Dupla Odonto Vencedora",
+          "score": 20,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "accuracy": 100,
+          "totalCorrectTime": 0.019999999999999997,
+          "members": [
+            {
+              "id": "part_c4a13b90f74e",
+              "name": "Carlos (Integrante A)",
+              "role": "A",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            },
+            {
+              "id": "part_4b6e918191e6",
+              "name": "Daniela (Integrante B)",
+              "role": "B",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            }
+          ],
+          "position": 1
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "DP-2526",
+        "code": "DP-2526",
+        "name": "Dupla Odonto Vencedora",
+        "score": 20,
+        "answeredCount": 2,
+        "correctCount": 2,
+        "accuracy": 100,
+        "totalCorrectTime": 0.019999999999999997,
+        "members": [
+          {
+            "id": "part_c4a13b90f74e",
+            "name": "Carlos (Integrante A)",
+            "role": "A",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          },
+          {
+            "id": "part_4b6e918191e6",
+            "name": "Daniela (Integrante B)",
+            "role": "B",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          }
+        ],
+        "position": 1
+      },
+      "teams": {
+        "DP-2526": {
+          "code": "DP-2526",
+          "name": "Dupla Odonto Vencedora",
+          "passwordHash": "$2b$10$vAaM0Cv1K1ntBn5kOR0MHuD52J1IniORikeYQTI2XnPad1JM8eo0u",
+          "memberA": "part_c4a13b90f74e",
+          "memberB": "part_4b6e918191e6",
+          "score": 20,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "totalCorrectTime": 0.019999999999999997,
+          "createdAt": "2026-11-04T20:22:10.509Z"
+        }
+      },
+      "participants": {
+        "part_c4a13b90f74e": {
+          "id": "part_c4a13b90f74e",
+          "name": "Carlos (Integrante A)",
+          "teamCode": "DP-2526",
+          "role": "member_A",
+          "socketId": "aNfwKZvQioQJ-mlWAAAA",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:10.509Z"
+        },
+        "part_4b6e918191e6": {
+          "id": "part_4b6e918191e6",
+          "name": "Daniela (Integrante B)",
+          "teamCode": "DP-2526",
+          "role": "member_B",
+          "socketId": "tlzaTW9ZQGsXZl7qAAAB",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:22:10.603Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_qse_f970998e",
+      "code": "QSE-350",
+      "name": "Desafio Quem Sou Eu — Turma Odonto G5",
+      "mode": "quem_sou_eu",
+      "totalQuestions": 10,
+      "finishedAt": "2026-11-04T20:03:16.760Z",
+      "leaderboard": [
+        {
+          "id": "qse_b9d3e2e5f7b9",
+          "name": "Ludymyla Coimbra",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 1
+        },
+        {
+          "id": "qse_67ae8f406e88",
+          "name": "Tawa Estrela",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "qse_b9d3e2e5f7b9",
+        "name": "Ludymyla Coimbra",
+        "score": 20,
+        "correctCount": 1,
+        "errorCount": 0,
+        "tortadaOptIn": true,
+        "isConnected": true,
+        "position": 1
+      },
+      "participants": {
+        "qse_b9d3e2e5f7b9": {
+          "id": "qse_b9d3e2e5f7b9",
+          "name": "Ludymyla Coimbra",
+          "socketId": "yn4NTyoWQAwegl34AAAA",
+          "score": 20,
+          "correctCount": 1,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:16.700Z"
+        },
+        "qse_67ae8f406e88": {
+          "id": "qse_67ae8f406e88",
+          "name": "Tawa Estrela",
+          "socketId": "zU8tNHI9WEIDTrdnAAAB",
+          "score": 0,
+          "correctCount": 0,
+          "errorCount": 0,
+          "optInTortada": true,
+          "tortadaOptIn": true,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:16.732Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_7cc4005a",
+      "code": "G5-456",
+      "name": "Torneio Solo Teste",
+      "mode": "solo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:03:16.061Z",
+      "leaderboard": [
+        {
+          "id": "part_1c6e3a401e7d",
+          "name": "Estudante Alfa",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "accuracy": 100,
+          "totalCorrectTime": 0.007,
+          "position": 1
+        },
+        {
+          "id": "part_cfce7ba1b6ee",
+          "name": "Estudante Beta",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "accuracy": 0,
+          "totalCorrectTime": 0,
+          "position": 2
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "part_1c6e3a401e7d",
+        "name": "Estudante Alfa",
+        "score": 30,
+        "answeredCount": 1,
+        "correctCount": 1,
+        "accuracy": 100,
+        "totalCorrectTime": 0.007,
+        "position": 1
+      },
+      "teams": {},
+      "participants": {
+        "part_1c6e3a401e7d": {
+          "id": "part_1c6e3a401e7d",
+          "name": "Estudante Alfa",
+          "socketId": "T44DPaR9u3SBmAZMAAAA",
+          "role": "solo",
+          "score": 30,
+          "answeredCount": 1,
+          "correctCount": 1,
+          "totalCorrectTime": 0.007,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:16.014Z"
+        },
+        "part_cfce7ba1b6ee": {
+          "id": "part_cfce7ba1b6ee",
+          "name": "Estudante Beta",
+          "socketId": "sI1ePpp4oovdftNjAAAB",
+          "role": "solo",
+          "score": 0,
+          "answeredCount": 1,
+          "correctCount": 0,
+          "totalCorrectTime": 0,
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:16.021Z"
+        }
+      }
+    },
+    {
+      "roomId": "room_eef141e1",
+      "code": "G5-102",
+      "name": "Torneio E2E Teste em Duplas",
+      "mode": "duo",
+      "totalQuestions": 15,
+      "finishedAt": "2026-11-04T20:03:15.029Z",
+      "leaderboard": [
+        {
+          "id": "DP-7272",
+          "code": "DP-7272",
+          "name": "Dupla Odonto Vencedora",
+          "score": 60,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "accuracy": 100,
+          "totalCorrectTime": 0.019999999999999997,
+          "members": [
+            {
+              "id": "part_b9572289a864",
+              "name": "Carlos (Integrante A)",
+              "role": "A",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            },
+            {
+              "id": "part_8a0516ddc7fe",
+              "name": "Daniela (Integrante B)",
+              "role": "B",
+              "stats": {
+                "answeredCount": 1,
+                "correctCount": 1
+              }
+            }
+          ],
+          "position": 1
+        }
+      ],
+      "hasWinner": true,
+      "champion": {
+        "id": "DP-7272",
+        "code": "DP-7272",
+        "name": "Dupla Odonto Vencedora",
+        "score": 60,
+        "answeredCount": 2,
+        "correctCount": 2,
+        "accuracy": 100,
+        "totalCorrectTime": 0.019999999999999997,
+        "members": [
+          {
+            "id": "part_b9572289a864",
+            "name": "Carlos (Integrante A)",
+            "role": "A",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          },
+          {
+            "id": "part_8a0516ddc7fe",
+            "name": "Daniela (Integrante B)",
+            "role": "B",
+            "stats": {
+              "answeredCount": 1,
+              "correctCount": 1
+            }
+          }
+        ],
+        "position": 1
+      },
+      "teams": {
+        "DP-7272": {
+          "code": "DP-7272",
+          "name": "Dupla Odonto Vencedora",
+          "passwordHash": "$2b$10$F6TYUSPBgp2d1akaj4X6ROdtrP94m0g2NZMAHtS3IHRvbmkgthkCu",
+          "memberA": "part_b9572289a864",
+          "memberB": "part_8a0516ddc7fe",
+          "score": 60,
+          "answeredCount": 2,
+          "correctCount": 2,
+          "totalCorrectTime": 0.019999999999999997,
+          "createdAt": "2026-11-04T20:03:14.757Z"
+        }
+      },
+      "participants": {
+        "part_b9572289a864": {
+          "id": "part_b9572289a864",
+          "name": "Carlos (Integrante A)",
+          "teamCode": "DP-7272",
+          "role": "member_A",
+          "socketId": "xi9EBmvdrOGJvOwfAAAA",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:14.757Z"
+        },
+        "part_8a0516ddc7fe": {
+          "id": "part_8a0516ddc7fe",
+          "name": "Daniela (Integrante B)",
+          "teamCode": "DP-7272",
+          "role": "member_B",
+          "socketId": "mO-mB8Ihb33MPosTAAAB",
+          "stats": {
+            "answeredCount": 1,
+            "correctCount": 1
+          },
+          "isConnected": true,
+          "joinedAt": "2026-11-04T20:03:14.877Z"
+        }
+      }
+    },
     {
       "roomId": "room_qse_8009b95a",
       "code": "QSE-686",

@@ -455,7 +455,13 @@ class RoomManager {
     const room = this.rooms[roomId];
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
 
-    const nextIdx = (questionIndex !== null) ? questionIndex : (room.currentQuestionIndex + 1);
+    let nextIdx = 0;
+    if (questionIndex !== null && questionIndex !== undefined && questionIndex >= 0) {
+      nextIdx = questionIndex;
+    } else {
+      nextIdx = (room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 0;
+    }
+
     if (nextIdx >= room.questions.length) {
       return this.finishQseCompetition(roomId);
     }
@@ -468,13 +474,18 @@ class RoomManager {
     room.lastResult = null;
 
     this.saveRooms();
-    this.io.to(roomId).emit('qse_round_started', {
+    const roundPayload = {
+      roundIndex: nextIdx,
       questionIndex: nextIdx,
       totalQuestions: room.questions.length,
       question: this.getSanitizedRoomState(roomId).question
-    });
+    };
+
+    this.io.to(roomId).emit('qse_round_started', roundPayload);
+    this.io.to('admin_' + roomId).emit('qse_round_started', roundPayload);
+    this.io.to('telao_' + roomId).emit('qse_round_started', roundPayload);
     this.broadcastRoomState(roomId);
-    return { success: true, questionIndex: nextIdx };
+    return { success: true, questionIndex: nextIdx, roundIndex: nextIdx };
   }
 
   finishQseNarration(roomId) {
@@ -487,18 +498,16 @@ class RoomManager {
     room.buzzerWinner = null;
 
     this.saveRooms();
-    this.io.to(roomId).emit('qse_buzzer_released', {
+    const payload = {
       unlockedAt: room.buzzerUnlockedAt,
       message: 'VALENDO!'
-    });
-    this.io.to('admin_' + roomId).emit('qse_buzzer_released', {
-      unlockedAt: room.buzzerUnlockedAt,
-      message: 'VALENDO!'
-    });
-    this.io.to('telao_' + roomId).emit('qse_buzzer_released', {
-      unlockedAt: room.buzzerUnlockedAt,
-      message: 'VALENDO!'
-    });
+    };
+    this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to(roomId).emit('qse_buzzer_released', payload);
+    this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
+    this.io.to('telao_' + roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to('telao_' + roomId).emit('qse_buzzer_released', payload);
     this.broadcastRoomState(roomId);
     return { success: true, unlockedAt: room.buzzerUnlockedAt };
   }
@@ -512,18 +521,16 @@ class RoomManager {
     room.buzzerWinner = null;
 
     this.saveRooms();
-    this.io.to(roomId).emit('qse_buzzer_released', {
+    const payload = {
       unlockedAt: room.buzzerUnlockedAt,
       message: 'VALENDO! (Liberação Manual)'
-    });
-    this.io.to('admin_' + roomId).emit('qse_buzzer_released', {
-      unlockedAt: room.buzzerUnlockedAt,
-      message: 'VALENDO! (Liberação Manual)'
-    });
-    this.io.to('telao_' + roomId).emit('qse_buzzer_released', {
-      unlockedAt: room.buzzerUnlockedAt,
-      message: 'VALENDO! (Liberação Manual)'
-    });
+    };
+    this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to(roomId).emit('qse_buzzer_released', payload);
+    this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
+    this.io.to('telao_' + roomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to('telao_' + roomId).emit('qse_buzzer_released', payload);
     this.broadcastRoomState(roomId);
     return { success: true, unlockedAt: room.buzzerUnlockedAt };
   }
@@ -565,7 +572,7 @@ class RoomManager {
     const room = this.rooms[roomId];
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (room.qseState !== 'answering') return { error: 'Não é o momento de responder.' };
-    if (!room.buzzerWinner || room.buzzerWinner.id !== participantId) {
+    if (!room.buzzerWinner || (String(room.buzzerWinner.id) !== String(participantId) && String(room.buzzerWinner.participantId) !== String(participantId))) {
       return { error: 'Apenas quem apertou o botão primeiro tem direito a responder!' };
     }
 

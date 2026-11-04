@@ -387,16 +387,48 @@ class TelaoApp {
 
     if (result.isCorrect) {
       banner.className = 'telao-banner banner-correct';
-      banner.innerHTML = `<span>🎉</span><span>RESPOSTA CORRETA! ${result.participantName} GANHOU +${result.pointsAwarded} PONTOS!</span>`;
+      banner.innerHTML = `<span>🎉</span><span>A RESPOSTA ESTÁ CORRETA! ${result.participantName} GANHOU +${result.pointsAwarded} PONTOS!</span>`;
       if (window.soundManager) {
         try { window.soundManager.playCorrect(); } catch(e) {}
       }
+
+      // Voice Narration: "A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!"
+      this.speakAnnouncement("A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!");
+
+      // Trigger Tortada Animation on screen
+      setTimeout(() => {
+        this.showTortadaAnimation("Torta no adversário!");
+      }, 1500);
     } else {
       banner.className = 'telao-banner banner-wrong';
       banner.innerHTML = `<span>❌</span><span>RESPOSTA INCORRETA! ${result.participantName} NÃO PONTUOU!</span>`;
       if (window.soundManager) {
         try { window.soundManager.playIncorrect(); } catch(e) {}
       }
+
+      // Voice Narration: "Resposta está erradaaaaa, leva tortada bebê!"
+      this.speakAnnouncement("Resposta está erradaaaaa, leva tortada bebê!");
+
+      // Trigger Tortada Animation on screen
+      setTimeout(() => {
+        this.showTortadaAnimation(result.participantName);
+      }, 1500);
+    }
+  }
+
+  speakAnnouncement(text) {
+    if (!('speechSynthesis' in window) || !this.soundEnabled) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'pt-BR';
+      utter.rate = 1.05;
+      utter.pitch = 1.1;
+      const voice = this.getBestPortugueseVoice();
+      if (voice) utter.voice = voice;
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      console.warn('Speech announcement error:', e);
     }
   }
 

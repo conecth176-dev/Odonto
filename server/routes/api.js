@@ -156,7 +156,7 @@ module.exports = function(roomManager) {
   });
 
   router.post('/admin/rooms/:id/qse/start-round', adminAuthMiddleware, (req, res) => {
-    const roundIndex = req.body.roundIndex !== undefined ? req.body.roundIndex : 0;
+    const roundIndex = req.body.roundIndex !== undefined ? Math.max(0, req.body.roundIndex) : 0;
     const result = roomManager.startQseRound(req.params.id, roundIndex);
     if (result.error) return res.status(400).json(result);
     res.json(result);
@@ -184,7 +184,7 @@ module.exports = function(roomManager) {
     const room = roomManager.getRoom(req.params.id);
     if (!room || room.mode !== 'quem_sou_eu') return res.status(404).json({ error: 'Sala inválida.' });
 
-    const nextIdx = room.currentQuestionIndex + 1;
+    const nextIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 0;
     if (nextIdx < room.questions.length) {
       const result = roomManager.startQseRound(req.params.id, nextIdx);
       res.json(result);

@@ -3171,7 +3171,31 @@ class EmbryoApp {
       } catch(e) {}
     }
 
+    // Dr. Odonto mascot voice announcement on correct or incorrect
+    if (result.isCorrect) {
+      this.speakMascotAnnouncement("A resposta estáaaaaaaaaaaaa corretaaaa! Torta nesse adversárioooooo!");
+    } else {
+      this.speakMascotAnnouncement("Resposta está erradaaaaa, leva tortada bebê!");
+    }
+
     this.renderQse(this.currentRoom);
+  }
+
+  speakMascotAnnouncement(text) {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.pitch = 0.95;
+      utterance.rate = 1.05;
+      utterance.volume = 1.0;
+      const maleVoice = this.getBestMalePtBrVoice();
+      if (maleVoice) utterance.voice = maleVoice;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech announcement error:', e);
+    }
   }
 
   handleQseTortadaTriggered(payload) {
@@ -3198,7 +3222,17 @@ class EmbryoApp {
     if (!this.currentParticipant) return alert('Você não está identificado nesta sala.');
 
     const res = await window.socketClient.buzzInQse(this.currentRoom.id, this.currentParticipant.id);
-    if (res && res.error) {
+    if (res && res.isWinner) {
+      this.currentRoom.qseState = 'answering';
+      this.currentRoom.buzzerWinner = res.winner || res.buzzerWinner || {
+        id: this.currentParticipant.id,
+        participantId: this.currentParticipant.id,
+        name: this.currentParticipant.name,
+        participantName: this.currentParticipant.name
+      };
+      this.currentRoom.isBuzzerWinner = true;
+      this.renderQse(this.currentRoom);
+    } else if (res && res.error) {
       console.warn('Buzzer rejected:', res.error);
     }
   }
@@ -3207,9 +3241,16 @@ class EmbryoApp {
     if (!this.currentRoom || this.currentRoom.qseState !== 'answering') return;
     if (!this.currentParticipant) return;
 
+    const optBtns = document.querySelectorAll('.qse-answer-btn');
+    optBtns.forEach(btn => {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+    });
+
     const res = await window.socketClient.submitQseAnswer(this.currentRoom.id, this.currentParticipant.id, optionIndex);
     if (res && res.error) {
       alert(res.error);
+      this.renderQse(this.currentRoom);
     }
   }
 
@@ -3221,12 +3262,12 @@ class EmbryoApp {
     const me = this.currentParticipant || room.me || { name: 'Participante', score: 0 };
     const myScore = (me.score !== undefined) ? me.score : ((room.participantsList || []).find(p => p.id === me.id)?.score || 0);
     const roundIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? room.currentQuestionIndex : 0;
-    const totalQ = room.totalQuestions || (room.questions ? room.questions.length : 10);
+    const totalQ = room.totalQuestions || (room.questions ? room.questions.length : 15);
     const q = room.question;
 
     const qseState = room.qseState || (room.status === 'finished' ? 'finished' : 'idle');
-    const isWinner = room.buzzerWinner && me && (room.buzzerWinner.participantId === me.id);
-    const winnerName = room.buzzerWinner ? room.buzzerWinner.participantName : '';
+    const isWinner = (room.isBuzzerWinner === true) || (room.buzzerWinner && me && (String(room.buzzerWinner.participantId || room.buzzerWinner.id) === String(me.id)));
+    const winnerName = room.buzzerWinner ? (room.buzzerWinner.participantName || room.buzzerWinner.name) : '';
 
     // Finished View
     if (qseState === 'finished') {
@@ -3359,16 +3400,20 @@ class EmbryoApp {
           </button>
         ` : qseState === 'answering' ? (
           isWinner ? `
-            <div class="glass" style="padding: 1.5rem; text-align: center; border: 2px solid #10b981; border-radius: 24px; background: rgba(16, 185, 129, 0.12);">
-              <div style="font-size: 2.2rem; margin-bottom: 0.3rem;">🎯👑</div>
-              <h3 style="font-family: var(--font-display); font-size: 1.35rem; color: #34d399; margin: 0 0 0.4rem;">VOCÊ FOI O PRIMEIRO!</h3>
-              <p style="color: #fff; font-size: 0.95rem; font-weight: 700; margin-bottom: 1.2rem;">Toque na alternativa correta abaixo para responder:</p>
+            <div class="glass" style="padding: 1.5rem; text-align: center; border: 2px solid #10b981; border-radius: 24px; background: rgba(16, 185, 129, 0.14); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);">
+              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">🎯👑</div>
+              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #34d399; margin: 0 0 0.4rem; text-shadow: 0 2px 10px rgba(16,185,129,0.35);">
+                VOCÊ FOI O PRIMEIRO!
+              </h3>
+              <p style="color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 1.2rem;">
+                Escolha e toque na letra da sua resposta:
+              </p>
 
-              <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+              <div style="display: grid; grid-template-columns: 1fr; gap: 0.85rem;">
                 ${['A', 'B', 'C', 'D'].map((letra, idx) => `
-                  <button class="btn btn-primary btn-block" style="padding: 0.9rem; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-start; gap: 0.8rem; text-align: left;" onclick="app.submitQseAnswer(${idx})">
-                    <span style="background: rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">${letra}</span>
-                    <span>${q && q.options ? this.escapeHtml(q.options[idx]) : letra}</span>
+                  <button class="btn btn-primary btn-block qse-answer-btn" style="padding: 1rem; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-start; gap: 1rem; text-align: left; border-radius: 16px; border: 2px solid rgba(56, 189, 248, 0.5); background: linear-gradient(135deg, rgba(2, 132, 199, 0.85), rgba(14, 165, 233, 0.75)); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); cursor: pointer;" onclick="app.submitQseAnswer(${idx})">
+                    <span style="background: #ffffff; color: #0369a1; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,0.25); flex-shrink: 0;">${letra}</span>
+                    <span style="color: #ffffff; font-size: 1rem; line-height: 1.35;">${q && q.options ? this.escapeHtml(q.options[idx]) : ('Alternativa ' + letra)}</span>
                   </button>
                 `).join('')}
               </div>
@@ -3442,8 +3487,9 @@ class EmbryoApp {
 
       const q = room.question;
       const qseState = room.qseState || 'idle';
-      const roundIdx = room.currentQuestionIndex !== undefined ? room.currentQuestionIndex : 0;
-      const totalQ = room.totalQuestions || 10;
+      const totalQ = room.totalQuestions || (room.questions ? room.questions.length : 15);
+      const currentRoundNumber = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 1;
+      const targetRoundIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? room.currentQuestionIndex : 0;
       const participants = room.participantsList || [];
 
       container.innerHTML = `
@@ -3470,15 +3516,15 @@ class EmbryoApp {
 
         <!-- Live Controls Bar -->
         <div class="glass" style="padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(15, 23, 42, 0.75);">
-          <div style="font-size: 0.8rem; color: #fbbf24; text-transform: uppercase; font-weight: 800; margin-bottom: 0.8rem;">
-            ⚡ Comandos ao Vivo do Anfitrião (Rodada ${roundIdx + 1} de ${totalQ})
+          <div style="font-size: 0.85rem; color: #fbbf24; text-transform: uppercase; font-weight: 800; margin-bottom: 0.8rem;">
+            ⚡ Comandos ao Vivo do Anfitrião (Rodada ${currentRoundNumber} de ${totalQ})
           </div>
 
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round', { roundIndex: ${roundIdx} })">
+            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round', { roundIndex: ${targetRoundIdx} })">
               ▶️ Iniciar Narração / Rodada
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration')">
+            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration', { roundIndex: ${targetRoundIdx} })">
               🔁 Repetir Narração
             </button>
             <button class="btn btn-secondary btn-sm" style="border-color: #eab308; color: #fde047;" onclick="app.qseAdminAction('${room.id}', 'emergency_unlock')">
@@ -3567,9 +3613,59 @@ class EmbryoApp {
 
   async qseAdminAction(roomId, action, data = {}) {
     try {
-      const res = await window.socketClient.qseAdminAction(roomId, action, this.adminToken, data);
+      const token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
+      this.adminToken = token;
+
+      let res = null;
+
+      // 1. Try WebSocket first if connected
+      if (window.socketClient && window.socketClient.isConnected) {
+        try {
+          res = await window.socketClient.qseAdminAction(roomId, action, token, data);
+        } catch (sockErr) {
+          console.warn('Socket qseAdminAction failed, falling back to HTTP:', sockErr);
+        }
+      }
+
+      // 2. Fallback to HTTP REST endpoint if socket did not succeed or returned error
+      if (!res || res.error) {
+        let endpoint = '';
+        let bodyData = {};
+
+        if (action === 'start_round') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
+          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : 0 };
+        } else if (action === 'repeat_narration') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
+          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : 0 };
+        } else if (action === 'finish_narration') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/finish-narration`;
+        } else if (action === 'emergency_unlock') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/unlock`;
+        } else if (action === 'advance_round') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/advance`;
+        } else if (action === 'finish') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/finish`;
+        } else if (action === 'trigger_tortada') {
+          endpoint = `/api/admin/rooms/${roomId}/qse/tortada`;
+          bodyData = { targetName: data.targetName };
+        }
+
+        if (endpoint) {
+          const httpRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(bodyData)
+          });
+          res = await httpRes.json();
+        }
+      }
+
       if (res && res.error) {
-        alert('Erro na ação: ' + res.error);
+        alert('Atenção: ' + res.error);
       } else {
         await this.loadAdminQse();
       }
@@ -3581,7 +3677,7 @@ class EmbryoApp {
   async triggerAdminTortada(roomId) {
     const victim = prompt('Nome de quem vai levar a tortada na cara (deixe em branco para o último que respondeu):');
     if (victim === null) return;
-    await window.socketClient.triggerTortada(roomId, this.adminToken, victim.trim());
+    await this.qseAdminAction(roomId, 'trigger_tortada', { targetName: victim.trim() });
   }
 
   async deleteQseRoom(roomId) {

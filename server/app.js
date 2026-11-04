@@ -225,12 +225,13 @@ io.on('connection', (socket) => {
 
       let res = { success: true };
       if (action === 'start_round') {
-        const roundIndex = data && data.roundIndex !== undefined ? data.roundIndex : 0;
+        const roundIndex = data && data.roundIndex !== undefined ? Math.max(0, data.roundIndex) : 0;
         res = roomManager.startQseRound(roomId, roundIndex);
       } else if (action === 'repeat_narration') {
         const room = roomManager.getRoom(roomId);
         if (room) {
-          res = roomManager.startQseRound(roomId, room.currentQuestionIndex);
+          const targetIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? room.currentQuestionIndex : 0;
+          res = roomManager.startQseRound(roomId, targetIdx);
         }
       } else if (action === 'finish_narration') {
         res = roomManager.finishQseNarration(roomId);
@@ -239,7 +240,7 @@ io.on('connection', (socket) => {
       } else if (action === 'advance_round') {
         const room = roomManager.getRoom(roomId);
         if (room) {
-          const nextIdx = room.currentQuestionIndex + 1;
+          const nextIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 0;
           if (nextIdx < room.questions.length) {
             res = roomManager.startQseRound(roomId, nextIdx);
           } else {
