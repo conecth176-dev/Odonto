@@ -466,6 +466,13 @@ class TelaoApp {
     this.activeNarrationSession++;
     this.isNarrating = false;
     window._activeUtterance = null;
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch (e) {}
+      this.currentAudio = null;
+    }
     if (this._narrationTimer) {
       clearTimeout(this._narrationTimer);
       this._narrationTimer = null;
@@ -482,11 +489,27 @@ class TelaoApp {
     this.resetOptionCards();
   }
 
+  getQuestionNumber(q) {
+    if (!q) return 1;
+    if (q.id) {
+      const matchFacil = q.id.match(/facil-(\d+)/i);
+      if (matchFacil) return parseInt(matchFacil[1]);
+      const matchMedia = q.id.match(/media-(\d+)/i);
+      if (matchMedia) return 10 + parseInt(matchMedia[1]);
+      const matchDificil = q.id.match(/dificil-(\d+)/i);
+      if (matchDificil) return 20 + parseInt(matchDificil[1]);
+    }
+    if (this.currentRoundIndex !== undefined && this.currentRoundIndex !== null) {
+      return (this.currentRoundIndex % 30) + 1;
+    }
+    return 1;
+  }
+
   narrateFullQuestion(q) {
     this.stopNarration();
 
-    if (!('speechSynthesis' in window) || !this.soundEnabled) {
-      console.warn('Speech synthesis mudo ou desativado. Liberando após delay de leitura.');
+    if (!this.soundEnabled) {
+      console.warn('Som desativado. Liberando após delay visual.');
       this.setNarratorVisual(true, 'Leitura da pergunta em andamento...');
       this._narrationTimer = setTimeout(() => {
         this.setNarratorVisual(false, 'Leitura concluída! Liberando botões...');
@@ -507,24 +530,24 @@ class TelaoApp {
       .replace(/(\s*atenção\s+participantes?\s*[\?:!\-—,\.]?\s*)+$/gi, '')
       .trim();
 
-    // Comédia e dinâmica divertida entre Cebolinha & Mônica!
+    const qNum = this.getQuestionNumber(q);
+
+    // Dynamic comedic dialogue and official voice tracks!
     const parts = [
-      // 1. Cebolinha lê a pergunta com o clássico sotaque trocando R por L
-      { character: 'cebolinha', text: cleanQuestion, cardIdx: -1 },
+      // 1. Cebolinha lê a pergunta
+      { audioUrl: `/audio/qse/questions/q${qNum}.mp3`, character: 'cebolinha', text: cleanQuestion, cardIdx: -1 },
       // 2. Mônica interrompe bravinha
-      { character: 'monica', text: 'Pára tudo, Cebolinha! Cala a boca e deixa que a dona da rua lê essas alternativas!', cardIdx: -1 },
-      // 3. Cebolinha insiste na alternativa A
-      { character: 'cebolinha', text: `Mas o plano infalível é meu! Alternativa A: ${q.options[0]}`, cardIdx: 0 },
-      // 4. Mônica lê alternativa B
-      { character: 'monica', text: `Cala a boca, seu dentuço! Eu leio a B! Alternativa B: ${q.options[1]}`, cardIdx: 1 },
-      // 5. Cebolinha lê alternativa C
-      { character: 'cebolinha', text: `Então eu leio a C! Alternativa C: ${q.options[2]}`, cardIdx: 2 },
-      // 6. Mônica lê alternativa D
-      { character: 'monica', text: `E eu leio a D! Alternativa D: ${q.options[3]}`, cardIdx: 3 },
-      // 7. Cebolinha encerra animado com o "Quem sou eu?" no final!
-      { character: 'cebolinha', text: `Quem sou eu? Plepalem-se... TÁ VALENDO!`, cardIdx: -1 },
-      // 8. Mônica reforça no final
-      { character: 'monica', text: `Apertem o botão no celular agora!`, cardIdx: -1 }
+      { audioUrl: '/audio/qse/monica/interrupcao.mp3', character: 'monica', text: 'Pára tudo, Cebolinha! Cala a boca e deixa que a dona da rua lê essas alternativas!', cardIdx: -1 },
+      // 3. Alternativa A
+      { audioUrl: `/audio/qse/options/q${qNum}_a.mp3`, character: 'cebolinha', text: `Alternativa A: ${q.options[0]}`, cardIdx: 0 },
+      // 4. Alternativa B
+      { audioUrl: `/audio/qse/options/q${qNum}_b.mp3`, character: 'monica', text: `Alternativa B: ${q.options[1]}`, cardIdx: 1 },
+      // 5. Alternativa C
+      { audioUrl: `/audio/qse/options/q${qNum}_c.mp3`, character: 'cebolinha', text: `Alternativa C: ${q.options[2]}`, cardIdx: 2 },
+      // 6. Alternativa D
+      { audioUrl: `/audio/qse/options/q${qNum}_d.mp3`, character: 'monica', text: `Alternativa D: ${q.options[3]}`, cardIdx: 3 },
+      // 7. Chamada final da Mônica
+      { audioUrl: '/audio/qse/monica/chamada_final.mp3', character: 'monica', text: 'Apertem o botão no celular agora!', cardIdx: -1 }
     ];
 
     let currentPart = 0;
@@ -550,7 +573,7 @@ class TelaoApp {
         if (card) card.classList.add('narrating');
       }
 
-      await this.playAudioOrSpeak(item.text, item.character || 'cebolinha', sessionId);
+      await this.playAudioOrSpeak(item.audioUrl, item.character || 'cebolinha', sessionId, item.text);
 
       if (this.activeNarrationSession !== sessionId || !this.isNarrating) return;
       currentPart++;
@@ -560,7 +583,73 @@ class TelaoApp {
     speakNext();
   }
 
-  playAudioOrSpeak(text, character = 'cebolinha', sessionId = null) {
+  playAudioOrSpeak(audioUrlOrText, character = 'cebolinha', sessionId = null, fallbackText = null) {
+    return new Promise((resolve) => {
+      if (!this.soundEnabled) return resolve();
+      if (sessionId && this.activeNarrationSession !== sessionId) return resolve();
+
+      const isAudioFile = typeof audioUrlOrText === 'string' && (audioUrlOrText.startsWith('/audio/') || audioUrlOrText.endsWith('.mp3'));
+      const audioUrl = isAudioFile ? audioUrlOrText : null;
+      const text = isAudioFile ? (fallbackText || '') : audioUrlOrText;
+
+      if (audioUrl) {
+        try {
+          if (this.currentAudio) {
+            try { this.currentAudio.pause(); } catch (e) {}
+            this.currentAudio = null;
+          }
+
+          const audio = new Audio(audioUrl);
+          this.currentAudio = audio;
+          let resolved = false;
+
+          const finish = () => {
+            if (!resolved) {
+              resolved = true;
+              this.currentAudio = null;
+              if (this._utteranceSafetyTimer) {
+                clearTimeout(this._utteranceSafetyTimer);
+                this._utteranceSafetyTimer = null;
+              }
+              resolve();
+            }
+          };
+
+          audio.onended = () => {
+            setTimeout(finish, 220);
+          };
+
+          audio.onerror = (err) => {
+            console.warn('Áudio MP3 indisponível ou bloqueado, usando síntese de voz de contingência:', audioUrl, err);
+            this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
+          };
+
+          // Timeout de segurança baseado na duração típica do áudio
+          const safetyTime = Math.max(10000, (text.length || 60) * 150);
+          this._utteranceSafetyTimer = setTimeout(finish, safetyTime);
+
+          if (!sessionId || this.activeNarrationSession === sessionId) {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              playPromise.catch((err) => {
+                console.warn('Erro ao reproduzir arquivo MP3:', audioUrl, err);
+                this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
+              });
+            }
+          } else {
+            finish();
+          }
+          return;
+        } catch (e) {
+          console.warn('Erro na inicialização do áudio:', e);
+        }
+      }
+
+      this.fallbackSpeechSynthesis(text, character, sessionId).then(resolve);
+    });
+  }
+
+  fallbackSpeechSynthesis(text, character = 'cebolinha', sessionId = null) {
     return new Promise((resolve) => {
       if (!this.soundEnabled || !('speechSynthesis' in window)) return resolve();
       if (sessionId && this.activeNarrationSession !== sessionId) return resolve();
@@ -570,7 +659,7 @@ class TelaoApp {
 
         // Converte para a pronúncia do Cebolinha trocando R por L
         const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
-        const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : '🐰 Mônica';
+        const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : (character === 'magali') ? '🍉 Magali' : (character === 'cascao') ? '🧦 Cascão' : '🐰 Mônica';
         this.setNarratorVisual(true, `${charTag}: "${spokenText}"`, character);
 
         const utter = new SpeechSynthesisUtterance(spokenText);
@@ -616,7 +705,6 @@ class TelaoApp {
         };
 
         utter.onend = () => {
-          // Breathing gap between dialogue lines so sentences never collide
           setTimeout(finish, 220);
         };
 
@@ -625,14 +713,10 @@ class TelaoApp {
           finish();
         };
 
-        // Chromium GC fix: keep globally referenced so Chrome won't drop it mid-speech
         window._activeUtterance = utter;
-
-        // Safety timeout so speech never blocks indefinitely
         const maxTime = Math.max(3000, Math.min(22000, spokenText.length * 120));
         this._utteranceSafetyTimer = setTimeout(finish, maxTime);
 
-        // Small pause of 100ms after cancel() to let browser speech thread reset cleanly
         setTimeout(() => {
           if (!sessionId || this.activeNarrationSession === sessionId) {
             window.speechSynthesis.speak(utter);
@@ -707,7 +791,8 @@ class TelaoApp {
     }
 
     // Mônica fala anunciando qual equipe apertou primeiro!
-    this.playAudioOrSpeak(`${team} apertou o botão primeiro!`, 'monica');
+    const buzzerAudio = (team === 'Equipe 2') ? '/audio/qse/monica/equipe2_apertou.mp3' : '/audio/qse/monica/equipe1_apertou.mp3';
+    this.playAudioOrSpeak(buzzerAudio, 'monica', null, `${team} apertou o botão primeiro!`);
   }
 
   onAnswerRevealed(result) {
@@ -734,8 +819,8 @@ class TelaoApp {
         try { window.soundManager.playCorrect(); } catch(e) {}
       }
 
-      // Cebolinha comemora feliz em bom humor
-      this.playAudioOrSpeak("A lesposta tá colétaaaa! Tolta na cala desse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
+      // Cebolinha comemora acerto com áudio oficial
+      this.playAudioOrSpeak('/audio/qse/cebolinha/acerto.mp3', 'cebolinha', null, "A lesposta tá colétaaaa! Tolta na cala desse advelsálioooo! O meu plano infalível funcionou!");
 
       // Trigger Tortada Animation on screen
       setTimeout(() => {
@@ -748,8 +833,8 @@ class TelaoApp {
         try { window.soundManager.playIncorrect(); } catch(e) {}
       }
 
-      // Mônica briga divertida com Sansão e torta
-      this.playAudioOrSpeak("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
+      // Mônica briga divertida com áudio oficial de tortada
+      this.playAudioOrSpeak('/audio/qse/monica/erro_tortada.mp3', 'monica', null, "Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!");
 
       // Trigger Tortada Animation on screen
       setTimeout(() => {
@@ -850,20 +935,22 @@ class TelaoApp {
       try { window.soundManager.playTrophy(); } catch(e) {}
     }
 
-    // Sequência de Áudio: Magali anuncia que o Cascão dará o resultado final -> Cascão parabeniza e diz a equipe vencedora!
+    // Sequência de Áudio Oficial: Magali anuncia que o Cascão dará o resultado final -> Cascão parabeniza e diz a equipe vencedora!
     const magaliSpeech = "Gente, essa disputa foi emocionante demais, me deu até fominha de melancia! Mas agora o Cascão vai revelar qual equipe foi a grande campeã e dar os parabéns pra todo mundo!";
-    await this.playAudioOrSpeak(magaliSpeech, 'magali');
+    await this.playAudioOrSpeak('/audio/qse/magali/final.mp3', 'magali', null, magaliSpeech);
 
-    let cascaoSpeech = "";
-    if (winningTeam === 'Equipe 1') {
-      cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 1! Meus parabéns, galera da Equipe 1! Vocês deram um verdadeiro show e arrasaram!";
-    } else if (winningTeam === 'Equipe 2') {
+    let cascaoAudio = '/audio/qse/cascao/equipe1_venceu.mp3';
+    let cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 1! Meus parabéns, galera da Equipe 1! Vocês deram um verdadeiro show e arrasaram!";
+
+    if (winningTeam === 'Equipe 2') {
+      cascaoAudio = '/audio/qse/cascao/equipe2_venceu.mp3';
       cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 2! Meus parabéns, galera da Equipe 2! Vocês deram um verdadeiro show e arrasaram!";
-    } else {
+    } else if (winningTeam === 'Empate') {
+      cascaoAudio = '/audio/qse/cascao/empate.mp3';
       cascaoSpeech = "É isso aí, Magali! E olha só que loucura: deu EMPATE! A Equipe 1 e a Equipe 2 foram tão bem que terminaram iguaizinhas! Parabéns pra todo mundo, vocês foram incríveis demais!";
     }
 
-    await this.playAudioOrSpeak(cascaoSpeech, 'cascao');
+    await this.playAudioOrSpeak(cascaoAudio, 'cascao', null, cascaoSpeech);
   }
 
   resetOptionCards() {
