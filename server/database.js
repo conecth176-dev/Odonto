@@ -49,7 +49,7 @@ class Database {
       }
 
       // Ensure default Quem Sou Eu questions exist
-      if (!this.data.qse_questions || this.data.qse_questions.length < defaultQseQuestions.length) {
+      if (!this.data.qse_questions || this.data.qse_questions.length !== defaultQseQuestions.length) {
         this.data.qse_questions = defaultQseQuestions;
       }
 
