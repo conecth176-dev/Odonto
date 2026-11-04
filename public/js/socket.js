@@ -177,12 +177,12 @@ const socketClient = {
     });
   },
 
-  joinQse(roomId, participantName, optInTortada) {
+  joinQse(roomId, participantName, optInTortada, team = 'Time 1') {
     return new Promise((resolve) => {
       if (!this.isConnected || !this.socket) {
         return resolve({ error: 'Servidor WebSocket indisponível no momento.' });
       }
-      this.socket.emit('join_qse_room', { roomId, participantName, optInTortada }, resolve);
+      this.socket.emit('join_qse_room', { roomId, participantName, optInTortada, team }, resolve);
     });
   },
 

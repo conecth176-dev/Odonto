@@ -683,17 +683,19 @@ class TelaoApp {
 
   onBuzzerWinner(winner) {
     this.stopNarration();
-    const name = winner.participantName || winner.name || 'O participante';
+    const name = winner.participantName || winner.name || 'Participante';
+    const rawTeam = winner.team || '';
+    const team = (rawTeam === 'Equipe 2' || String(rawTeam).toLowerCase().includes('2') || name.toLowerCase().includes('equipe 2') || name.toLowerCase().includes('time 2')) ? 'Equipe 2' : 'Equipe 1';
     const banner = document.getElementById('statusBanner');
     banner.className = 'telao-banner banner-winner';
-    banner.innerHTML = `<span>🚨</span><span>${name} APERTOU PRIMEIRO! ESCOLHENDO RESPOSTA...</span>`;
+    banner.innerHTML = `<span>🚨</span><span><strong>${team.toUpperCase()}</strong> (${name}) APERTOU PRIMEIRO!</span>`;
 
     if (window.soundManager) {
       try { window.soundManager.playCountdownTick(); } catch(e) {}
     }
 
-    // Mônica fala anunciando quem apertou primeiro
-    this.playAudioOrSpeak(`${name} apertou o botão primeiro!`, 'monica');
+    // Mônica fala anunciando qual equipe apertou primeiro!
+    this.playAudioOrSpeak(`${team} apertou o botão primeiro!`, 'monica');
   }
 
   onAnswerRevealed(result) {

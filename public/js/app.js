@@ -3106,11 +3106,13 @@ class EmbryoApp {
   async handleQseJoinSubmit() {
     const nameInput = document.getElementById('qseParticipantName');
     const name = nameInput ? nameInput.value.trim() : '';
+    const teamSelect = document.getElementById('qseParticipantTeam');
+    const team = teamSelect ? teamSelect.value : 'Equipe 1';
     const optIn = document.getElementById('qseOptInTortada') ? document.getElementById('qseOptInTortada').checked : true;
 
     if (!name) return alert('Por favor, informe seu nome ou apelido para o jogo.');
 
-    const res = await window.socketClient.joinQse(this.targetJoinRoomId, name, optIn);
+    const res = await window.socketClient.joinQse(this.targetJoinRoomId, name, optIn, team);
     if (res.error) {
       return alert(res.error);
     }
@@ -3363,7 +3365,7 @@ class EmbryoApp {
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
-          <span>Competidor: <strong style="color: #fff;">${this.escapeHtml(me.name)}</strong></span>
+          <span>Competidor: <strong style="color: #fff;">${this.escapeHtml(me.name)}</strong> <span style="background: ${(me.team === 'Equipe 2') ? '#3b82f6' : '#ef4444'}; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 4px;">${me.team || 'Equipe 1'}</span></span>
           <span>Rodada: <strong style="color: #fbbf24;">${roundIdx + 1} de ${totalQ}</strong></span>
         </div>
       </div>

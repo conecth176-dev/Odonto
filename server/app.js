@@ -125,13 +125,13 @@ io.on('connection', (socket) => {
   });
 
   // Quem Sou Eu: Join room
-  socket.on('join_qse_room', ({ roomId, participantName, optInTortada }, callback) => {
+  socket.on('join_qse_room', ({ roomId, participantName, optInTortada, team }, callback) => {
     try {
       if (!roomId || !participantName) {
         return callback && callback({ error: 'Dados incompletos para ingressar no Quem Sou Eu.' });
       }
 
-      const res = roomManager.joinQseRoom(roomId, participantName, socket.id, !!optInTortada);
+      const res = roomManager.joinQseRoom(roomId, participantName, socket.id, !!optInTortada, team);
       if (res.error) {
         return callback && callback(res);
       }

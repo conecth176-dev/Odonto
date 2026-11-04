@@ -385,7 +385,7 @@ class RoomManager {
     return newRoom;
   }
 
-  joinQseRoom(roomId, participantName, socketId = null, optInTortada = true) {
+  joinQseRoom(roomId, participantName, socketId = null, optInTortada = true, team = 'Equipe 1') {
     const room = this.rooms[roomId];
     if (!room) return { error: 'Sala não encontrada.' };
     if (room.mode !== 'quem_sou_eu') return { error: 'Esta sala não é do minigame Quem Sou Eu.' };
@@ -397,10 +397,12 @@ class RoomManager {
       return { error: 'Por favor, informe seu nome.' };
     }
 
+    const assignedTeam = (team === 'Equipe 2' || String(team).toLowerCase().includes('2')) ? 'Equipe 2' : 'Equipe 1';
     const participantId = 'qse_' + crypto.randomBytes(6).toString('hex');
     const participant = {
       id: participantId,
       name: participantName.trim(),
+      team: assignedTeam,
       socketId,
       score: 0,
       correctCount: 0,
@@ -555,6 +557,7 @@ class RoomManager {
       participantId: participant.id,
       name: participant.name,
       participantName: participant.name,
+      team: participant.team || 'Equipe 1',
       buzzedAt: now,
       elapsedMs
     };
@@ -1176,6 +1179,7 @@ class RoomManager {
     const participantsList = Object.values(room.participants || {}).map(p => ({
       id: p.id,
       name: p.name,
+      team: p.team || 'Equipe 1',
       score: p.score || 0,
       correctCount: p.correctCount || 0,
       optInTortada: p.optInTortada || false,
@@ -1219,7 +1223,7 @@ class RoomManager {
       enableTortada: room.enableTortada || false,
       isBuzzerWinner: !!(me && room.buzzerWinner && room.buzzerWinner.participantId === me.id),
       // User-specific contextual flags
-      me: me ? { id: me.id, name: me.name, role: me.role, teamCode: me.teamCode, score: me.score || 0, optInTortada: me.optInTortada || false } : null,
+      me: me ? { id: me.id, name: me.name, role: me.role, team: me.team || 'Equipe 1', teamCode: me.teamCode, score: me.score || 0, optInTortada: me.optInTortada || false } : null,
       myTeam: myTeam ? { code: myTeam.code, name: myTeam.name, memberA: myTeam.memberA, memberB: myTeam.memberB } : null,
       myTurn,
       myAnswer
