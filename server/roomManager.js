@@ -655,15 +655,17 @@ class RoomManager {
       }
     });
 
-    let winningTeam = 'Equipe 1';
-    if (team2Score > team1Score) winningTeam = 'Equipe 2';
-    else if (team1Score === team2Score) winningTeam = 'Empate';
+    let winningTeam = 'Empate';
+    if (team1Score > team2Score) winningTeam = 'Equipe 1';
+    else if (team2Score > team1Score) winningTeam = 'Equipe 2';
+    else winningTeam = 'Empate';
 
     const teamScores = {
       team1: team1Score,
       team2: team2Score,
       winningTeam
     };
+    room.teamScores = teamScores;
 
     const hasWinner = room.leaderboard.some(p => (p.score || 0) > 0);
     const historyItem = {
@@ -1244,6 +1246,7 @@ class RoomManager {
       buzzerUnlockedAt: room.buzzerUnlockedAt || null,
       lastResult: room.lastResult || null,
       enableTortada: room.enableTortada || false,
+      teamScores: room.teamScores || null,
       isBuzzerWinner: !!(me && room.buzzerWinner && room.buzzerWinner.participantId === me.id),
       // User-specific contextual flags
       me: me ? { id: me.id, name: me.name, role: me.role, team: me.team || 'Equipe 1', teamCode: me.teamCode, score: me.score || 0, optInTortada: me.optInTortada || false } : null,

@@ -17,6 +17,7 @@ class TelaoApp {
     this._currentRoundKey = null;
     this._narrationTimer = null;
     this._utteranceSafetyTimer = null;
+    this._isCompetitionFinished = false;
 
     this.init();
   }
@@ -389,7 +390,9 @@ class TelaoApp {
     } else if (state.qseState === 'revealed' && state.lastResult) {
       this.onAnswerRevealed(state.lastResult);
     } else if (state.qseState === 'finished' || state.status === 'finished') {
-      this.onCompetitionFinished({ leaderboard: state.leaderboard });
+      if (!this._isCompetitionFinished) {
+        this.onCompetitionFinished({ leaderboard: state.leaderboard, teamScores: state.teamScores });
+      }
     }
   }
 
@@ -434,6 +437,7 @@ class TelaoApp {
     this._currentRoundKey = roundKey;
 
     // Terminate any previous speech or narration loops immediately
+    this._isCompetitionFinished = false;
     this.stopNarration();
     this.currentRoundIndex = data.roundIndex;
 
@@ -592,6 +596,9 @@ class TelaoApp {
       const audioUrl = isAudioFile ? audioUrlOrText : null;
       const text = isAudioFile ? (fallbackText || '') : audioUrlOrText;
 
+      const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : (character === 'magali') ? '🍉 Magali' : (character === 'cascao') ? '🧦 Cascão' : '🐰 Mônica';
+      this.setNarratorVisual(true, `${charTag}: "${text}"`, character);
+
       if (audioUrl) {
         try {
           if (this.currentAudio) {
@@ -601,12 +608,14 @@ class TelaoApp {
 
           const audio = new Audio(audioUrl);
           this.currentAudio = audio;
+          window._activeAudioElement = audio;
           let resolved = false;
 
           const finish = () => {
             if (!resolved) {
               resolved = true;
               this.currentAudio = null;
+              window._activeAudioElement = null;
               if (this._utteranceSafetyTimer) {
                 clearTimeout(this._utteranceSafetyTimer);
                 this._utteranceSafetyTimer = null;
@@ -616,7 +625,7 @@ class TelaoApp {
           };
 
           audio.onended = () => {
-            setTimeout(finish, 220);
+            setTimeout(finish, 180);
           };
 
           audio.onerror = (err) => {
@@ -625,10 +634,11 @@ class TelaoApp {
           };
 
           // Timeout de segurança baseado na duração típica do áudio
-          const safetyTime = Math.max(10000, (text.length || 60) * 150);
+          const safetyTime = Math.max(12000, (text.length || 60) * 160);
           this._utteranceSafetyTimer = setTimeout(finish, safetyTime);
 
           if (!sessionId || this.activeNarrationSession === sessionId) {
+            audio.load();
             const playPromise = audio.play();
             if (playPromise !== undefined) {
               playPromise.catch((err) => {
@@ -867,7 +877,13 @@ class TelaoApp {
   }
 
   async onCompetitionFinished(payload) {
+    if (this._isCompetitionFinished) {
+      console.log('[Telão] Cerimônia de encerramento já em andamento, ignorando evento duplicado.');
+      return;
+    }
+    this._isCompetitionFinished = true;
     this.stopNarration();
+
     const stageMain = document.querySelector('.telao-stage');
     const questionBox = document.getElementById('questionBox');
     const optionsGrid = document.getElementById('optionsGrid');
@@ -880,33 +896,75 @@ class TelaoApp {
     if (optionsGrid) optionsGrid.style.display = 'none';
     if (statusBanner) statusBanner.style.display = 'none';
 
-    const teamScores = payload.teamScores || {
-      team1: 0,
-      team2: 0,
-      winningTeam: 'Equipe 1'
-    };
-    const winningTeam = teamScores.winningTeam || 'Equipe 1';
+    // 1. Cálculo da pontuação com critério rigoroso de EMPATE
+    let team1Score = 0;
+    let team2Score = 0;
+
+    if (payload && payload.teamScores && typeof payload.teamScores.team1 === 'number') {
+      team1Score = payload.teamScores.team1;
+      team2Score = payload.teamScores.team2;
+    } else {
+      const list = (payload && payload.leaderboard) || (this.roomState && (this.roomState.leaderboard || this.roomState.participantsList)) || [];
+      list.forEach(p => {
+        const isTeam2 = (p.team === 'Equipe 2' || String(p.team || '').toLowerCase().includes('2'));
+        if (isTeam2) {
+          team2Score += (p.score || 0);
+        } else {
+          team1Score += (p.score || 0);
+        }
+      });
+    }
+
+    // Regra estrita: Se os pontos forem iguais (inclusive 0 a 0), é EMPATE!
+    let winningTeam = 'Empate';
+    if (team1Score > team2Score) {
+      winningTeam = 'Equipe 1';
+    } else if (team2Score > team1Score) {
+      winningTeam = 'Equipe 2';
+    } else {
+      winningTeam = 'Empate';
+    }
+
+    console.log(`[Telão] Placar Final: Equipe 1 (${team1Score} pts) x Equipe 2 (${team2Score} pts) -> Resultado: ${winningTeam}`);
 
     if (podiumContainer) {
       podiumContainer.style.display = 'flex';
 
       if (podiumTeamBanner) {
-        podiumTeamBanner.innerHTML = `
-          <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(244, 114, 182, 0.2)); border: 2px solid #fbbf24; border-radius: 20px; padding: 1.2rem 2.5rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 0 35px rgba(251, 191, 36, 0.35);">
-            <div style="font-size: 1.1rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">🍉 Placar Final das Equipes 🧦</div>
-            <div style="font-size: 2.3rem; font-weight: 900; color: #fff; margin: 0.5rem 0; font-family: 'Outfit', sans-serif;">
-              ${winningTeam === 'Empate' ? '🤝 EMPATE ENTRE AS EQUIPES!' : `🏆 GRANDE CAMPEÃ: ${winningTeam.toUpperCase()}! 🏆`}
+        if (winningTeam === 'Empate') {
+          podiumTeamBanner.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(56, 189, 248, 0.25)); border: 3px solid #fbbf24; border-radius: 20px; padding: 1.5rem 2.5rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 0 45px rgba(251, 191, 36, 0.45);">
+              <div style="font-size: 1.2rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">🍉 Placar Final das Equipes 🧦</div>
+              <div style="font-size: 2.8rem; font-weight: 900; color: #fbbf24; margin: 0.6rem 0; font-family: 'Outfit', sans-serif;">
+                🤝 EMPATE ENTRE AS EQUIPES! 🤝
+              </div>
+              <p style="font-size: 1.2rem; color: #e2e8f0; font-weight: 700; margin: 0.3rem 0 1.2rem;">
+                As duas equipes foram fantásticas e terminaram com a mesma pontuação!
+              </p>
+              <div style="display: flex; justify-content: center; gap: 3rem; font-size: 1.5rem; font-weight: 900;">
+                <span style="color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 0.5rem 1.4rem; border-radius: 14px; border: 1px solid rgba(239, 68, 68, 0.4);">🔴 Equipe 1: ${team1Score} pts</span>
+                <span style="color: #60a5fa; background: rgba(59, 130, 246, 0.2); padding: 0.5rem 1.4rem; border-radius: 14px; border: 1px solid rgba(59, 130, 246, 0.4);">🔵 Equipe 2: ${team2Score} pts</span>
+              </div>
             </div>
-            <div style="display: flex; justify-content: center; gap: 2.5rem; font-size: 1.35rem; font-weight: 800; margin-top: 0.5rem;">
-              <span style="color: #f87171;">🔴 Equipe 1: ${teamScores.team1} pts</span>
-              <span style="color: #60a5fa;">🔵 Equipe 2: ${teamScores.team2} pts</span>
+          `;
+        } else {
+          podiumTeamBanner.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(244, 114, 182, 0.25)); border: 3px solid #fbbf24; border-radius: 20px; padding: 1.5rem 2.5rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 0 45px rgba(251, 191, 36, 0.45);">
+              <div style="font-size: 1.2rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">🍉 Placar Final das Equipes 🧦</div>
+              <div style="font-size: 2.8rem; font-weight: 900; color: #fff; margin: 0.6rem 0; font-family: 'Outfit', sans-serif;">
+                🏆 GRANDE CAMPEÃ: ${winningTeam.toUpperCase()}! 🏆
+              </div>
+              <div style="display: flex; justify-content: center; gap: 3rem; font-size: 1.5rem; font-weight: 900; margin-top: 0.8rem;">
+                <span style="color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 0.5rem 1.4rem; border-radius: 14px; border: 1px solid rgba(239, 68, 68, 0.4);">🔴 Equipe 1: ${team1Score} pts</span>
+                <span style="color: #60a5fa; background: rgba(59, 130, 246, 0.2); padding: 0.5rem 1.4rem; border-radius: 14px; border: 1px solid rgba(59, 130, 246, 0.4);">🔵 Equipe 2: ${team2Score} pts</span>
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
       }
 
       if (podiumSteps) {
-        const list = payload.leaderboard || [];
+        const list = (payload && payload.leaderboard) || (this.roomState && this.roomState.leaderboard) || [];
         const p1 = list[0] || { name: '---', score: 0 };
         const p2 = list[1] || { name: '---', score: 0 };
         const p3 = list[2] || { name: '---', score: 0 };
@@ -931,14 +989,20 @@ class TelaoApp {
       }
     }
 
-    if (window.soundManager) {
-      try { window.soundManager.playTrophy(); } catch(e) {}
+    if (window.soundManager && typeof window.soundManager.playCorrect === 'function') {
+      try { window.soundManager.playCorrect(); } catch(e) {}
     }
 
-    // Sequência de Áudio Oficial: Magali anuncia que o Cascão dará o resultado final -> Cascão parabeniza e diz a equipe vencedora!
+    // 2. Sequência de Áudio Oficial:
+    // Parte 1: Magali anuncia que o Cascão dará o resultado final
     const magaliSpeech = "Gente, essa disputa foi emocionante demais, me deu até fominha de melancia! Mas agora o Cascão vai revelar qual equipe foi a grande campeã e dar os parabéns pra todo mundo!";
+    console.log('[Telão] 🍉 Reproduzindo áudio da Magali...');
     await this.playAudioOrSpeak('/audio/qse/magali/final.mp3', 'magali', null, magaliSpeech);
 
+    // Pausa garantida de 450ms entre os personagens
+    await new Promise(r => setTimeout(r, 450));
+
+    // Parte 2: Cascão parabeniza e diz a equipe vencedora ou empate!
     let cascaoAudio = '/audio/qse/cascao/equipe1_venceu.mp3';
     let cascaoSpeech = "É isso aí, Magali! E sem precisar tomar banho, eu anuncio com muito orgulho que a grande vencedora do Quem Sou Eu é a EQUIPE 1! Meus parabéns, galera da Equipe 1! Vocês deram um verdadeiro show e arrasaram!";
 
@@ -950,7 +1014,10 @@ class TelaoApp {
       cascaoSpeech = "É isso aí, Magali! E olha só que loucura: deu EMPATE! A Equipe 1 e a Equipe 2 foram tão bem que terminaram iguaizinhas! Parabéns pra todo mundo, vocês foram incríveis demais!";
     }
 
+    console.log('[Telão] 🧦 Reproduzindo áudio do Cascão:', cascaoAudio, winningTeam);
     await this.playAudioOrSpeak(cascaoAudio, 'cascao', null, cascaoSpeech);
+    console.log('[Telão] 🎉 Cerimônia de encerramento finalizada com sucesso!');
+  }
   }
 
   resetOptionCards() {
