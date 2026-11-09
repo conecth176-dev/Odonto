@@ -655,18 +655,21 @@ class TelaoApp {
           const finish = () => {
             if (!resolved) {
               resolved = true;
-              this.currentAudio = null;
-              window._activeAudioElement = null;
               if (this._utteranceSafetyTimer) {
                 clearTimeout(this._utteranceSafetyTimer);
                 this._utteranceSafetyTimer = null;
+              }
+              if (this.currentAudio === audio) {
+                try { audio.pause(); } catch (e) {}
+                this.currentAudio = null;
+                window._activeAudioElement = null;
               }
               resolve();
             }
           };
 
           audio.onended = () => {
-            setTimeout(finish, 180);
+            setTimeout(finish, 350);
           };
 
           audio.onerror = (err) => {
@@ -674,9 +677,22 @@ class TelaoApp {
             this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
           };
 
-          // Timeout de segurança ajustado (máximo 8 segundos por trecho)
-          const safetyTime = Math.min(8000, Math.max(3000, (text.length || 30) * 90));
-          this._utteranceSafetyTimer = setTimeout(finish, safetyTime);
+          // Timeout de segurança proporcional: perguntas têm até 25s de áudio oficial
+          let defaultSafety = 35000;
+          if (audioUrl.includes('/options/')) {
+            defaultSafety = 15000;
+          } else if (audioUrl.includes('/monica/') || audioUrl.includes('/magali/') || audioUrl.includes('/cascao/')) {
+            defaultSafety = 15000;
+          }
+
+          this._utteranceSafetyTimer = setTimeout(finish, defaultSafety);
+
+          audio.onloadedmetadata = () => {
+            if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+              if (this._utteranceSafetyTimer) clearTimeout(this._utteranceSafetyTimer);
+              this._utteranceSafetyTimer = setTimeout(finish, Math.round((audio.duration + 3) * 1000));
+            }
+          };
 
           if (!sessionId || this.activeNarrationSession === sessionId) {
             audio.load();
