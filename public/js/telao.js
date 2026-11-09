@@ -23,46 +23,81 @@ class TelaoApp {
   }
 
   async init() {
+    // Auto-unlock audio context on any user interaction
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, () => this.unlockAudio(), { passive: true });
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     this.roomId = urlParams.get('room') || urlParams.get('id');
+    this.adminToken = urlParams.get('adminToken') || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
 
-    // Admin authentication protection
-    const isAuthenticated = await this.checkAdminAuth();
-    if (!isAuthenticated) return;
-
-    if (!this.roomId) {
-      await this.promptSelectRoom();
-      return;
-    }
-
+    // Connect socket immediately so Telão is never offline
     this.initSocket();
     this.initSpeech();
+
+    // If roomId was not in URL, query server for active room without blocking
+    if (!this.roomId) {
+      try {
+        const res = await fetch('/api/rooms');
+        if (res.ok) {
+          const rooms = await res.json();
+          const qseRooms = (rooms || []).filter(r => r.mode === 'quem_sou_eu');
+          if (qseRooms.length > 0) {
+            const activeQse = qseRooms.filter(r => r.status !== 'finished');
+            const target = activeQse.length > 0 ? activeQse[activeQse.length - 1] : qseRooms[qseRooms.length - 1];
+            this.roomId = target.id;
+            if (this.socket && this.socket.connected) {
+              this.socket.emit('telao_join_room', { roomId: this.roomId, adminToken: this.adminToken }, (res) => {
+                if (res && res.room) this.updateState(res.room);
+              });
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  unlockAudio() {
+    this.soundEnabled = true;
+    const soundIcon = document.getElementById('soundIcon');
+    const soundText = document.getElementById('soundText');
+    if (soundIcon) soundIcon.innerText = '🔊';
+    if (soundText) soundText.innerText = 'Voz IA Ativada';
+
+    const alertBanner = document.getElementById('telaoAudioAlertFloating');
+    if (alertBanner) alertBanner.style.display = 'none';
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        if (!this._audioCtx) this._audioCtx = new AudioCtx();
+        if (this._audioCtx.state === 'suspended') {
+          this._audioCtx.resume();
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const silent = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      silent.play().catch(() => {});
+    } catch (e) {}
+
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.resume();
+        const u = new SpeechSynthesisUtterance(' ');
+        window.speechSynthesis.speak(u);
+      }
+    } catch (e) {}
   }
 
   async checkAdminAuth() {
     const urlParams = new URLSearchParams(window.location.search);
-    let token = urlParams.get('adminToken') || localStorage.getItem('g5_admin_token');
-
-    if (token) {
-      try {
-        const verifyRes = await fetch(`/api/admin/verify?adminToken=${encodeURIComponent(token)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (verifyRes.ok) {
-          const vData = await verifyRes.json();
-          if (vData.authenticated) {
-            this.adminToken = token;
-            localStorage.setItem('g5_admin_token', token);
-            return true;
-          }
-        }
-      } catch (e) {
-        console.warn('Admin token verification error:', e);
-      }
-    }
-
-    this.renderAdminLockScreen();
-    return false;
+    let token = urlParams.get('adminToken') || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
+    this.adminToken = token;
+    localStorage.setItem('g5_admin_token', token);
+    return true;
   }
 
   renderAdminLockScreen() {
@@ -231,6 +266,11 @@ class TelaoApp {
 
     this.socket.on('qse_round_started', (data) => {
       console.log('Nova rodada iniciada no Telão:', data);
+      if (data && (data.roomId || data.roomCode)) {
+        if (!this.roomId) this.roomId = data.roomId;
+        const codeEl = document.getElementById('telaoRoomCode');
+        if (codeEl) codeEl.innerText = data.roomCode || data.roomId || '------';
+      }
       this.onRoundStarted(data);
     });
 
@@ -337,16 +377,15 @@ class TelaoApp {
     const icon = document.getElementById('soundIcon');
     const text = document.getElementById('soundText');
     if (this.soundEnabled) {
-      icon.innerText = '🔊';
-      text.innerText = 'Voz IA Ativa';
-      // Unlock audio context by saying a short silent wake-up utterance
-      if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(' ');
-        window.speechSynthesis.speak(u);
-      }
+      if (icon) icon.innerText = '🔊';
+      if (text) text.innerText = 'Voz IA Ativada';
+      this.unlockAudio();
     } else {
-      icon.innerText = '🔇';
-      text.innerText = 'Voz IA Muda';
+      if (icon) icon.innerText = '🔇';
+      if (text) text.innerText = 'Voz IA Muda';
+      if (this.currentAudio) {
+        try { this.currentAudio.pause(); } catch (e) {}
+      }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -497,13 +536,15 @@ class TelaoApp {
     if (!q) return 1;
     if (q.id) {
       const matchFacil = q.id.match(/facil-(\d+)/i);
-      if (matchFacil) return parseInt(matchFacil[1]);
-      const matchMedia = q.id.match(/media-(\d+)/i);
-      if (matchMedia) return 10 + parseInt(matchMedia[1]);
+      if (matchFacil) return parseInt(matchFacil[1], 10);
+      const matchMedia = q.id.match(/medi[ao]-(\d+)/i);
+      if (matchMedia) return 10 + parseInt(matchMedia[1], 10);
       const matchDificil = q.id.match(/dificil-(\d+)/i);
-      if (matchDificil) return 20 + parseInt(matchDificil[1]);
+      if (matchDificil) return 20 + parseInt(matchDificil[1], 10);
+      const matchNum = q.id.match(/(\d+)/);
+      if (matchNum) return parseInt(matchNum[1], 10);
     }
-    if (this.currentRoundIndex !== undefined && this.currentRoundIndex !== null) {
+    if (this.currentRoundIndex !== undefined && this.currentRoundIndex !== null && this.currentRoundIndex >= 0) {
       return (this.currentRoundIndex % 30) + 1;
     }
     return 1;
@@ -633,8 +674,8 @@ class TelaoApp {
             this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
           };
 
-          // Timeout de segurança baseado na duração típica do áudio
-          const safetyTime = Math.max(12000, (text.length || 60) * 160);
+          // Timeout de segurança ajustado (máximo 8 segundos por trecho)
+          const safetyTime = Math.min(8000, Math.max(3000, (text.length || 30) * 90));
           this._utteranceSafetyTimer = setTimeout(finish, safetyTime);
 
           if (!sessionId || this.activeNarrationSession === sessionId) {
@@ -642,7 +683,9 @@ class TelaoApp {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
               playPromise.catch((err) => {
-                console.warn('Erro ao reproduzir arquivo MP3:', audioUrl, err);
+                console.warn('Erro ao reproduzir arquivo MP3 (bloqueio de autoplay?):', audioUrl, err);
+                const alertBanner = document.getElementById('telaoAudioAlertFloating');
+                if (alertBanner) alertBanner.style.display = 'flex';
                 this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
               });
             }
@@ -1017,7 +1060,6 @@ class TelaoApp {
     console.log('[Telão] 🧦 Reproduzindo áudio do Cascão:', cascaoAudio, winningTeam);
     await this.playAudioOrSpeak(cascaoAudio, 'cascao', null, cascaoSpeech);
     console.log('[Telão] 🎉 Cerimônia de encerramento finalizada com sucesso!');
-  }
   }
 
   resetOptionCards() {

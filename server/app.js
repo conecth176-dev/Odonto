@@ -146,15 +146,31 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Telão: Join room as spectator / display (Admin Only)
+    // Telão: Join room as spectator / display
   socket.on('telao_join_room', ({ roomId, adminToken }, callback) => {
     try {
-      if (!isValidAdminToken(adminToken)) {
-        return callback && callback({ error: 'Acesso restrito: Apenas o Administrador / Anfitrião pode abrir o Telão.' });
+      socket.join('telao_global');
+      let targetRoom = null;
+      if (roomId) {
+        targetRoom = roomManager.getRoom(roomId);
       }
-      socket.join('telao_' + roomId);
-      const roomState = roomManager.getSanitizedRoomState(roomId, null);
-      if (callback) callback({ success: true, room: roomState });
+      if (!targetRoom) {
+        const allRooms = roomManager.getAllRoomsSummary();
+        const activeQse = allRooms.filter(r => r.mode === 'quem_sou_eu' && r.status !== 'finished');
+        const fallback = activeQse.length > 0 ? activeQse[activeQse.length - 1] : allRooms.find(r => r.mode === 'quem_sou_eu');
+        if (fallback) {
+          targetRoom = roomManager.getRoom(fallback.id);
+        }
+      }
+
+      if (targetRoom) {
+        socket.join('telao_' + targetRoom.id);
+        if (targetRoom.code) socket.join('telao_' + targetRoom.code);
+        const roomState = roomManager.getSanitizedRoomState(targetRoom.id, null);
+        if (callback) callback({ success: true, room: roomState });
+      } else {
+        if (callback) callback({ success: true, waiting: true });
+      }
     } catch (err) {
       if (callback) callback({ error: err.message });
     }

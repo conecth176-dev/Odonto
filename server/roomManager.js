@@ -163,7 +163,20 @@ class RoomManager {
   }
 
   getRoom(roomId) {
-    return this.rooms[roomId] || null;
+    if (!roomId) return null;
+    if (this.rooms[roomId]) return this.rooms[roomId];
+    const byCode = Object.values(this.rooms).find(r => r.code === roomId);
+    if (byCode) return byCode;
+    return null;
+  }
+
+  emitToTelao(room, event, payload) {
+    if (!room) return;
+    this.io.to('telao_' + room.id).emit(event, payload);
+    if (room.code) {
+      this.io.to('telao_' + room.code).emit(event, payload);
+    }
+    this.io.to('telao_global').emit(event, payload);
   }
 
   deleteRoom(roomId) {
@@ -477,6 +490,8 @@ class RoomManager {
 
     this.saveRooms();
     const roundPayload = {
+      roomId: room.id,
+      roomCode: room.code,
       roundIndex: nextIdx,
       questionIndex: nextIdx,
       totalQuestions: room.questions.length,
@@ -484,8 +499,10 @@ class RoomManager {
     };
 
     this.io.to(roomId).emit('qse_round_started', roundPayload);
+    if (room.code) this.io.to(room.code).emit('qse_round_started', roundPayload);
     this.io.to('admin_' + roomId).emit('qse_round_started', roundPayload);
-    this.io.to('telao_' + roomId).emit('qse_round_started', roundPayload);
+    if (room.code) this.io.to('admin_' + room.code).emit('qse_round_started', roundPayload);
+    this.emitToTelao(room, 'qse_round_started', roundPayload);
     this.broadcastRoomState(roomId);
     return { success: true, questionIndex: nextIdx, roundIndex: nextIdx };
   }
@@ -564,8 +581,10 @@ class RoomManager {
 
     this.saveRooms();
     this.io.to(roomId).emit('qse_buzzer_winner', room.buzzerWinner);
+    if (room.code) this.io.to(room.code).emit('qse_buzzer_winner', room.buzzerWinner);
     this.io.to('admin_' + roomId).emit('qse_buzzer_winner', room.buzzerWinner);
-    this.io.to('telao_' + roomId).emit('qse_buzzer_winner', room.buzzerWinner);
+    if (room.code) this.io.to('admin_' + room.code).emit('qse_buzzer_winner', room.buzzerWinner);
+    this.emitToTelao(room, 'qse_buzzer_winner', room.buzzerWinner);
     this.broadcastRoomState(roomId);
 
     return { success: true, isWinner: true, elapsedMs, winner: room.buzzerWinner, buzzerWinner: room.buzzerWinner };
@@ -613,8 +632,10 @@ class RoomManager {
     this.saveRooms();
 
     this.io.to(roomId).emit('qse_answer_revealed', room.lastResult);
+    if (room.code) this.io.to(room.code).emit('qse_answer_revealed', room.lastResult);
     this.io.to('admin_' + roomId).emit('qse_answer_revealed', room.lastResult);
-    this.io.to('telao_' + roomId).emit('qse_answer_revealed', room.lastResult);
+    if (room.code) this.io.to('admin_' + room.code).emit('qse_answer_revealed', room.lastResult);
+    this.emitToTelao(room, 'qse_answer_revealed', room.lastResult);
     this.broadcastRoomState(roomId);
 
     return { success: true, result: room.lastResult };
@@ -630,8 +651,10 @@ class RoomManager {
     };
 
     this.io.to(roomId).emit('qse_tortada_triggered', payload);
+    if (room.code) this.io.to(room.code).emit('qse_tortada_triggered', payload);
     this.io.to('admin_' + roomId).emit('qse_tortada_triggered', payload);
-    this.io.to('telao_' + roomId).emit('qse_tortada_triggered', payload);
+    if (room.code) this.io.to('admin_' + room.code).emit('qse_tortada_triggered', payload);
+    this.emitToTelao(room, 'qse_tortada_triggered', payload);
 
     return { success: true, payload };
   }
@@ -686,8 +709,10 @@ class RoomManager {
     this.saveRooms();
     const finishPayload = { leaderboard: room.leaderboard, hasWinner, teamScores };
     this.io.to(roomId).emit('qse_finished', finishPayload);
+    if (room.code) this.io.to(room.code).emit('qse_finished', finishPayload);
     this.io.to('admin_' + roomId).emit('qse_finished', finishPayload);
-    this.io.to('telao_' + roomId).emit('qse_finished', finishPayload);
+    if (room.code) this.io.to('admin_' + room.code).emit('qse_finished', finishPayload);
+    this.emitToTelao(room, 'qse_finished', finishPayload);
     this.broadcastRoomState(roomId);
     this.broadcastRoomList();
 
@@ -1288,7 +1313,7 @@ class RoomManager {
     });
 
     // Also broadcast to Telão
-    this.io.to('telao_' + roomId).emit('telao_state_update', genericState);
+    this.emitToTelao(room, 'telao_state_update', genericState);
   }
 }
 

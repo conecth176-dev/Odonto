@@ -604,6 +604,12 @@
   </style>
 </head>
 <body>
+  <!-- Floating Audio Unlock Alert (shown only if browser blocks autoplay) -->
+  <div id="telaoAudioAlertFloating" onclick="window.telaoApp.unlockAudio()" style="display: none; position: fixed; top: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 999999; background: linear-gradient(135deg, #0284c7, #06b6d4); color: #fff; padding: 0.9rem 1.8rem; border-radius: 999px; box-shadow: 0 0 35px rgba(6, 182, 212, 0.8), 0 10px 20px rgba(0,0,0,0.5); font-weight: 800; font-size: 1.1rem; cursor: pointer; align-items: center; gap: 0.8rem; border: 2px solid #fff; animation: floatBadge 2s ease-in-out infinite;">
+    <span>🔊</span>
+    <span>CLIQUE AQUI PARA ATIVAR O SOM DO TELÃO (Cebolinha e Mônica)</span>
+  </div>
+
 
   <div class="telao-container">
     <!-- Header -->
@@ -707,6 +713,6 @@
   <!-- Socket.io & Telão Script -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/sound.js"></script>
-  <script src="/js/telao.js"></script>
+  <script src="/js/telao.js?v=20261109_qse_fix"></script>
 </body>
 </html>
