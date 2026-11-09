@@ -175,7 +175,7 @@
     }
 
     .question-theme-tag {
-      display: inline-block;
+      display: none !important;
       background: rgba(6, 182, 212, 0.15);
       border: 1px solid rgba(6, 182, 212, 0.4);
       color: #38bdf8;
@@ -647,7 +647,7 @@
       <section class="telao-main-card">
         <!-- Question Section -->
         <div class="question-box" id="questionBox">
-          <span class="question-theme-tag" id="questionThemeTag">Embriologia Humana</span>
+          <span class="question-theme-tag" id="questionThemeTag" style="display: none !important;"></span>
           <h2 class="question-riddle-title" id="questionRiddleTitle">QUEM SOU EU? 🧠</h2>
           <p class="question-prompt" id="questionPrompt">Conectando ao jogo em tempo real...</p>
         </div>
@@ -713,6 +713,6 @@
   <!-- Socket.io & Telão Script -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/sound.js"></script>
-  <script src="/js/telao.js?v=20261109_qse_fix2"></script>
+  <script src="/js/telao.js?v=20261109_qse_notheme"></script>
 </body>
 </html>

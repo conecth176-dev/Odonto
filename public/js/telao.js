@@ -407,7 +407,7 @@ class TelaoApp {
       const diff = currentQ.difficulty || 'Médio';
       const pts = currentQ.points || (diff === 'Difícil' ? 30 : diff === 'Médio' ? 20 : 10);
       document.getElementById('telaoPointsLabel').innerText = `${pts} pts (${diff})`;
-      document.getElementById('questionThemeTag').innerText = currentQ.theme || currentQ.category || 'Embriologia Humana';
+      const tEl1 = document.getElementById('questionThemeTag'); if (tEl1) { tEl1.innerText = ''; tEl1.style.display = 'none'; }
       document.getElementById('questionPrompt').innerText = currentQ.question || '';
 
       if (currentQ.options && currentQ.options.length === 4) {
@@ -488,7 +488,7 @@ class TelaoApp {
     const diff = q.difficulty || 'Médio';
     const pts = q.points || (diff === 'Difícil' ? 30 : diff === 'Médio' ? 20 : 10);
     document.getElementById('telaoPointsLabel').innerText = `${pts} pts (${diff})`;
-    document.getElementById('questionThemeTag').innerText = q.theme || 'Embriologia Humana';
+    const tEl2 = document.getElementById('questionThemeTag'); if (tEl2) { tEl2.innerText = ''; tEl2.style.display = 'none'; }
     document.getElementById('questionPrompt').innerText = q.question || '';
 
     for (let i = 0; i < 4; i++) {

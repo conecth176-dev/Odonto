@@ -3372,10 +3372,7 @@ class EmbryoApp {
 
       <!-- Question Prompt Card -->
       <div class="glass" style="padding: 1.4rem 1.3rem; margin-bottom: 1.3rem; border-radius: 22px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-          <span style="background: rgba(6, 182, 212, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 999px; letter-spacing: 0.5px;">
-            ${q ? (q.theme || q.category || 'Embriologia') : 'Aguardando Pergunta'}
-          </span>
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.6rem;">
           <span style="color: #c084fc; font-weight: 800; font-size: 0.8rem;">
             ${q ? `${q.points || 20} pts (${q.difficulty || 'Médio'})` : ''}
           </span>
