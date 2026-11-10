@@ -2602,16 +2602,31 @@ class EmbryoApp {
     const correctLetter = (correctIdx !== null && correctIdx !== undefined && letters[correctIdx]) ? letters[correctIdx] : 'A';
     const correctText = (q && q.options && correctIdx !== null && q.options[correctIdx]) ? q.options[correctIdx] : '';
 
+    // Definição clara e visual do Modo de Jogo
+    const mode = (adminState.mode || 'solo').toLowerCase();
+    const isDuo = mode === 'duo';
+    const isQse = mode === 'quem_sou_eu';
+    const modeLabel = isDuo ? 'EM DUPLAS' : isQse ? 'QUEM SOU EU?' : 'INDIVIDUAL (SOLO)';
+    const modeIcon = isDuo ? '👥' : isQse ? '🧠🥧' : '👤';
+    const modeColor = isDuo ? '#c084fc' : isQse ? '#f43f5e' : '#38bdf8';
+    const modeBg = isDuo ? 'rgba(192, 132, 252, 0.15)' : isQse ? 'rgba(244, 63, 94, 0.15)' : 'rgba(56, 189, 248, 0.15)';
+    const modeBorder = isDuo ? 'rgba(192, 132, 252, 0.35)' : isQse ? 'rgba(244, 63, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)';
+
     container.innerHTML = `
       <!-- Barra Superior: Info da Sala e Ações do Admin -->
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="room-code-tag">${adminState.code}</span>
-          <h2 style="font-family: var(--font-display); font-size: 1.4rem; color: #fff; margin-top: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+            <span class="room-code-tag">${adminState.code}</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; background: ${modeBg}; border: 1px solid ${modeBorder}; color: ${modeColor};">
+              ${modeIcon} MODO: ${modeLabel}
+            </span>
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 1.4rem; color: #fff; margin-top: 2px;">
             ${this.escapeHtml(adminState.name)}
           </h2>
           <span style="font-size: 0.85rem; color: var(--text-muted);">
-            Modo: <strong style="color: #38bdf8;">${adminState.mode.toUpperCase()}</strong> | Status: <strong style="color: ${isRunning ? '#34d399' : isPaused ? '#fbbf24' : '#94a3b8'};">${adminState.status}</strong>
+            Status: <strong style="color: ${isRunning ? '#34d399' : isPaused ? '#fbbf24' : '#94a3b8'};">${adminState.status.toUpperCase()}</strong>
           </span>
         </div>
 
@@ -2662,6 +2677,12 @@ class EmbryoApp {
                 </span>
               </div>
             ` : ''}
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Modo:</span>
+              <strong style="color: ${modeColor}; font-size: 0.95rem; display: flex; align-items: center; gap: 5px;">
+                ${modeIcon} ${modeLabel}
+              </strong>
+            </div>
             <div>
               <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Respostas Recebidas:</span>
               <strong style="color: #34d399; font-size: 1.05rem;">${round ? round.answersCount : 0}</strong>
