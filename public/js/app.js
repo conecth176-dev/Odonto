@@ -3749,6 +3749,8 @@ class EmbryoApp {
     if (modeSelect) modeSelect.value = 'quem_sou_eu';
     const nameInput = document.getElementById('newRoomName');
     if (nameInput) nameInput.value = 'Competição Quem Sou Eu? — Grupo 5';
+    const countSelect = document.getElementById('newRoomQuestionCount');
+    if (countSelect) countSelect.value = '30';
   }
 
   async openTelao(roomId) {

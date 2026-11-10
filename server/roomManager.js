@@ -362,11 +362,14 @@ class RoomManager {
       if (filtered.length > 0) pool = filtered;
     }
 
-    const countVal = (questionCount === 'all') ? pool.length : (parseInt(questionCount) || 12);
+    const countVal = (questionCount === 'all') ? pool.length : (parseInt(questionCount) || 30);
     const targetCount = Math.min(countVal, pool.length);
 
-    let selected = this._shuffle(pool).slice(0, targetCount);
-    selected = selected.map(q => this._shuffleOptions(q));
+    // Mantém perguntas e alternativas na ordem original sem embaralhar para sincronia 1:1 com os áudios
+    let selected = pool.slice(0, targetCount).map(q => ({
+      ...q,
+      options: [...q.options]
+    }));
 
     const roomId = 'room_qse_' + crypto.randomBytes(4).toString('hex');
     const roomCode = ('QSE-' + Math.floor(100 + Math.random() * 900)).toUpperCase();
