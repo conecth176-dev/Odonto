@@ -662,20 +662,10 @@ class RoomManager {
       clearTimeout(this._qseAutoAdvanceTimers[roomId]);
       delete this._qseAutoAdvanceTimers[roomId];
     }
-    if (isCorrect) {
-      this._qseAutoAdvanceTimers[roomId] = setTimeout(() => {
-        delete this._qseAutoAdvanceTimers[roomId];
-        const curRoom = this.rooms[roomId];
-        if (curRoom && curRoom.qseState === 'revealed') {
-          const nextIdx = (curRoom.currentQuestionIndex !== undefined && curRoom.currentQuestionIndex >= 0) ? (curRoom.currentQuestionIndex + 1) : 0;
-          if (nextIdx < curRoom.questions.length) {
-            this.startQseRound(roomId, nextIdx);
-          } else {
-            this.finishQseCompetition(roomId);
-          }
-        }
-      }, 15000);
-      if (this._qseAutoAdvanceTimers[roomId].unref) this._qseAutoAdvanceTimers[roomId].unref();
+    // Auto-advance de 15s desativado: quem passa a pergunta no QSE é o apresentador
+    if (this._qseAutoAdvanceTimers && this._qseAutoAdvanceTimers[roomId]) {
+      clearTimeout(this._qseAutoAdvanceTimers[roomId]);
+      delete this._qseAutoAdvanceTimers[roomId];
     }
     this.saveRooms();
 
@@ -822,10 +812,8 @@ class RoomManager {
     room.currentRound.endTime = now + remainingSec * 1000;
     room.status = 'in_progress';
 
-    // Start timer for remaining seconds
-    room.timer = setTimeout(() => {
-      this.autoCloseRound(roomId);
-    }, remainingSec * 1000);
+    // Timer desativado: controle manual pelo apresentador
+    room.timer = null;
 
     this.saveRooms();
     this.broadcastRoomState(roomId);
@@ -956,10 +944,8 @@ class RoomManager {
       isClosed: false
     };
 
-    // Auto-close when time is up
-    room.timer = setTimeout(() => {
-      this.autoCloseRound(roomId);
-    }, duration * 1000);
+    // Auto-close desativado: quem passa a pergunta e fecha a rodada é o apresentador
+    room.timer = null;
 
     this.calculateLeaderboard(roomId);
     this.saveRooms();
@@ -1003,10 +989,8 @@ class RoomManager {
       room.status = 'explanation';
     }
 
-    // Schedule automatic transition to the next question or final podium!
-    room.timer = setTimeout(() => {
-      this.advanceToNextOrFinish(roomId);
-    }, autoAdvanceSeconds * 1000);
+    // Transição automática desativada: o apresentador avança no seu próprio tempo
+    room.timer = null;
 
     this.saveRooms();
     this.broadcastRoomState(roomId);
@@ -1068,11 +1052,8 @@ class RoomManager {
     let points = 0;
 
     if (isCorrect) {
-      // Official Formula:
-      // Pontuação = pontuação máxima * (1 - 0.5 * tempo utilizado / tempo total)
-      const ratio = timeUsed / room.currentRound.duration;
-      points = Math.round(maxPoints * (1 - 0.5 * ratio));
-      if (points < 0) points = 0;
+      // Pontuação integral no acerto (sem penalidade de tempo, controlado pelo apresentador)
+      points = maxPoints;
     }
 
     // Store submission in round

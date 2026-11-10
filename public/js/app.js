@@ -1099,14 +1099,8 @@ class EmbryoApp {
           <span class="arena-category">${q ? q.category : ''}</span>
         </div>
 
-        <div class="timer-container">
-          <div class="timer-circle-wrap" id="timerWrap">
-            <svg class="timer-svg" viewBox="0 0 44 44">
-              <circle class="timer-bg-circle" cx="22" cy="22" r="18"></circle>
-              <circle class="timer-progress-circle" id="timerCircleProgress" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"></circle>
-            </svg>
-            <span class="timer-text" id="timerDisplay">--</span>
-          </div>
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid rgba(56, 189, 248, 0.35); font-size: 0.85rem; font-weight: 800; color: #38bdf8;">
+          🎙️ Sem limite de tempo • Controle do Apresentador
         </div>
       </div>
     `;
@@ -1124,8 +1118,8 @@ class EmbryoApp {
               <div style="font-size: 0.8rem; color: #cbd5e1;">Gabarito oficial revelado e pontuação calculada.</div>
             </div>
           </div>
-          <div style="background: rgba(15,23,42,0.7); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); border: 1px solid rgba(56,189,248,0.4); font-size: 0.88rem; font-weight: 700; color: #38bdf8;">
-            ⏳ Próxima pergunta em: <strong id="explanationTimerSec" style="color: #6ee7b7;">...</strong>
+          <div style="background: rgba(15,23,42,0.7); padding: 0.4rem 0.95rem; border-radius: var(--radius-full); border: 1px solid rgba(56,189,248,0.4); font-size: 0.85rem; font-weight: 700; color: #38bdf8;">
+            🎙️ Aguardando o apresentador passar a pergunta
           </div>
         </div>
       `;
@@ -1484,12 +1478,7 @@ class EmbryoApp {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
     }
-
-    const timerDisplay = document.getElementById('timerDisplay');
-    const timerCircle = document.getElementById('timerCircleProgress');
-    const timerWrap = document.getElementById('timerWrap');
-    const expTimerSec = document.getElementById('explanationTimerSec');
-    if (!timerDisplay || !timerCircle) return;
+    return;
 
     const maxCircumference = 113.1; // 2 * PI * 18
 
@@ -3436,23 +3425,9 @@ class EmbryoApp {
 
     this.renderQse(this.currentRoom);
 
-    if (result.isCorrect) {
-      if (this._qseCountdownInterval) clearInterval(this._qseCountdownInterval);
-      let count = 15;
-      const updateBadge = () => {
-        const badge = document.getElementById('qseMobileCountdown');
-        if (badge) badge.innerText = `⏱️ Próxima pergunta em ${count}s...`;
-      };
-      updateBadge();
-      this._qseCountdownInterval = setInterval(() => {
-        count--;
-        if (count <= 0) {
-          clearInterval(this._qseCountdownInterval);
-          this._qseCountdownInterval = null;
-        } else {
-          updateBadge();
-        }
-      }, 1000);
+    if (this._qseCountdownInterval) {
+      clearInterval(this._qseCountdownInterval);
+      this._qseCountdownInterval = null;
     }
   }
 
