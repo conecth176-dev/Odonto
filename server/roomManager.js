@@ -62,7 +62,7 @@ class RoomManager {
     return { ...question, options: newOptions, correctAnswer: newCorrectAnswer };
   }
 
-  createRoom({ name, description, mode, timeLimit, formula, questionIds, revealExplanation, tieBreaker, questionCount, difficulty, enableTortada }) {
+  createRoom({ name, description, mode, timeLimit, formula, questionIds, revealExplanation, tieBreaker, questionCount, difficulty, enableTortada, requireAdminUnlock }) {
     if (mode === 'quem_sou_eu') {
       return this.createQseRoom({ name, description, questionCount, difficulty, enableTortada });
     }
@@ -145,6 +145,7 @@ class RoomManager {
       timeLimit: parseInt(timeLimit) || 180,
       formula: formula || 'standard',
       revealExplanation: revealExplanation !== false,
+      requireAdminUnlock: requireAdminUnlock === true,
       tieBreaker: tieBreaker || 'most_correct_then_fastest',
       questions: selectedQuestions,
       currentQuestionIndex: -1,
@@ -831,6 +832,19 @@ class RoomManager {
     return { success: true };
   }
 
+  unlockRoundAnswers(roomId) {
+    const room = this.rooms[roomId];
+    if (!room) return { error: 'Sala não encontrada.' };
+    if (!room.currentRound) return { error: 'Rodada não iniciada.' };
+    room.requireAdminUnlock = true;
+    room.currentRound.answersUnlocked = true;
+    room.currentRound.answersUnlockedAt = Date.now();
+    this.saveRooms();
+    this.broadcastRoomState(roomId);
+    this.io.to(roomId).emit('round_answers_unlocked', { roomId, questionIndex: room.currentRound.questionIndex });
+    return { success: true, answersUnlocked: true };
+  }
+
   advanceManually(roomId) {
     const room = this.rooms[roomId];
     if (!room) return { error: 'Sala não encontrada.' };
@@ -929,6 +943,7 @@ class RoomManager {
     room.status = 'in_progress';
     room.explanationDuration = null;
     room.explanationEndsAt = null;
+    const isLockedByDefault = (room.requireAdminUnlock === true && room.mode !== 'quem_sou_eu');
     room.currentRound = {
       questionIndex,
       questionId: question.id,
@@ -936,6 +951,7 @@ class RoomManager {
       endTime,
       duration,
       activeDuoRole,
+      answersUnlocked: !isLockedByDefault,
       answers: {}, // submitterId -> { optionIndex, timeUsed, points, isCorrect, submittedAt }
       isClosed: false
     };
@@ -1029,6 +1045,11 @@ class RoomManager {
         const turnName = activeRole === 'member_A' ? 'o Integrante A' : 'o Integrante B';
         return { error: `Nesta pergunta é a vez de ${turnName} responder pela dupla!` };
       }
+    }
+
+    // Prevent submission if answers are still locked by admin
+    if (room.requireAdminUnlock && room.currentRound && room.currentRound.answersUnlocked === false) {
+      return { error: 'Aguarde o responsável liberar as alternativas no painel adm para responder!' };
     }
 
     // Prevent duplicate submission
@@ -1314,6 +1335,7 @@ class RoomManager {
         duration: room.currentRound.duration,
         activeDuoRole: room.currentRound.activeDuoRole,
         isClosed: room.currentRound.isClosed,
+        answersUnlocked: room.currentRound.answersUnlocked !== false,
         answersCount,
         totalExpected,
         // In explanation mode, reveal answers stats

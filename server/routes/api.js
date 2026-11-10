@@ -36,6 +36,9 @@ module.exports = function(roomManager) {
 
     const sanitized = roomManager.getSanitizedRoomState(req.params.id);
     if (isAdmin) {
+      if (room.mode !== 'quem_sou_eu') {
+        room.requireAdminUnlock = true;
+      }
       const currentQ = (room.currentQuestionIndex >= 0 && room.questions) ? room.questions[room.currentQuestionIndex] : null;
       return res.json({
         ...sanitized,
@@ -211,6 +214,12 @@ module.exports = function(roomManager) {
 
   router.post('/admin/rooms/:id/resume', adminAuthMiddleware, (req, res) => {
     const result = roomManager.resumeCompetition(req.params.id);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  });
+
+  router.post('/admin/rooms/:id/unlock-answers', adminAuthMiddleware, (req, res) => {
+    const result = roomManager.unlockRoundAnswers(req.params.id);
     if (result.error) return res.status(400).json(result);
     res.json(result);
   });

@@ -1158,6 +1158,7 @@ class EmbryoApp {
       const myAnswer = room.myAnswer;
       const hasSubmitted = !!myAnswer;
       const canSubmit = !isExplanation && !hasSubmitted && (room.mode === 'solo' || room.myTurn);
+      const isAnswersLocked = (!isExplanation && round && round.answersUnlocked === false);
 
       const optionsHtml = q.options.map((opt, idx) => {
         let optClass = 'option-btn';
@@ -1223,12 +1224,31 @@ class EmbryoApp {
           <span class="question-theme-tag">${this.escapeHtml(q.theme || q.category)}</span>
           <h2 class="question-text">${this.escapeHtml(q.question)}</h2>
 
-          <div class="options-list">
-            ${optionsHtml}
-          </div>
+          ${isAnswersLocked ? `
+            <div style="background: rgba(15, 23, 42, 0.7); border: 2px dashed rgba(56, 189, 248, 0.45); border-radius: var(--radius-md); padding: 2.2rem 1.5rem; text-align: center; margin: 1.25rem 0;">
+              <div style="font-size: 3rem; margin-bottom: 0.6rem; animation: pulse 2s infinite;">🔒</div>
+              <h3 style="font-family: var(--font-display); color: #38bdf8; font-size: 1.3rem; margin: 0 0 0.4rem;">
+                Alternativas Bloqueadas
+              </h3>
+              <p style="color: #cbd5e1; font-size: 0.95rem; margin: 0 0 0.5rem; line-height: 1.5;">
+                Leia o enunciado com atenção. As letras <strong>A, B, C e D</strong> aparecerão aqui para você responder assim que o responsável autorizar no painel!
+              </p>
+              <span style="font-size: 0.8rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 12px; border-radius: 9999px;">
+                ⏱️ Aguardando autorização do anfitrião...
+              </span>
+            </div>
+          ` : `
+            <div class="options-list">
+              ${optionsHtml}
+            </div>
+          `}
 
           <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.25rem;">
-            ${actionText}
+            ${isAnswersLocked ? `
+              <div style="text-align: center; color: var(--text-dim); font-size: 0.88rem; padding: 0.5rem 0;">
+                🔒 Respostas temporariamente bloqueadas pelo anfitrião.
+              </div>
+            ` : actionText}
           </div>
         </div>
       `;
@@ -2636,6 +2656,15 @@ class EmbryoApp {
           ` : ''}
 
           ${isRunning ? `
+            ${round && round.answersUnlocked === false ? `
+              <button class="btn btn-emerald" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); animation: pulse 1.5s infinite;" onclick="app.adminRoomAction('unlock_answers')">
+                🔓 Liberar Respostas (A, B, C, D)
+              </button>
+            ` : `
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-weight: 800; font-size: 0.82rem;">
+                ✅ Respostas Liberadas
+              </span>
+            `}
             <button class="btn btn-gold" onclick="app.adminRoomAction('pause')">⏸ Pausar</button>
             <button class="btn btn-primary" onclick="app.adminRoomAction('advance')">⏩ Fechar Rodada / Avançar</button>
           ` : ''}
@@ -2681,6 +2710,12 @@ class EmbryoApp {
               <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Modo:</span>
               <strong style="color: ${modeColor}; font-size: 0.95rem; display: flex; align-items: center; gap: 5px;">
                 ${modeIcon} ${modeLabel}
+              </strong>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Alternativas:</span>
+              <strong style="color: ${round && round.answersUnlocked === false ? '#f87171' : '#34d399'}; font-size: 0.95rem; display: flex; align-items: center; gap: 4px;">
+                ${round && round.answersUnlocked === false ? '🔒 Bloqueadas' : '🔓 Liberadas'}
               </strong>
             </div>
             <div>
@@ -2829,7 +2864,10 @@ class EmbryoApp {
     try {
       let actionHandled = false;
       try {
-        const res = await fetch(`/api/admin/rooms/${this.adminSelectedRoomId}/${action}`, {
+        const endpoint = (action === 'unlock_answers')
+          ? `/api/admin/rooms/${this.adminSelectedRoomId}/unlock-answers`
+          : `/api/admin/rooms/${this.adminSelectedRoomId}/${action}`;
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2860,7 +2898,9 @@ class EmbryoApp {
             room.questions = (allQ || []).slice(0, count);
           }
 
-          if (action === 'start') {
+          if (action === 'unlock_answers') {
+            if (room.currentRound) room.currentRound.answersUnlocked = true;
+          } else if (action === 'start') {
             room.status = 'in_progress';
             room.currentQuestionIndex = 0;
             room.answersCount = 0;
@@ -2947,7 +2987,7 @@ class EmbryoApp {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.adminToken}`
           },
-          body: JSON.stringify({ name, description, mode, timeLimit, revealExplanation, questionCount, difficulty, enableTortada })
+          body: JSON.stringify({ name, description, mode, timeLimit, revealExplanation, questionCount, difficulty, enableTortada, requireAdminUnlock: true })
         });
         const contentType = res.headers.get('content-type') || '';
         if (res.ok && contentType.includes('application/json')) {

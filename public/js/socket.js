@@ -75,6 +75,15 @@ const socketClient = {
         }
       });
 
+      this.socket.on('round_answers_unlocked', (payload) => {
+        if (window.app && window.app.currentRoom && window.app.currentRoom.id === payload.roomId) {
+          if (window.app.currentRoom.currentRound) {
+            window.app.currentRoom.currentRound.answersUnlocked = true;
+          }
+          window.app.renderArena(window.app.currentRoom);
+        }
+      });
+
       // Quem Sou Eu Event Listeners
       this.socket.on('qse_round_started', (data) => {
         if (window.app && window.app.handleQseRoundStarted) {
