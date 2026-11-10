@@ -402,11 +402,31 @@ class TelaoApp {
     // 1. Títulos e Subtítulos do Telão
     const titleEl = document.getElementById('telaoTitle');
     const subEl = document.getElementById('telaoSubtitle');
+    const badgeEl = document.getElementById('telaoLogoBadge');
     if (titleEl) {
-      titleEl.innerText = isDuo ? 'QUIZ EM DUPLAS 👥' : isSolo ? 'QUIZ INDIVIDUAL (SOLO) 👤' : 'QUEM SOU EU? 🧠🥧';
+      if (isDuo) {
+        titleEl.innerText = 'QUIZ DE EMBRIOLOGIA (EM DUPLAS) 👥';
+      } else if (isSolo) {
+        titleEl.innerText = 'QUIZ DE EMBRIOLOGIA (SOLO) 👤';
+      } else if (isQse) {
+        titleEl.innerText = 'QUEM SOU EU? 🧠🥧';
+      } else {
+        titleEl.innerText = 'QUIZ DE EMBRIOLOGIA 🧠';
+      }
     }
     if (subEl) {
-      subEl.innerText = isDuo ? 'Embriologia Humana • Alternância de Turnos em Tempo Real' : isSolo ? 'Embriologia Humana • Competição Individual ao Vivo' : 'Minigame Interativo com Torta na Cara';
+      if (isDuo) {
+        subEl.innerText = 'Grupo 5 • Bases Celulares e Embriologia • Duplas em Tempo Real';
+      } else if (isSolo) {
+        subEl.innerText = 'Grupo 5 • Bases Celulares e Embriologia • Competição ao Vivo';
+      } else if (isQse) {
+        subEl.innerText = 'Minigame Interativo com Torta na Cara';
+      } else {
+        subEl.innerText = 'Grupo 5 • Bases Celulares e Embriologia';
+      }
+    }
+    if (badgeEl) {
+      badgeEl.innerText = isQse ? '🧠🥧' : '🧠🔬';
     }
 
     // 2. Info Header (Sala, Rodada, Pontuação)
@@ -421,7 +441,8 @@ class TelaoApp {
       if (isQse) {
         qTitleEl.innerText = 'QUEM SOU EU? 🧠';
       } else {
-        qTitleEl.innerText = currentQIdx >= 0 ? `PERGUNTA ${currentQIdx + 1} DE ${totalQ} ❓` : 'QUIZ DE EMBRIOLOGIA ❓';
+        const qNum = currentQIdx >= 0 ? currentQIdx + 1 : 1;
+        qTitleEl.innerText = `QUIZ DE EMBRIOLOGIA — QUESTÃO ${qNum} DE ${totalQ} ❓`;
       }
     }
 
@@ -762,6 +783,11 @@ class TelaoApp {
     this.resetOptionCards();
 
     // Set Header
+    const qTitleOnRound = document.getElementById('questionRiddleTitle');
+    if (qTitleOnRound) {
+      const isQse = this.roomState && this.roomState.mode === 'quem_sou_eu';
+      qTitleOnRound.innerText = isQse ? 'QUEM SOU EU? 🧠' : `QUIZ DE EMBRIOLOGIA — QUESTÃO ${data.roundIndex + 1} DE ${data.totalQuestions} ❓`;
+    }
     document.getElementById('telaoRoundLabel').innerText = `${data.roundIndex + 1} / ${data.totalQuestions}`;
     const diff = q.difficulty || 'Médio';
     const pts = q.points || (diff === 'Difícil' ? 30 : diff === 'Médio' ? 20 : 10);
