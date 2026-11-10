@@ -350,8 +350,23 @@ class RoomManager {
   // --- QUEM SOU EU? (Minigame Presencial com Celulares & Telão) ---
 
   createQseRoom({ name, description, questionCount, difficulty, enableTortada }) {
-    const allQuestions = db.get('qse_questions') || require('./qseQuestionsData');
-    let pool = [...allQuestions];
+    const rawQuestions = require('./qseQuestionsData');
+    let pool = rawQuestions.map((q, idx) => {
+      let audioNum = idx + 1;
+      if (q.id) {
+        const matchFacil = q.id.match(/facil-(\d+)/i);
+        if (matchFacil) audioNum = parseInt(matchFacil[1], 10);
+        const matchMedia = q.id.match(/medi[ao]-(\d+)/i);
+        if (matchMedia) audioNum = 10 + parseInt(matchMedia[1], 10);
+        const matchDificil = q.id.match(/dificil-(\d+)/i);
+        if (matchDificil) audioNum = 20 + parseInt(matchDificil[1], 10);
+      }
+      return {
+        ...q,
+        audioNumber: audioNum,
+        options: [...q.options]
+      };
+    });
 
     if (difficulty && difficulty !== 'all') {
       const normDiff = difficulty.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -365,11 +380,10 @@ class RoomManager {
     const countVal = (questionCount === 'all') ? pool.length : (parseInt(questionCount) || 30);
     const targetCount = Math.min(countVal, pool.length);
 
-    // Mantém perguntas e alternativas na ordem original sem embaralhar para sincronia 1:1 com os áudios
-    let selected = pool.slice(0, targetCount).map(q => ({
-      ...q,
-      options: [...q.options]
-    }));
+    // Perguntas são sorteadas de forma aleatória entre fácil, médio e difícil!
+    // As alternativas A, B, C, D de cada pergunta são preservadas na ordem original (sem embaralhar)
+    // para que correspondam perfeitamente aos áudios gravados de cada alternativa.
+    let selected = this._shuffle(pool).slice(0, targetCount);
 
     const roomId = 'room_qse_' + crypto.randomBytes(4).toString('hex');
     const roomCode = ('QSE-' + Math.floor(100 + Math.random() * 900)).toUpperCase();
@@ -1216,8 +1230,18 @@ class RoomManager {
 
     let sanitizedQuestion = null;
     if (currentQ) {
+      let audioNum = currentQ.audioNumber;
+      if (!audioNum && currentQ.id) {
+        const matchFacil = currentQ.id.match(/facil-(\d+)/i);
+        if (matchFacil) audioNum = parseInt(matchFacil[1], 10);
+        const matchMedia = currentQ.id.match(/medi[ao]-(\d+)/i);
+        if (matchMedia) audioNum = 10 + parseInt(matchMedia[1], 10);
+        const matchDificil = currentQ.id.match(/dificil-(\d+)/i);
+        if (matchDificil) audioNum = 20 + parseInt(matchDificil[1], 10);
+      }
       sanitizedQuestion = {
         id: currentQ.id,
+        audioNumber: audioNum,
         category: currentQ.category,
         difficulty: currentQ.difficulty,
         points: currentQ.points,

@@ -551,6 +551,7 @@ class TelaoApp {
 
   getQuestionNumber(q) {
     if (!q) return 1;
+    if (q.audioNumber) return parseInt(q.audioNumber, 10);
     if (q.id) {
       const matchFacil = q.id.match(/facil-(\d+)/i);
       if (matchFacil) return parseInt(matchFacil[1], 10);
