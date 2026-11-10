@@ -472,6 +472,7 @@ class RoomManager {
   startQseRound(roomId, questionIndex = null) {
     const room = this.rooms[roomId];
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    if (this._qseAutoAdvanceTimers && this._qseAutoAdvanceTimers[roomId]) { clearTimeout(this._qseAutoAdvanceTimers[roomId]); delete this._qseAutoAdvanceTimers[roomId]; }
 
     let nextIdx = 0;
     if (questionIndex !== null && questionIndex !== undefined && questionIndex >= 0) {
@@ -640,6 +641,26 @@ class RoomManager {
     };
 
     this.calculateQseLeaderboard(roomId);
+    if (!this._qseAutoAdvanceTimers) this._qseAutoAdvanceTimers = {};
+    if (this._qseAutoAdvanceTimers[roomId]) {
+      clearTimeout(this._qseAutoAdvanceTimers[roomId]);
+      delete this._qseAutoAdvanceTimers[roomId];
+    }
+    if (isCorrect) {
+      this._qseAutoAdvanceTimers[roomId] = setTimeout(() => {
+        delete this._qseAutoAdvanceTimers[roomId];
+        const curRoom = this.rooms[roomId];
+        if (curRoom && curRoom.qseState === 'revealed') {
+          const nextIdx = (curRoom.currentQuestionIndex !== undefined && curRoom.currentQuestionIndex >= 0) ? (curRoom.currentQuestionIndex + 1) : 0;
+          if (nextIdx < curRoom.questions.length) {
+            this.startQseRound(roomId, nextIdx);
+          } else {
+            this.finishQseCompetition(roomId);
+          }
+        }
+      }, 15000);
+      if (this._qseAutoAdvanceTimers[roomId].unref) this._qseAutoAdvanceTimers[roomId].unref();
+    }
     this.saveRooms();
 
     this.io.to(roomId).emit('qse_answer_revealed', room.lastResult);
@@ -673,6 +694,7 @@ class RoomManager {
   finishQseCompetition(roomId) {
     const room = this.rooms[roomId];
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    if (this._qseAutoAdvanceTimers && this._qseAutoAdvanceTimers[roomId]) { clearTimeout(this._qseAutoAdvanceTimers[roomId]); delete this._qseAutoAdvanceTimers[roomId]; }
 
     room.status = 'finished';
     room.qseState = 'finished';

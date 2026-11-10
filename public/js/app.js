@@ -3124,6 +3124,10 @@ class EmbryoApp {
   }
 
   handleQseRoundStarted(data) {
+    if (this._qseCountdownInterval) {
+      clearInterval(this._qseCountdownInterval);
+      this._qseCountdownInterval = null;
+    }
     if (this.currentView === 'admin') {
       this.loadAdminQse();
     }
@@ -3198,6 +3202,25 @@ class EmbryoApp {
     }
 
     this.renderQse(this.currentRoom);
+
+    if (result.isCorrect) {
+      if (this._qseCountdownInterval) clearInterval(this._qseCountdownInterval);
+      let count = 15;
+      const updateBadge = () => {
+        const badge = document.getElementById('qseMobileCountdown');
+        if (badge) badge.innerText = `⏱️ Próxima pergunta em ${count}s...`;
+      };
+      updateBadge();
+      this._qseCountdownInterval = setInterval(() => {
+        count--;
+        if (count <= 0) {
+          clearInterval(this._qseCountdownInterval);
+          this._qseCountdownInterval = null;
+        } else {
+          updateBadge();
+        }
+      }, 1000);
+    }
   }
 
   toCebolinha(text) {
@@ -3451,6 +3474,9 @@ class EmbryoApp {
               <p style="color: #a7f3d0; font-size: 0.95rem; font-weight: 700; margin: 0;">
                 ${this.escapeHtml(room.lastResult.participantName)} acertou e garantiu +${room.lastResult.pointsAwarded} pontos!
               </p>
+              <div id="qseMobileCountdown" style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(16,185,129,0.18); border: 1px solid #34d399; border-radius: 9999px; color: #a7f3d0; font-weight: 800; font-size: 0.9rem;">
+                ⏱️ Próxima pergunta em 15s...
+              </div>
             ` : `
               <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">❌</div>
               <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #f87171; margin: 0 0 0.3rem;">RESPOSTA INCORRETA!</h3>

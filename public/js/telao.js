@@ -522,6 +522,7 @@ class TelaoApp {
   }
 
   stopNarration() {
+    if (this._autoAdvanceCountdown) { clearInterval(this._autoAdvanceCountdown); this._autoAdvanceCountdown = null; }
     this.activeNarrationSession++;
     this.isNarrating = false;
     window._activeUtterance = null;
@@ -916,7 +917,6 @@ class TelaoApp {
 
     if (result.isCorrect) {
       banner.className = 'telao-banner banner-correct';
-      banner.innerHTML = `<span>🎉</span><span>A RESPOSTA ESTÁ CORRETA! ${result.participantName} GANHOU +${result.pointsAwarded} PONTOS!</span>`;
       if (window.soundManager) {
         try { window.soundManager.playCorrect(); } catch(e) {}
       }
@@ -928,6 +928,24 @@ class TelaoApp {
       setTimeout(() => {
         this.showTortadaAnimation("Torta no adversário!");
       }, 1500);
+
+      // Contagem regressiva visual de 15 segundos para a próxima pergunta automática
+      let countdown = 15;
+      const updateBannerCountdown = () => {
+        if (!banner) return;
+        banner.innerHTML = `<span>🎉</span><span>A RESPOSTA ESTÁ CORRETA! ${result.participantName} GANHOU +${result.pointsAwarded} PONTOS! &nbsp;•&nbsp; <span style="background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 999px; border: 1px solid #fef08a; color: #fef08a; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">⏱️ Próxima pergunta em ${countdown}s...</span></span>`;
+      };
+      updateBannerCountdown();
+      if (this._autoAdvanceCountdown) clearInterval(this._autoAdvanceCountdown);
+      this._autoAdvanceCountdown = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) {
+          clearInterval(this._autoAdvanceCountdown);
+          this._autoAdvanceCountdown = null;
+        } else {
+          updateBannerCountdown();
+        }
+      }, 1000);
     } else {
       banner.className = 'telao-banner banner-wrong';
       banner.innerHTML = `<span>❌</span><span>RESPOSTA INCORRETA! ${result.participantName} NÃO PONTUOU!</span>`;
