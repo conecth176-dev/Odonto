@@ -63,7 +63,7 @@ class TelaoApp {
     const soundIcon = document.getElementById('soundIcon');
     const soundText = document.getElementById('soundText');
     if (soundIcon) soundIcon.innerText = '🔊';
-    if (soundText) soundText.innerText = 'Voz IA Ativada';
+    if (soundText) soundText.innerText = 'Som do Telão Ativado';
 
     const alertBanner = document.getElementById('telaoAudioAlertFloating');
     if (alertBanner) alertBanner.style.display = 'none';
@@ -85,9 +85,7 @@ class TelaoApp {
 
     try {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.resume();
-        const u = new SpeechSynthesisUtterance(' ');
-        window.speechSynthesis.speak(u);
+        window.speechSynthesis.cancel();
       }
     } catch (e) {}
   }
@@ -378,11 +376,11 @@ class TelaoApp {
     const text = document.getElementById('soundText');
     if (this.soundEnabled) {
       if (icon) icon.innerText = '🔊';
-      if (text) text.innerText = 'Voz IA Ativada';
+      if (text) text.innerText = 'Som do Telão Ativado';
       this.unlockAudio();
     } else {
       if (icon) icon.innerText = '🔇';
-      if (text) text.innerText = 'Voz IA Muda';
+      if (text) text.innerText = 'Som do Telão Mudo';
       if (this.currentAudio) {
         try { this.currentAudio.pause(); } catch (e) {}
       }
@@ -403,7 +401,7 @@ class TelaoApp {
     document.getElementById('telaoRoundLabel').innerText = currentQIdx >= 0 ? `${currentQIdx + 1} / ${totalQ}` : `-- / ${totalQ}`;
 
     const currentQ = state.question;
-    if (currentQ) {
+    if (currentQ && state.currentQuestionIndex !== undefined && state.currentQuestionIndex >= 0) {
       const diff = currentQ.difficulty || 'Médio';
       const pts = currentQ.points || (diff === 'Difícil' ? 30 : diff === 'Médio' ? 20 : 10);
       document.getElementById('telaoPointsLabel').innerText = `${pts} pts (${diff})`;
@@ -416,21 +414,39 @@ class TelaoApp {
           if (txtEl) txtEl.innerText = currentQ.options[i];
         }
       }
+    } else {
+      document.getElementById('questionPrompt').innerText = 'Aguardando o anfitrião iniciar a rodada...';
+      document.getElementById('telaoRoundLabel').innerText = `-- / ${totalQ || 10}`;
+      document.getElementById('telaoPointsLabel').innerText = '-- pts';
+      for (let i = 0; i < 4; i++) {
+        const txtEl = document.getElementById(`optionText${i}`);
+        if (txtEl) txtEl.innerText = `Aguardando alternativa ${['A','B','C','D'][i]}...`;
+      }
+      const banner = document.getElementById('statusBanner');
+      if (banner) {
+        banner.className = 'telao-banner banner-locked';
+        banner.innerHTML = `<span>🔒</span><span>SALA ABERTA • AGUARDANDO O INÍCIO PELO ANFITRIÃO</span>`;
+      }
     }
 
     // Ranking sidebar
     this.renderRanking(state.leaderboard || state.participantsList || []);
 
-    // Status sync if loading existing state
+    // Status sync strictly visual (NO audio trigger on passive state update)
     if (state.qseState === 'buzzer_active') {
-      this.onBuzzerUnlocked();
+      const banner = document.getElementById('statusBanner');
+      if (banner) {
+        banner.className = 'telao-banner banner-active';
+        banner.innerHTML = `<span>⚡</span><span>VALENDO! APERTEM O BOTÃO NO CELULAR!</span>`;
+      }
     } else if (state.qseState === 'answering' && state.buzzerWinner) {
-      this.onBuzzerWinner(state.buzzerWinner);
-    } else if (state.qseState === 'revealed' && state.lastResult) {
-      this.onAnswerRevealed(state.lastResult);
-    } else if (state.qseState === 'finished' || state.status === 'finished') {
-      if (!this._isCompetitionFinished) {
-        this.onCompetitionFinished({ leaderboard: state.leaderboard, teamScores: state.teamScores });
+      const name = state.buzzerWinner.participantName || state.buzzerWinner.name || 'Participante';
+      const rawTeam = state.buzzerWinner.team || '';
+      const team = (rawTeam === 'Equipe 2' || String(rawTeam).toLowerCase().includes('2')) ? 'Equipe 2' : 'Equipe 1';
+      const banner = document.getElementById('statusBanner');
+      if (banner) {
+        banner.className = 'telao-banner banner-winner';
+        banner.innerHTML = `<span>🚨</span><span><strong>${team.toUpperCase()}</strong> (${name}) APERTOU PRIMEIRO!</span>`;
       }
     }
   }
@@ -618,17 +634,29 @@ class TelaoApp {
         if (card) card.classList.add('narrating');
       }
 
-      await this.playAudioOrSpeak(item.audioUrl, item.character || 'cebolinha', sessionId, item.text);
+      const isLastPart = (currentPart === parts.length - 1);
+      await this.playAudioOrSpeak(item.audioUrl, item.character || 'cebolinha', sessionId, item.text, isLastPart);
 
       if (this.activeNarrationSession !== sessionId || !this.isNarrating) return;
+
+      if (isLastPart) {
+        // Mônica terminou "Apertem o botão no celular agora!" -> Libera em menos de 1 milissegundo!
+        this.isNarrating = false;
+        this.setNarratorVisual(false, 'Narração finalizada! Botões liberados!');
+        this.resetOptionCards();
+        this.notifyNarrationFinished();
+        this.onBuzzerUnlocked();
+        return;
+      }
+
       currentPart++;
-      this._narrationTimer = setTimeout(speakNext, 350);
+      this._narrationTimer = setTimeout(speakNext, 250);
     };
 
     speakNext();
   }
 
-  playAudioOrSpeak(audioUrlOrText, character = 'cebolinha', sessionId = null, fallbackText = null) {
+  playAudioOrSpeak(audioUrlOrText, character = 'cebolinha', sessionId = null, fallbackText = null, isImmediate = false) {
     return new Promise((resolve) => {
       if (!this.soundEnabled) return resolve();
       if (sessionId && this.activeNarrationSession !== sessionId) return resolve();
@@ -669,12 +697,17 @@ class TelaoApp {
           };
 
           audio.onended = () => {
-            setTimeout(finish, 350);
+            if (isImmediate) {
+              finish();
+            } else {
+              setTimeout(finish, 200);
+            }
           };
 
           audio.onerror = (err) => {
-            console.warn('Áudio MP3 indisponível ou bloqueado, usando síntese de voz de contingência:', audioUrl, err);
-            this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
+            console.warn('Áudio MP3 indisponível:', audioUrl, err);
+            // Voz de IA desativada - aguarda breve pausa e segue sem síntese robótica
+            setTimeout(finish, 150);
           };
 
           // Timeout de segurança proporcional: perguntas têm até 25s de áudio oficial
@@ -702,7 +735,7 @@ class TelaoApp {
                 console.warn('Erro ao reproduzir arquivo MP3 (bloqueio de autoplay?):', audioUrl, err);
                 const alertBanner = document.getElementById('telaoAudioAlertFloating');
                 if (alertBanner) alertBanner.style.display = 'flex';
-                this.fallbackSpeechSynthesis(text, character, sessionId).then(finish);
+                setTimeout(finish, 200);
               });
             }
           } else {

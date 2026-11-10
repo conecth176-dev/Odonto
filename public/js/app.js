@@ -3192,13 +3192,9 @@ class EmbryoApp {
       } catch(e) {}
     }
 
-    // Dr. Odonto mascot voice announcement on correct or incorrect (only on the participant device that answered)
-    if (isMe && this.currentView !== 'admin') {
-      if (result.isCorrect) {
-        this.speakMascotAnnouncement("A lesposta tá colétaaaa! Tolta nesse advelsálioooo! O meu plano infalível funcionou!", 'cebolinha');
-      } else {
-        this.speakMascotAnnouncement("Resposta erradaaaa! Toma tortada na cara e coelhada do Sansão, bebêee!", 'monica');
-      }
+    // Voz de IA desativada a pedido do usuário (apenas efeitos sonoros)
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
     }
 
     this.renderQse(this.currentRoom);
@@ -3215,29 +3211,9 @@ class EmbryoApp {
   }
 
   speakMascotAnnouncement(text, character = 'cebolinha') {
-    if (!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const spokenText = (character === 'cebolinha') ? this.toCebolinha(text) : text;
-      const utterance = new SpeechSynthesisUtterance(spokenText);
-      utterance.lang = 'pt-BR';
-
-      if (character === 'cebolinha') {
-        utterance.pitch = 1.35; // Tom de garoto travesso (Cebolinha)
-        utterance.rate = 1.05;
-        const maleVoice = this.getBestMalePtBrVoice();
-        if (maleVoice) utterance.voice = maleVoice;
-      } else {
-        utterance.pitch = 1.25; // Tom enérgico e bravo da Mônica
-        utterance.rate = 1.08;
-        const femaleVoice = this.getBestFemalePtBrVoice();
-        if (femaleVoice) utterance.voice = femaleVoice;
-      }
-
-      utterance.volume = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech announcement error:', e);
+    // Voz de IA sintética desativada para não misturar com as vozes oficiais
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
     }
   }
 

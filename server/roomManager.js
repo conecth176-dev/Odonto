@@ -523,10 +523,14 @@ class RoomManager {
     };
     this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
     this.io.to(roomId).emit('qse_buzzer_released', payload);
+    if (room.code) {
+      this.io.to(room.code).emit('qse_buzzer_unlocked', payload);
+      this.io.to(room.code).emit('qse_buzzer_released', payload);
+    }
     this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
     this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
-    this.io.to('telao_' + roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to('telao_' + roomId).emit('qse_buzzer_released', payload);
+    this.emitToTelao(room, 'qse_buzzer_unlocked', payload);
+    this.emitToTelao(room, 'qse_buzzer_released', payload);
     this.broadcastRoomState(roomId);
     return { success: true, unlockedAt: room.buzzerUnlockedAt };
   }
@@ -546,10 +550,14 @@ class RoomManager {
     };
     this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
     this.io.to(roomId).emit('qse_buzzer_released', payload);
+    if (room.code) {
+      this.io.to(room.code).emit('qse_buzzer_unlocked', payload);
+      this.io.to(room.code).emit('qse_buzzer_released', payload);
+    }
     this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
     this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
-    this.io.to('telao_' + roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to('telao_' + roomId).emit('qse_buzzer_released', payload);
+    this.emitToTelao(room, 'qse_buzzer_unlocked', payload);
+    this.emitToTelao(room, 'qse_buzzer_released', payload);
     this.broadcastRoomState(roomId);
     return { success: true, unlockedAt: room.buzzerUnlockedAt };
   }
