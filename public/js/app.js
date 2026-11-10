@@ -2713,33 +2713,17 @@ class EmbryoApp {
             </div>
 
             <!-- Alternativas A, B, C, D -->
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
-              ${(q.options || []).map((opt, i) => {
-                const isCorrect = (correctIdx !== null && correctIdx === i);
-                return `
-                  <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); background: ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isCorrect ? '#10b981' : 'rgba(255,255,255,0.06)'};">
-                    <span style="font-weight: 800; min-width: 24px; color: ${isCorrect ? '#34d399' : '#94a3b8'};">
-                      ${letters[i]})
-                    </span>
-                    <span style="font-size: 0.88rem; color: ${isCorrect ? '#a7f3d0' : '#cbd5e1'}; flex: 1;">
-                      ${this.escapeHtml(opt)}
-                    </span>
-                    ${isCorrect ? `<span style="color: #34d399; font-weight: 700; font-size: 0.8rem; background: rgba(16,185,129,0.2); padding: 2px 6px; border-radius: 4px;">✓ Gabarito</span>` : ''}
-                  </div>
-                `;
-              }).join('')}
-            </div>
-
-            <!-- Gabarito Oficial & Explicação Científica -->
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
-              <div style="font-size: 0.88rem; color: #34d399; font-weight: 700; margin-bottom: 4px;">
-                ✅ Gabarito: <strong>${correctLetter}) ${this.escapeHtml(correctText)}</strong>
-              </div>
-              ${(q.scientificExplanation || q.explanation) ? `
-                <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.45; margin-top: 6px;">
-                  <strong style="color: #cbd5e1;">Explicação:</strong> ${this.escapeHtml(q.scientificExplanation || q.explanation)}
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${(q.options || []).map((opt, i) => `
+                <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                  <span style="font-weight: 800; min-width: 24px; color: #38bdf8;">
+                    ${letters[i]})
+                  </span>
+                  <span style="font-size: 0.88rem; color: #cbd5e1; flex: 1;">
+                    ${this.escapeHtml(opt)}
+                  </span>
                 </div>
-              ` : ''}
+              `).join('')}
             </div>
           ` : `
             <div style="text-align: center; padding: 2.5rem 0; color: var(--text-dim);">
