@@ -35,7 +35,7 @@ module.exports = function(roomManager) {
     const isAdmin = isValidAdminToken(token);
 
     const sanitized = roomManager.getSanitizedRoomState(req.params.id);
-    if (isAdmin && room.mode === 'quem_sou_eu') {
+    if (isAdmin) {
       const currentQ = (room.currentQuestionIndex >= 0 && room.questions) ? room.questions[room.currentQuestionIndex] : null;
       return res.json({
         ...sanitized,

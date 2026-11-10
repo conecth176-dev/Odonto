@@ -2519,7 +2519,11 @@ class EmbryoApp {
 
   async fetchAdminRoomState(roomId) {
     try {
-      const res = await fetch(`/api/rooms/${roomId}`);
+      const headers = {};
+      if (this.adminToken) {
+        headers['Authorization'] = `Bearer ${this.adminToken}`;
+      }
+      const res = await fetch(`/api/rooms/${roomId}`, { headers });
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
         const state = await res.json();
@@ -2578,22 +2582,36 @@ class EmbryoApp {
     if (!container) return;
 
     const round = adminState.currentRound;
-    const q = adminState.question;
+    let q = adminState.question;
     const isRunning = adminState.status === 'in_progress';
     const isPaused = adminState.status === 'paused';
     const isLobby = adminState.status === 'lobby';
     const isExplanation = adminState.status === 'explanation';
     const isFinished = adminState.status === 'finished';
 
+    // Resolver gabarito com garantia de integridade (sem undefined)
+    let correctIdx = (q && q.correctAnswer !== null && q.correctAnswer !== undefined) ? q.correctAnswer : null;
+    if (q && (correctIdx === null || correctIdx === undefined)) {
+      const bank = this.adminQuestionsData || this.studyBankQuestions || [];
+      const found = bank.find(item => item.id === q.id || item.question === q.question);
+      if (found && found.correctAnswer !== null && found.correctAnswer !== undefined) {
+        correctIdx = found.correctAnswer;
+      }
+    }
+    const letters = ['A', 'B', 'C', 'D'];
+    const correctLetter = (correctIdx !== null && correctIdx !== undefined && letters[correctIdx]) ? letters[correctIdx] : 'A';
+    const correctText = (q && q.options && correctIdx !== null && q.options[correctIdx]) ? q.options[correctIdx] : '';
+
     container.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <!-- Barra Superior: Info da Sala e Ações do Admin -->
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
           <span class="room-code-tag">${adminState.code}</span>
           <h2 style="font-family: var(--font-display); font-size: 1.4rem; color: #fff; margin-top: 4px;">
             ${this.escapeHtml(adminState.name)}
           </h2>
           <span style="font-size: 0.85rem; color: var(--text-muted);">
-            Modo: <strong>${adminState.mode.toUpperCase()}</strong> | Status: <strong style="color: #38bdf8;">${adminState.status}</strong>
+            Modo: <strong style="color: #38bdf8;">${adminState.mode.toUpperCase()}</strong> | Status: <strong style="color: ${isRunning ? '#34d399' : isPaused ? '#fbbf24' : '#94a3b8'};">${adminState.status}</strong>
           </span>
         </div>
 
@@ -2622,29 +2640,181 @@ class EmbryoApp {
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <div class="glass" style="padding: 1.25rem;">
-          <h4 style="color: #fff; margin-bottom: 0.75rem;">Status da Rodada Atual</h4>
-          ${round ? `
-            <p><strong>Pergunta:</strong> ${round.questionIndex + 1} de ${adminState.totalQuestions}</p>
-            <p><strong>Tema:</strong> ${q ? q.category : 'N/A'}</p>
-            <p><strong>Respostas Recebidas:</strong> <span style="color: #34d399; font-weight: 700;">${round.answersCount}</span> / ${round.totalExpected}</p>
+      <!-- 1. RODADA: Painel em Destaque -->
+      <div class="glass" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; border-left: 4px solid #38bdf8; background: rgba(15, 23, 42, 0.7); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 0.05em; display: block;">🎯 CONTROLE DA RODADA</span>
+            <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: #fff; margin: 2px 0 0;">
+              ${round ? `RODADA ${round.questionIndex + 1} de ${adminState.totalQuestions}` : 'RODADA: Aguardando Início'}
+            </h3>
+          </div>
+          <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
             ${q ? `
-              <div style="margin-top: 1rem; background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: var(--radius-sm);">
-                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Enunciado:</div>
-                <div style="font-size: 0.9rem; color: #fff;">${this.escapeHtml(q.question)}</div>
-                <div style="font-size: 0.82rem; color: #34d399; margin-top: 6px;">
-                  Gabarito: <strong>${['A', 'B', 'C', 'D'][q.correctAnswer]}</strong>) ${this.escapeHtml(q.options[q.correctAnswer] || '')}
-                </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Tema / Categoria:</span>
+                <strong style="color: #f1f5f9; font-size: 0.95rem;">${this.escapeHtml(q.category || q.theme || 'Geral')}</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Dificuldade:</span>
+                <span class="badge ${q.difficulty === 'Fácil' ? 'badge-easy' : q.difficulty === 'Difícil' ? 'badge-hard' : 'badge-medium'}">
+                  ${q.difficulty || 'Média'} (${q.points || 10} pts)
+                </span>
               </div>
             ` : ''}
-          ` : `<p style="color: var(--text-dim);">A competição ainda não foi iniciada.</p>`}
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Respostas Recebidas:</span>
+              <strong style="color: #34d399; font-size: 1.05rem;">${round ? round.answersCount : 0}</strong>
+              <span style="color: var(--text-muted); font-size: 0.85rem;"> / ${round ? round.totalExpected : (adminState.participants ? Object.keys(adminState.participants).length : 0)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grade Principal: PERGUNTA (Esquerda) e RANK GERAL DE PONTOS (Direita) -->
+      <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 1.25rem; align-items: start;">
+        
+        <!-- 2. PERGUNTA: ................ -->
+        <div class="glass" style="padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
+            <h4 style="color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; letter-spacing: 0.02em;">
+              <span>❓</span> PERGUNTA:
+            </h4>
+            ${round ? `<span style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;">Questão ${round.questionIndex + 1} de ${adminState.totalQuestions}</span>` : ''}
+          </div>
+
+          ${q ? `
+            <div style="background: rgba(15, 23, 42, 0.75); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">Enunciado:</div>
+              <div style="font-size: 1rem; color: #f8fafc; font-weight: 600; line-height: 1.5;">
+                ${this.escapeHtml(q.question)}
+              </div>
+            </div>
+
+            <!-- Alternativas A, B, C, D -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+              ${(q.options || []).map((opt, i) => {
+                const isCorrect = (correctIdx !== null && correctIdx === i);
+                return `
+                  <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); background: ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isCorrect ? '#10b981' : 'rgba(255,255,255,0.06)'};">
+                    <span style="font-weight: 800; min-width: 24px; color: ${isCorrect ? '#34d399' : '#94a3b8'};">
+                      ${letters[i]})
+                    </span>
+                    <span style="font-size: 0.88rem; color: ${isCorrect ? '#a7f3d0' : '#cbd5e1'}; flex: 1;">
+                      ${this.escapeHtml(opt)}
+                    </span>
+                    ${isCorrect ? `<span style="color: #34d399; font-weight: 700; font-size: 0.8rem; background: rgba(16,185,129,0.2); padding: 2px 6px; border-radius: 4px;">✓ Gabarito</span>` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Gabarito Oficial & Explicação Científica -->
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+              <div style="font-size: 0.88rem; color: #34d399; font-weight: 700; margin-bottom: 4px;">
+                ✅ Gabarito: <strong>${correctLetter}) ${this.escapeHtml(correctText)}</strong>
+              </div>
+              ${(q.scientificExplanation || q.explanation) ? `
+                <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.45; margin-top: 6px;">
+                  <strong style="color: #cbd5e1;">Explicação:</strong> ${this.escapeHtml(q.scientificExplanation || q.explanation)}
+                </div>
+              ` : ''}
+            </div>
+          ` : `
+            <div style="text-align: center; padding: 2.5rem 0; color: var(--text-dim);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏱️</div>
+              <p style="margin: 0;">A competição ainda não foi iniciada.</p>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Clique em <strong>Iniciar Competição</strong> acima.</span>
+            </div>
+          `}
         </div>
 
-        <div class="glass" style="padding: 1.25rem;">
-          <h4 style="color: #fff; margin-bottom: 0.75rem;">Ranking da Sala em Tempo Real</h4>
-          ${this.renderLeaderboardTableSnippet(adminState.leaderboard || [])}
+        <!-- 3. RANK GERAL DE PONTOS -->
+        <div class="glass" style="padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
+            <h4 style="color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; letter-spacing: 0.02em;">
+              <span>🏆</span> RANK GERAL DE PONTOS
+            </h4>
+            <span style="font-size: 0.72rem; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 9999px;">EM TEMPO REAL</span>
+          </div>
+
+          ${this.renderAdminFullLeaderboard(adminState)}
         </div>
+
+      </div>
+    `;
+  }
+
+  renderAdminFullLeaderboard(adminState) {
+    let list = adminState.leaderboard || [];
+    if (list.length === 0) {
+      if (adminState.mode === 'solo' && adminState.participants) {
+        list = Object.values(adminState.participants).map((p, idx) => ({
+          position: idx + 1,
+          id: p.id,
+          name: p.name,
+          score: p.score || 0,
+          correctCount: p.correctCount || 0,
+          answeredCount: p.answeredCount || 0,
+          accuracy: p.answeredCount > 0 ? Math.round((p.correctCount / p.answeredCount) * 100) : 0
+        }));
+      } else if (adminState.mode === 'duo' && adminState.teams) {
+        list = Object.values(adminState.teams).map((t, idx) => ({
+          position: idx + 1,
+          id: t.code,
+          code: t.code,
+          name: t.name,
+          score: t.score || 0,
+          correctCount: t.correctCount || 0,
+          answeredCount: t.answeredCount || 0,
+          accuracy: t.answeredCount > 0 ? Math.round((t.correctCount / t.answeredCount) * 100) : 0
+        }));
+      }
+    }
+
+    if (list.length === 0) {
+      return `
+        <div style="text-align: center; padding: 2rem 0; color: var(--text-dim);">
+          <div style="font-size: 2rem; margin-bottom: 0.4rem;">👥</div>
+          <p style="font-size: 0.88rem; margin: 0 0 4px; color: var(--text-muted);">Nenhum participante conectado ainda.</p>
+          <span style="font-size: 0.78rem;">Compartilhe o código <strong style="color: #38bdf8;">${adminState.code}</strong> para entrarem.</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+        <table class="leaderboard-table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr>
+              <th style="width: 45px;">Pos</th>
+              <th>Participante / Dupla</th>
+              <th style="text-align: right; width: 85px;">Acertos</th>
+              <th style="text-align: right; width: 80px;">Pontos</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map((item, idx) => `
+              <tr>
+                <td>
+                  <span style="font-weight: 800; font-size: 1rem; color: ${idx === 0 ? '#fbbf24' : idx === 1 ? '#cbd5e1' : idx === 2 ? '#d97706' : '#94a3b8'};">
+                    ${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                  </span>
+                </td>
+                <td>
+                  <strong style="color: #f1f5f9; font-size: 0.92rem;">${this.escapeHtml(item.name)}</strong>
+                  ${item.code ? `<span class="room-code-tag" style="margin-left: 6px; font-size: 0.7rem; padding: 2px 6px;">${item.code}</span>` : ''}
+                </td>
+                <td style="text-align: right; color: var(--text-muted); font-size: 0.85rem;">
+                  ${item.correctCount || 0}/${item.answeredCount || 0}
+                </td>
+                <td style="text-align: right; font-weight: 800; color: #38bdf8; font-size: 1.05rem;">
+                  ${item.score || 0} <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;">pts</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
     `;
   }

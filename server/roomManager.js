@@ -217,6 +217,7 @@ class RoomManager {
     };
 
     room.participants[participantId] = participant;
+    this.calculateLeaderboard(roomId);
     this.saveRooms();
     this.broadcastRoomState(roomId);
     this.broadcastRoomList();
@@ -944,6 +945,7 @@ class RoomManager {
       this.autoCloseRound(roomId);
     }, duration * 1000);
 
+    this.calculateLeaderboard(roomId);
     this.saveRooms();
     this.broadcastRoomState(roomId);
   }
@@ -1363,6 +1365,7 @@ class RoomManager {
     const genericState = this.getSanitizedRoomState(roomId, null);
     this.io.to('admin_' + roomId).emit('admin_room_state_update', {
       ...genericState,
+      question: currentQ || genericState.question,
       fullAnswers: room.currentRound ? room.currentRound.answers : {},
       currentQuestionRaw: currentQ,
       participants: room.participants,
