@@ -3544,12 +3544,12 @@ class EmbryoApp {
     const isWinner = (room.isBuzzerWinner === true) || (room.buzzerWinner && me && (String(room.buzzerWinner.participantId || room.buzzerWinner.id) === String(me.id)));
     const winnerName = room.buzzerWinner ? (room.buzzerWinner.participantName || room.buzzerWinner.name) : '';
 
-    // Finished View
+    // 1. Tela de Competição Finalizada
     if (qseState === 'finished') {
       const topList = room.leaderboard || [];
       const myRank = topList.findIndex(p => p.id === me.id);
       container.innerHTML = `
-        <div class="glass" style="padding: 2.2rem 1.5rem; text-align: center; border: 2px solid #fbbf24;">
+        <div class="glass" style="padding: 2.2rem 1.5rem; text-align: center; border: 2px solid #fbbf24; border-radius: 28px;">
           <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">👑🏆</div>
           <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: #fbbf24; margin: 0 0 0.5rem;">COMPETIÇÃO FINALIZADA!</h2>
           <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">Parabéns a todos os participantes do Grupo 5 de Embriologia!</p>
@@ -3565,7 +3565,7 @@ class EmbryoApp {
           <h3 style="font-size: 1.15rem; color: #fff; margin-bottom: 0.8rem; text-align: left;">🏆 Pódio da Competição</h3>
           <div style="display: flex; flex-direction: column; gap: 0.6rem; text-align: left; margin-bottom: 1.5rem;">
             ${topList.slice(0, 5).map((p, idx) => `
-              <div class="glass" style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${idx === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(30, 41, 59, 0.5)'};">
+              <div class="glass" style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${idx === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(30, 41, 59, 0.5)'}; border-radius: 12px;">
                 <span style="font-weight: 700; color: #fff;">
                   ${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`} ${this.escapeHtml(p.name)}
                 </span>
@@ -3582,418 +3582,87 @@ class EmbryoApp {
       return;
     }
 
-    // Active Game Mobile Screen
-    container.innerHTML = `
-      <!-- Mobile Participant Header -->
-      <div class="glass" style="padding: 1.1rem 1.3rem; margin-bottom: 1.2rem; border-radius: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 1.4rem;">🧠🥧</span>
-            <span class="room-code-tag">${room.code || 'SALA'}</span>
-          </div>
-          <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 0.3rem 0.8rem; border-radius: 999px; font-weight: 800; color: #38bdf8; font-size: 0.95rem;">
-            ${myScore} pts
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
-          <span>Competidor: <strong style="color: #fff;">${this.escapeHtml(me.name)}</strong> <span style="background: ${(me.team === 'Equipe 2') ? '#3b82f6' : '#ef4444'}; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 4px;">${me.team || 'Equipe 1'}</span></span>
-          <span>Rodada: <strong style="color: #fbbf24;">${roundIdx + 1} de ${totalQ}</strong></span>
-        </div>
-      </div>
-
-      <!-- Question Prompt Card -->
-      <div class="glass" style="padding: 1.4rem 1.3rem; margin-bottom: 1.3rem; border-radius: 22px;">
-        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.6rem;">
-          <span style="color: #c084fc; font-weight: 800; font-size: 0.8rem;">
-            ${q ? `${q.points || 20} pts (${q.difficulty || 'Médio'})` : ''}
-          </span>
-        </div>
-
-        <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: #fbbf24; margin: 0 0 0.5rem;">QUEM SOU EU?</h3>
-        <p style="font-size: 1.05rem; line-height: 1.45; color: #f8fafc; font-weight: 600; margin: 0;">
-          ${q ? this.escapeHtml(q.question) : 'O anfitrião iniciará a rodada em instantes. Acompanhe a narração da IA pelo telão!'}
-        </p>
-      </div>
-
-      <!-- Alternatives List Preview -->
-      ${(q && q.options && q.options.length === 4) ? `
-        <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; margin-bottom: 1.5rem;">
-          ${q.options.map((opt, i) => {
-            const letter = ['A', 'B', 'C', 'D'][i];
-            const isChosen = room.lastResult && room.lastResult.optionIndex === i;
-            const isCorrect = room.lastResult && room.lastResult.correctAnswer === i;
-            let borderStyle = 'rgba(255, 255, 255, 0.1)';
-            let bgStyle = 'rgba(30, 41, 59, 0.45)';
-
-            if (qseState === 'revealed') {
-              if (isCorrect) {
-                borderStyle = '#10b981';
-                bgStyle = 'rgba(16, 185, 129, 0.2)';
-              } else if (isChosen) {
-                borderStyle = '#ef4444';
-                bgStyle = 'rgba(239, 68, 68, 0.2)';
-              }
-            }
-
-            return `
-              <div class="glass" style="padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.8rem; border-color: ${borderStyle}; background: ${bgStyle}; border-radius: 14px;">
-                <span style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-family: var(--font-display); flex-shrink: 0;">
-                  ${letter}
-                </span>
-                <span style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0; line-height: 1.35;">
-                  ${this.escapeHtml(opt)}
-                </span>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      ` : ''}
-
-      <!-- THE GIANT BUZZER BUTTON SECTION (Dynamic States) -->
-      <div style="margin-top: 1rem;">
-        ${qseState === 'idle' || qseState === 'lobby' ? `
-          <button class="buzzer-giant-btn buzzer-locked" disabled>
-            <span style="font-size: 2.2rem;">🔒</span>
-            <span>AGUARDE A PERGUNTA</span>
-            <span style="font-size: 0.75rem; text-transform: none; color: #94a3b8; font-weight: 600;">O anfitrião iniciará a rodada</span>
-          </button>
-        ` : qseState === 'reading' ? `
-          <button class="buzzer-giant-btn buzzer-listening" disabled>
-            <span style="font-size: 2.2rem;">🎧🎙️</span>
-            <span>OUÇA COM ATENÇÃO!</span>
-            <span style="font-size: 0.75rem; text-transform: none; color: #c084fc; font-weight: 700;">A IA está narrando as alternativas no telão</span>
-          </button>
-        ` : qseState === 'buzzer_active' ? `
-          <button class="buzzer-giant-btn buzzer-ready" onclick="app.buzzInQse()">
-            <span style="font-size: 2.4rem;">⚡🔔⚡</span>
-            <span>APERTE PARA RESPONDER!</span>
-            <span style="font-size: 0.8rem; text-transform: none; color: #fff; font-weight: 800;">TOQUE RÁPIDO PARA GANHAR A RESPOSTA!</span>
-          </button>
-        ` : qseState === 'answering' ? (
-          isWinner ? `
-            <div class="glass" style="padding: 1.5rem; text-align: center; border: 2px solid #10b981; border-radius: 24px; background: rgba(16, 185, 129, 0.14); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);">
-              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">🎯👑</div>
-              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #34d399; margin: 0 0 0.4rem; text-shadow: 0 2px 10px rgba(16,185,129,0.35);">
-                VOCÊ FOI O PRIMEIRO!
-              </h3>
-              <p style="color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 1.2rem;">
-                Escolha e toque na letra da sua resposta:
-              </p>
-
-              <div style="display: grid; grid-template-columns: 1fr; gap: 0.85rem;">
-                ${['A', 'B', 'C', 'D'].map((letra, idx) => `
-                  <button class="btn btn-primary btn-block qse-answer-btn" style="padding: 1rem; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-start; gap: 1rem; text-align: left; border-radius: 16px; border: 2px solid rgba(56, 189, 248, 0.5); background: linear-gradient(135deg, rgba(2, 132, 199, 0.85), rgba(14, 165, 233, 0.75)); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); cursor: pointer;" onclick="app.submitQseAnswer(${idx})">
-                    <span style="background: #ffffff; color: #0369a1; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,0.25); flex-shrink: 0;">${letra}</span>
-                    <span style="color: #ffffff; font-size: 1rem; line-height: 1.35;">${q && q.options ? this.escapeHtml(q.options[idx]) : ('Alternativa ' + letra)}</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          ` : `
-            <button class="buzzer-giant-btn buzzer-other-won" disabled>
-              <span style="font-size: 2.2rem;">⏳</span>
-              <span>OUTRO FOI MAIS RÁPIDO!</span>
-              <span style="font-size: 0.8rem; text-transform: none; color: #fca5a5; font-weight: 700;">
-                ${this.escapeHtml(winnerName || 'Outro participante')} está respondendo...
-              </span>
-            </button>
-          `
-        ) : qseState === 'revealed' ? `
-          <div class="glass" style="padding: 1.5rem; text-align: center; border-radius: 24px; border: 2px solid ${room.lastResult && room.lastResult.isCorrect ? '#10b981' : '#ef4444'};">
-            ${room.lastResult && room.lastResult.isCorrect ? `
-              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">🎉✅</div>
-              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #34d399; margin: 0 0 0.3rem;">RESPOSTA CORRETA!</h3>
-              <p style="color: #a7f3d0; font-size: 0.95rem; font-weight: 700; margin: 0;">
-                ${this.escapeHtml(room.lastResult.participantName)} acertou e garantiu +${room.lastResult.pointsAwarded} pontos!
-              </p>
-              <div id="qseMobileCountdown" style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(16,185,129,0.18); border: 1px solid #34d399; border-radius: 9999px; color: #a7f3d0; font-weight: 800; font-size: 0.9rem;">
-                ⏱️ Próxima pergunta em 15s...
-              </div>
-            ` : `
-              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">❌</div>
-              <h3 style="font-family: var(--font-display); font-size: 1.4rem; color: #f87171; margin: 0 0 0.3rem;">RESPOSTA INCORRETA!</h3>
-              <p style="color: #fecaca; font-size: 0.95rem; font-weight: 700; margin: 0;">
-                ${this.escapeHtml(room.lastResult ? room.lastResult.participantName : 'Participante')} não pontuou nesta rodada.
-              </p>
-            `}
-            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">Aguarde o anfitrião liberar a próxima rodada no telão.</p>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  // --- Admin Quem Sou Eu Live Dashboard ---
-  async loadAdminQse() {
-    const container = document.getElementById('adminQseContainer');
-    if (!container) return;
-
-    container.innerHTML = `<div class="glass" style="padding: 2rem; text-align: center;"><p style="color: var(--text-muted);">Carregando minigame Quem Sou Eu...</p></div>`;
-
-    try {
-      const res = await fetch('/api/rooms');
-      const allRooms = res.ok ? await res.json() : [];
-      const qseRooms = (allRooms || []).filter(r => r.mode === 'quem_sou_eu');
-
-      if (qseRooms.length === 0) {
-        container.innerHTML = `
-          <div class="glass" style="padding: 2.5rem; text-align: center; border: 2px dashed rgba(251, 191, 36, 0.4);">
-            <div style="font-size: 3rem; margin-bottom: 0.8rem;">🧠🥧</div>
-            <h3 style="color: #fff; font-size: 1.4rem; font-family: var(--font-display); margin: 0 0 0.5rem;">Nenhuma Sala Quem Sou Eu Ativa</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 1.5rem;">
-              Crie uma sala de competição interativa para que os alunos disputem no botão do celular e acompanhem pelo telão do auditório.
-            </p>
-            <button class="btn btn-primary" onclick="app.openCreateQseRoomModal()">
-              + Criar Sala Quem Sou Eu 🎮
-            </button>
-          </div>
-        `;
-        return;
-      }
-
-      const activeRoom = qseRooms[0];
-      const token = this.adminToken || localStorage.getItem('g5_admin_token');
-      if (!token) {
-        return this.openAdminView(true);
-      }
-      this.adminToken = token;
-
-      // Fetch full active room state
-      const stateRes = await fetch(`/api/rooms/${activeRoom.id}?adminToken=${encodeURIComponent(token)}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const room = stateRes.ok ? await stateRes.json() : activeRoom;
-
-      // Join socket admin room for real-time live events
-      window.socketClient.adminJoin(room.id, token);
-
-      const q = room.question;
-      const qseState = room.qseState || 'idle';
-      const totalQ = room.totalQuestions || (room.questions ? room.questions.length : 15);
-      const currentRoundNumber = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 1;
-      const targetRoundIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? room.currentQuestionIndex : 0;
-      const participants = room.participantsList || [];
-
+    // 2. Se ESTE participante venceu o botão: exibe os 4 botões de resposta A, B, C, D
+    if (qseState === 'answering' && isWinner) {
       container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-              <span class="room-code-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: #f59e0b;">${room.code}</span>
-              <h3 style="color: #fff; font-size: 1.4rem; font-family: var(--font-display); margin: 0;">${this.escapeHtml(room.name)}</h3>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0.3rem 0 0;">
-              Controle ao vivo da competição presencial com narração IA e disputa no celular
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 75vh; text-align: center;">
+          <div class="glass" style="width: 100%; max-width: 440px; padding: 2rem 1.5rem; border: 2.5px solid #10b981; border-radius: 28px; background: rgba(16, 185, 129, 0.16); box-shadow: 0 0 40px rgba(16, 185, 129, 0.35);">
+            <div style="font-size: 3.5rem; margin-bottom: 0.2rem;">🎯👑</div>
+            <h2 style="font-family: var(--font-display); font-size: 1.6rem; color: #34d399; margin: 0 0 0.4rem; text-shadow: 0 2px 10px rgba(16,185,129,0.35);">
+              VOCÊ APERTOU PRIMEIRO!
+            </h2>
+            <p style="color: #fff; font-size: 1.05rem; font-weight: 700; margin-bottom: 1.5rem;">
+              Veja as alternativas no telão e toque na sua letra:
             </p>
-          </div>
 
-          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #06b6d4); font-weight: 800;" onclick="app.openTelao('${room.id}')">
-              🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="app.deleteQseRoom('${room.id}')">
-              Excluir Sala 🗑️
-            </button>
-          </div>
-        </div>
-
-        <!-- Live Controls Bar -->
-        <div class="glass" style="padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(251, 191, 36, 0.3); background: rgba(15, 23, 42, 0.75);">
-          <div style="font-size: 0.85rem; color: #fbbf24; text-transform: uppercase; font-weight: 800; margin-bottom: 0.8rem;">
-            ⚡ Comandos ao Vivo do Anfitrião (Rodada ${currentRoundNumber} de ${totalQ})
-          </div>
-
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-primary btn-sm" onclick="app.qseAdminAction('${room.id}', 'start_round')">
-              ▶️ Iniciar Narração / Rodada
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="app.qseAdminAction('${room.id}', 'repeat_narration')">
-              🔁 Repetir Narração
-            </button>
-            <button class="btn btn-secondary btn-sm" style="border-color: #eab308; color: #fde047;" onclick="app.qseAdminAction('${room.id}', 'emergency_unlock')">
-              🔓 Liberar Botões Manualmente (Emergência)
-            </button>
-            <button class="btn btn-secondary btn-sm" style="border-color: #10b981; color: #34d399;" onclick="app.qseAdminAction('${room.id}', 'advance_round')">
-              ⏩ Avançar Próxima Pergunta
-            </button>
-            <button class="btn btn-secondary btn-sm" style="border-color: #ec4899; color: #f472b6;" onclick="app.triggerAdminTortada('${room.id}')">
-              🥧 Dar Tortada na Cara!
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="app.confirmFinishQse('${room.id}')">
-              🏁 Encerrar Competição
-            </button>
-          </div>
-        </div>
-
-        <!-- Live Question Card with Protected Correct Answer -->
-        <div style="display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start;">
-          <div class="glass" style="padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-              <span style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
-                ${q ? (q.theme || 'Fenômeno Embriológico') : 'Pergunta'}
-              </span>
-              <span style="color: #fbbf24; font-weight: 800; font-size: 0.9rem;">
-                Status do Botão: ${qseState === 'buzzer_active' ? '⚡ LIBERADO' : qseState === 'reading' ? '🎧 NARRANDO' : qseState === 'answering' ? '🚨 RESPONDENDO' : '🔒 BLOQUEADO'}
-              </span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              ${['A', 'B', 'C', 'D'].map((letra, idx) => `
+                <button class="btn btn-primary qse-answer-btn" style="padding: 1.4rem 1rem; font-size: 2.2rem; font-weight: 900; border-radius: 20px; border: 2.5px solid #38bdf8; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4); cursor: pointer;" onclick="app.submitQseAnswer(${idx})">
+                  ${letra}
+                </button>
+              `).join('')}
             </div>
-
-            <h4 style="font-size: 1.25rem; color: #fff; margin: 0 0 1rem; line-height: 1.4;">
-              ${q ? this.escapeHtml(q.question) : 'Nenhuma pergunta carregada.'}
-            </h4>
-
-            ${(q && q.options) ? `
-              <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem;">
-                ${q.options.map((opt, i) => {
-                  const letter = ['A', 'B', 'C', 'D'][i];
-                  const isCorrect = (q.correctAnswer === i);
-                  return `
-                    <div style="padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid ${isCorrect ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 41, 59, 0.4)'}; display: flex; align-items: center; justify-content: space-between;">
-                      <span style="font-size: 0.95rem; color: ${isCorrect ? '#a7f3d0' : '#e2e8f0'}; font-weight: ${isCorrect ? '800' : '500'};">
-                        <strong>${letter})</strong> ${this.escapeHtml(opt)}
-                      </span>
-                      ${isCorrect ? `<span style="color: #34d399; font-weight: 800; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); padding: 0.2rem 0.5rem; border-radius: 6px;">🔒 GABARITO (Anfitrião)</span>` : ''}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : ''}
-
-            ${room.buzzerWinner ? `
-              <div style="background: rgba(6, 182, 212, 0.15); border: 1px solid #06b6d4; border-radius: 12px; padding: 0.85rem 1rem; color: #fff;">
-                🚨 <strong>${this.escapeHtml(room.buzzerWinner.participantName)}</strong> apertou primeiro e tem o direito de responder!
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- Connected Participants Sidebar -->
-          <div class="glass" style="padding: 1.25rem;">
-            <h4 style="color: #fff; font-size: 1.1rem; margin: 0 0 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
-              👥 Competidores Conectados (${participants.length})
-            </h4>
-
-            ${participants.length === 0 ? `
-              <p style="color: var(--text-dim); font-size: 0.85rem; text-align: center; margin: 1.5rem 0;">Nenhum participante conectado ainda.</p>
-            ` : `
-              <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto;">
-                ${participants.map(p => `
-                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.5); border-radius: 8px;">
-                    <div>
-                      <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">${this.escapeHtml(p.name)}</span>
-                      ${p.optInTortada ? `<span style="font-size: 0.8rem;" title="Participa da tortada">🥧</span>` : ''}
-                    </div>
-                    <span style="font-weight: 800; color: #38bdf8; font-family: var(--font-display);">${p.score || 0} pts</span>
-                  </div>
-                `).join('')}
-              </div>
-            `}
           </div>
         </div>
       `;
-    } catch (e) {
-      container.innerHTML = `<div class="glass" style="padding: 2rem; color: #f87171;">Erro ao carregar Quem Sou Eu: ${e.message}</div>`;
+      return;
     }
-  }
 
-  async qseAdminAction(roomId, action, data = {}) {
-    try {
-      let token = this.adminToken || localStorage.getItem('g5_admin_token') || 'Dev.Tawa';
-      this.adminToken = token;
+    // 3. Se OUTRO participante venceu o botão: botão cinza mostrando que outro foi mais rápido
+    if (qseState === 'answering' && !isWinner) {
+      container.innerHTML = `
+        <!-- Minimal Participant Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.25rem; margin-bottom: 0.5rem; border-radius: 999px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.1);">
+          <span style="font-weight: 800; color: #f8fafc; font-size: 0.95rem;">👤 ${this.escapeHtml(me.name)} <span style="background: ${(me.team === 'Equipe 2') ? '#3b82f6' : '#ef4444'}; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 4px;">${me.team || 'Equipe 1'}</span></span>
+          <span style="font-weight: 900; color: #38bdf8; font-size: 1rem; font-family: var(--font-display);">${myScore} pts</span>
+        </div>
 
-      let res = null;
-
-      // 1. Try WebSocket first if connected
-      if (window.socketClient && window.socketClient.isConnected) {
-        try {
-          res = await window.socketClient.qseAdminAction(roomId, action, token, data);
-        } catch (sockErr) {
-          console.warn('Socket qseAdminAction failed, falling back to HTTP:', sockErr);
-        }
-      }
-
-      // 2. If token error, auto-recover with master token
-      if (res && res.error && (res.error.includes('Token') || res.error.includes('autorizado'))) {
-        console.warn('Admin token rejected, retrying with master Dev.Tawa token...');
-        token = 'Dev.Tawa';
-        this.adminToken = token;
-        localStorage.setItem('g5_admin_token', token);
-        if (window.socketClient && window.socketClient.isConnected) {
-          try {
-            res = await window.socketClient.qseAdminAction(roomId, action, token, data);
-          } catch (e) {}
-        }
-      }
-
-      // 3. Fallback to HTTP REST endpoint if socket did not succeed or returned error
-      if (!res || res.error) {
-        let endpoint = '';
-        let bodyData = {};
-
-        if (action === 'start_round') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
-          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : null };
-        } else if (action === 'repeat_narration') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/start-round`;
-          bodyData = { roundIndex: data.roundIndex !== undefined ? data.roundIndex : null };
-        } else if (action === 'finish_narration') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/finish-narration`;
-        } else if (action === 'emergency_unlock') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/unlock`;
-        } else if (action === 'advance_round') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/advance`;
-        } else if (action === 'finish') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/finish`;
-        } else if (action === 'trigger_tortada') {
-          endpoint = `/api/admin/rooms/${roomId}/qse/tortada`;
-          bodyData = { targetName: data.targetName };
-        }
-
-        if (endpoint) {
-          const httpRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(bodyData)
-          });
-          res = await httpRes.json();
-          // Retry HTTP with Dev.Tawa if 401
-          if (res && res.error && (res.error.includes('Token') || res.error.includes('autorizado'))) {
-            token = 'Dev.Tawa';
-            this.adminToken = token;
-            localStorage.setItem('g5_admin_token', token);
-            const retryRes = await fetch(endpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify(bodyData)
-            });
-            res = await retryRes.json();
-          }
-        }
-      }
-
-      if (res && res.error) {
-        alert('Atenção: ' + res.error);
-      } else {
-        await this.loadAdminQse();
-      }
-    } catch (e) {
-      alert('Erro ao executar ação do Quem Sou Eu: ' + e.message);
+        <div class="qse-buzzer-stage">
+          <div class="buzzer-pedestal">
+            <div class="buzzer-outer-ring">
+              <button class="buzzer-giant-circle buzzer-gray" disabled>
+                <span style="font-size: 3.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">⏳</span>
+                <span style="font-size: 1.35rem; font-weight: 900; margin-top: 6px; letter-spacing: 0.5px; text-transform: uppercase;">OUTRO FOI MAIS RÁPIDO!</span>
+                <span style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px; font-weight: 600;">${this.escapeHtml(winnerName || 'Outro participante')} está respondendo...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
     }
-  }
 
-  async confirmFinishQse(roomId) {
-    if (!confirm('Deseja realmente encerrar a competição Quem Sou Eu e exibir o pódio final?')) return;
-    await this.qseAdminAction(roomId, 'finish');
-  }
+    // 4. TELA PADRÃO DO PARTICIPANTE: APENAS O BOTÃO GIGANTE (VERMELHO QUANDO LIBERADO, CINZA QUANDO NÃO LIBERADO)
+    const isUnlocked = (qseState === 'buzzer_active');
 
-  async triggerAdminTortada(roomId) {
-    const victim = prompt('Nome de quem vai levar a tortada na cara (deixe em branco para o último que respondeu):');
-    if (victim === null) return;
-    await this.qseAdminAction(roomId, 'trigger_tortada', { targetName: victim.trim() });
+    container.innerHTML = `
+      <!-- Minimal Participant Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.25rem; margin-bottom: 0.5rem; border-radius: 999px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.1);">
+        <span style="font-weight: 800; color: #f8fafc; font-size: 0.95rem;">👤 ${this.escapeHtml(me.name)} <span style="background: ${(me.team === 'Equipe 2') ? '#3b82f6' : '#ef4444'}; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 4px;">${me.team || 'Equipe 1'}</span></span>
+        <span style="font-weight: 900; color: #38bdf8; font-size: 1rem; font-family: var(--font-display);">${myScore} pts</span>
+      </div>
+
+      <!-- APENAS O BOTÃO GIGANTE CENTRALIZADO -->
+      <div class="qse-buzzer-stage">
+        <div class="buzzer-pedestal">
+          <div class="buzzer-outer-ring" style="${isUnlocked ? 'box-shadow: 0 0 50px rgba(239, 68, 68, 0.7); border-color: #ef4444;' : ''}">
+            ${isUnlocked ? `
+              <button class="buzzer-giant-circle buzzer-red" onclick="app.buzzInQse()">
+                <span style="font-size: 4.2rem; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">🔔</span>
+                <span style="font-size: 1.7rem; font-weight: 900; margin-top: 6px; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); text-transform: uppercase;">APERTE AGORA!</span>
+                <span style="font-size: 0.95rem; color: #fef08a; font-weight: 800; margin-top: 4px; text-shadow: 0 1px 4px rgba(0,0,0,0.6);">VALENDO!</span>
+              </button>
+            ` : `
+              <button class="buzzer-giant-circle buzzer-gray" disabled>
+                <span style="font-size: 3.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">🔒</span>
+                <span style="font-size: 1.45rem; font-weight: 900; margin-top: 6px; letter-spacing: 0.5px; text-transform: uppercase;">BLOQUEADO</span>
+                <span style="font-size: 0.85rem; color: #cbd5e1; margin-top: 4px; font-weight: 600;">Aguarde liberação no telão</span>
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   async deleteQseRoom(roomId) {
