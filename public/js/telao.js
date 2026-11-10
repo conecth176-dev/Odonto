@@ -393,6 +393,12 @@ class TelaoApp {
   updateState(state) {
     if (!state) return;
     this.roomState = state;
+    if (state.id) {
+      this.roomId = state.id;
+    }
+    if (state.code) {
+      this.roomCode = state.code;
+    }
 
     const mode = (state.mode || 'solo').toLowerCase();
     const isDuo = mode === 'duo';
@@ -537,6 +543,16 @@ class TelaoApp {
 
     // 7. Atualiza botões de controle para o modo da sala
     this.updateControlsForMode(state);
+
+    if (isQse) {
+      if (state.qseState === 'buzzer_active') {
+        this.updateTelaoControlsState('unlocked');
+      } else if (state.qseState === 'answering') {
+        this.updateTelaoControlsState('winner');
+      } else {
+        this.updateTelaoControlsState('locked');
+      }
+    }
   }
 
   renderRanking(list) {
@@ -722,20 +738,37 @@ class TelaoApp {
 
   unlockBuzzerManual() {
     this.stopNarration();
-    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : 'solo';
-    if (mode === 'solo' || mode === 'duo') {
+    const targetRoomId = this.roomId || (this.roomState && (this.roomState.id || this.roomState.code));
+    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : '';
+    const isQse = (mode === 'quem_sou_eu') || !!(this.roomState && this.roomState.qseState);
+
+    console.log(`[Telão] unlockBuzzerManual acionado! isQse: ${isQse}, targetRoomId: ${targetRoomId}`);
+
+    if (isQse) {
+      // QUEM SOU EU: Liberar o botão de resposta para todos os participantes
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('telao_unlock_buzzer', { roomId: targetRoomId });
+        this.socket.emit('qse_finish_narration', { roomId: targetRoomId });
+        this.socket.emit('qse_emergency_unlock', { roomId: targetRoomId, adminToken: this.adminToken });
+      }
+      if (targetRoomId) {
+        fetch(`/api/admin/rooms/${targetRoomId}/qse/unlock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.adminToken}`
+          }
+        }).catch(err => console.warn('HTTP unlock fallback:', err));
+      }
+      this.onBuzzerUnlocked();
+    } else {
+      // QUIZ SOLO / DUO: Liberar respostas A, B, C, D
       if (this.roomState && this.roomState.status === 'lobby') {
         this.triggerAdminAction('start');
       } else {
         this.triggerAdminAction('unlock_answers');
       }
-    } else {
-      console.log('🔓 Responsável liberou o botão no Telão para a sala:', this.roomId);
-      if (this.socket && this.socket.connected) {
-        this.socket.emit('telao_unlock_buzzer', { roomId: this.roomId });
-        this.socket.emit('qse_finish_narration', { roomId: this.roomId });
-      }
-      this.onBuzzerUnlocked();
+      this.updateTelaoControlsState('unlocked');
     }
   }
 
@@ -745,19 +778,32 @@ class TelaoApp {
       this._autoAdvanceCountdown = null;
     }
     this.stopNarration();
-    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : 'solo';
-    if (mode === 'solo' || mode === 'duo') {
-      this.triggerAdminAction('advance');
-    } else {
-      console.log('⏩ Responsável avançou a pergunta no Telão para a sala:', this.roomId);
+    const targetRoomId = this.roomId || (this.roomState && (this.roomState.id || this.roomState.code));
+    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : '';
+    const isQse = (mode === 'quem_sou_eu') || !!(this.roomState && this.roomState.qseState);
+
+    console.log(`[Telão] nextQuestionManual acionado! isQse: ${isQse}, targetRoomId: ${targetRoomId}`);
+
+    if (isQse) {
       if (this.socket && this.socket.connected) {
-        this.socket.emit('telao_advance_round', { roomId: this.roomId });
+        this.socket.emit('telao_advance_round', { roomId: targetRoomId });
         this.socket.emit('qse_admin_action', {
-          roomId: this.roomId,
+          roomId: targetRoomId,
           action: 'advance_round',
           adminToken: this.adminToken
         });
       }
+      if (targetRoomId) {
+        fetch(`/api/admin/rooms/${targetRoomId}/qse/advance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.adminToken}`
+          }
+        }).catch(err => console.warn('HTTP advance fallback:', err));
+      }
+    } else {
+      this.triggerAdminAction('advance');
     }
   }
 

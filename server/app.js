@@ -50,9 +50,16 @@ io.on('connection', (socket) => {
         return callback && callback(res);
       }
 
-      socket.join(roomId);
+      const targetRoom = roomManager.getRoom(roomId);
+      if (targetRoom) {
+        socket.join(targetRoom.id);
+        if (targetRoom.code) socket.join(targetRoom.code);
+        socket.roomId = targetRoom.id;
+      } else {
+        socket.join(roomId);
+        socket.roomId = roomId;
+      }
       socket.participantId = res.participant.id;
-      socket.roomId = roomId;
 
       if (callback) callback(res);
     } catch (err) {
@@ -157,13 +164,19 @@ io.on('connection', (socket) => {
       if (!targetRoom) {
         const allRooms = roomManager.getAllRoomsSummary();
         const activeRooms = allRooms.filter(r => r.status !== 'finished');
-        const fallback = activeRooms.length > 0 ? activeRooms[activeRooms.length - 1] : allRooms[allRooms.length - 1];
+        const activeQse = activeRooms.filter(r => r.mode === 'quem_sou_eu');
+        const fallback = activeQse.length > 0
+          ? activeQse[activeQse.length - 1]
+          : (activeRooms.length > 0 ? activeRooms[activeRooms.length - 1] : allRooms[allRooms.length - 1]);
         if (fallback) {
           targetRoom = roomManager.getRoom(fallback.id);
         }
       }
 
       if (targetRoom) {
+        socket.roomId = targetRoom.id;
+        socket.join(targetRoom.id);
+        if (targetRoom.code) socket.join(targetRoom.code);
         socket.join('telao_' + targetRoom.id);
         if (targetRoom.code) socket.join('telao_' + targetRoom.code);
         const roomState = roomManager.getSanitizedRoomState(targetRoom.id, null);
@@ -179,7 +192,8 @@ io.on('connection', (socket) => {
   // Quem Sou Eu: AI narration finished on Telão
   socket.on('qse_finish_narration', ({ roomId }, callback) => {
     try {
-      const res = roomManager.finishQseNarration(roomId);
+      const targetId = roomId || socket.roomId;
+      const res = roomManager.finishQseNarration(targetId);
       if (callback) callback(res);
     } catch (err) {
       if (callback) callback({ error: err.message });
@@ -211,7 +225,8 @@ io.on('connection', (socket) => {
   // Telão: Liberar Botão do Quem Sou Eu (acionado pelo responsável via botão no telão)
   socket.on('telao_unlock_buzzer', ({ roomId }, callback) => {
     try {
-      const res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      const targetId = roomId || socket.roomId;
+      const res = roomManager.emergencyUnlockQseBuzzer(targetId);
       if (callback) callback(res);
     } catch (err) {
       if (callback) callback({ error: err.message });
@@ -247,7 +262,8 @@ io.on('connection', (socket) => {
   // Telão: Próxima Pergunta do Quem Sou Eu (acionado pelo responsável via botão no telão)
   socket.on('telao_advance_round', ({ roomId }, callback) => {
     try {
-      const room = roomManager.getRoom(roomId);
+      const targetId = roomId || socket.roomId;
+      const room = roomManager.getRoom(targetId);
       if (!room) return callback && callback({ error: 'Sala não encontrada.' });
 
       if (roomManager._qseAutoAdvanceTimers && roomManager._qseAutoAdvanceTimers[room.id]) {
@@ -274,7 +290,8 @@ io.on('connection', (socket) => {
       if (!isValidAdminToken(adminToken)) {
         return callback && callback({ error: 'Token de administrador inválido.' });
       }
-      const res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      const targetId = roomId || socket.roomId;
+      const res = roomManager.emergencyUnlockQseBuzzer(targetId);
       if (callback) callback(res);
     } catch (err) {
       if (callback) callback({ error: err.message });

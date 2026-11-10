@@ -418,7 +418,7 @@ class RoomManager {
   }
 
   joinQseRoom(roomId, participantName, socketId = null, optInTortada = true, team = 'Equipe 1') {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room) return { error: 'Sala não encontrada.' };
     if (room.mode !== 'quem_sou_eu') return { error: 'Esta sala não é do minigame Quem Sou Eu.' };
     if (room.status === 'finished') return { error: 'Esta competição já foi finalizada.' };
@@ -459,7 +459,7 @@ class RoomManager {
   }
 
   calculateQseLeaderboard(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return;
 
     let items = Object.values(room.participants).map(p => ({
@@ -528,62 +528,69 @@ class RoomManager {
   }
 
   finishQseNarration(roomId) {
-    const room = this.getRoom(roomId);
-    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
-    if (room.qseState !== 'reading') return { error: 'Narração não está em andamento.' };
-
-    room.qseState = 'buzzer_active';
-    room.buzzerUnlockedAt = Date.now();
-    room.buzzerWinner = null;
-
-    this.saveRooms();
-    const payload = {
-      unlockedAt: room.buzzerUnlockedAt,
-      message: 'VALENDO!'
-    };
-    this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to(roomId).emit('qse_buzzer_released', payload);
-    if (room.code) {
-      this.io.to(room.code).emit('qse_buzzer_unlocked', payload);
-      this.io.to(room.code).emit('qse_buzzer_released', payload);
-    }
-    this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
-    this.emitToTelao(room, 'qse_buzzer_unlocked', payload);
-    this.emitToTelao(room, 'qse_buzzer_released', payload);
-    this.broadcastRoomState(roomId);
-    return { success: true, unlockedAt: room.buzzerUnlockedAt };
+    return this.emergencyUnlockQseBuzzer(roomId);
   }
 
   emergencyUnlockQseBuzzer(roomId) {
-    const room = this.getRoom(roomId);
-    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
+    let room = this.getRoom(roomId);
+    if (!room) {
+      const qseRooms = Object.values(this.rooms).filter(r => r.mode === 'quem_sou_eu');
+      room = qseRooms.find(r => r.status !== 'finished') || qseRooms[qseRooms.length - 1];
+    }
+    if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida para o Quem Sou Eu.' };
 
+    const actualRoomId = room.id;
+    room.status = 'in_progress';
     room.qseState = 'buzzer_active';
     room.buzzerUnlockedAt = Date.now();
     room.buzzerWinner = null;
 
     this.saveRooms();
     const payload = {
+      roomId: actualRoomId,
+      roomCode: room.code,
       unlockedAt: room.buzzerUnlockedAt,
       message: 'VALENDO! (Liberação Manual)'
     };
-    this.io.to(roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to(roomId).emit('qse_buzzer_released', payload);
+
+    // 1. Emite para canais da sala (ID e Código)
+    this.io.to(actualRoomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to(actualRoomId).emit('qse_buzzer_released', payload);
     if (room.code) {
       this.io.to(room.code).emit('qse_buzzer_unlocked', payload);
       this.io.to(room.code).emit('qse_buzzer_released', payload);
     }
-    this.io.to('admin_' + roomId).emit('qse_buzzer_unlocked', payload);
-    this.io.to('admin_' + roomId).emit('qse_buzzer_released', payload);
+
+    // 2. Emite para canal de Admin
+    this.io.to('admin_' + actualRoomId).emit('qse_buzzer_unlocked', payload);
+    this.io.to('admin_' + actualRoomId).emit('qse_buzzer_released', payload);
+    if (room.code) {
+      this.io.to('admin_' + room.code).emit('qse_buzzer_unlocked', payload);
+      this.io.to('admin_' + room.code).emit('qse_buzzer_released', payload);
+    }
+
+    // 3. Emite para Telão dedicado e Telão global
     this.emitToTelao(room, 'qse_buzzer_unlocked', payload);
     this.emitToTelao(room, 'qse_buzzer_released', payload);
-    this.broadcastRoomState(roomId);
-    return { success: true, unlockedAt: room.buzzerUnlockedAt };
+    this.io.to('telao_global').emit('qse_buzzer_unlocked', payload);
+    this.io.to('telao_global').emit('qse_buzzer_released', payload);
+
+    // 4. Emite diretamente para o socket individual de cada participante da sala (garantia 100%)
+    if (room.participants) {
+      for (const p of Object.values(room.participants)) {
+        if (p.socketId) {
+          this.io.to(p.socketId).emit('qse_buzzer_unlocked', payload);
+          this.io.to(p.socketId).emit('qse_buzzer_released', payload);
+        }
+      }
+    }
+
+    this.broadcastRoomState(actualRoomId);
+    return { success: true, unlockedAt: room.buzzerUnlockedAt, roomId: actualRoomId };
   }
 
   buzzInQse(roomId, participantId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (room.qseState !== 'buzzer_active') {
       return { error: 'O botão de resposta ainda não está liberado!' };
@@ -619,7 +626,7 @@ class RoomManager {
   }
 
   submitQseAnswer(roomId, participantId, optionIndex) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (room.qseState !== 'answering') return { error: 'Não é o momento de responder.' };
     if (!room.buzzerWinner || (String(room.buzzerWinner.id) !== String(participantId) && String(room.buzzerWinner.participantId) !== String(participantId))) {
@@ -680,7 +687,7 @@ class RoomManager {
   }
 
   triggerQseTortada(roomId, targetName = '') {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
 
     const payload = {
@@ -698,7 +705,7 @@ class RoomManager {
   }
 
   finishQseCompetition(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (this._qseAutoAdvanceTimers && this._qseAutoAdvanceTimers[roomId]) { clearTimeout(this._qseAutoAdvanceTimers[roomId]); delete this._qseAutoAdvanceTimers[roomId]; }
 
@@ -772,14 +779,16 @@ class RoomManager {
 
   // --- Admin Competition Controls ---
   startCompetition(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room) return { error: 'Sala não encontrada.' };
     if (!room.questions || room.questions.length === 0) {
       return { error: 'A sala não possui perguntas cadastradas.' };
     }
-
+    if (room.mode === 'quem_sou_eu') {
+      return this.startQseRound(room.id, 0);
+    }
     room.currentQuestionIndex = 0;
-    this.startRound(roomId, 0);
+    this.startRound(room.id, 0);
     return { success: true };
   }
 
@@ -821,8 +830,11 @@ class RoomManager {
   }
 
   unlockRoundAnswers(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room) return { error: 'Sala não encontrada.' };
+    if (room.mode === 'quem_sou_eu') {
+      return this.emergencyUnlockQseBuzzer(room.id);
+    }
     if (!room.currentRound) return { error: 'Rodada não iniciada.' };
     room.requireAdminUnlock = true;
     room.currentRound.answersUnlocked = true;
@@ -834,8 +846,16 @@ class RoomManager {
   }
 
   advanceManually(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room) return { error: 'Sala não encontrada.' };
+    if (room.mode === 'quem_sou_eu') {
+      const nextIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 0;
+      if (nextIdx < room.questions.length) {
+        return this.startQseRound(room.id, nextIdx);
+      } else {
+        return this.finishQseCompetition(room.id);
+      }
+    }
 
     if (room.timer) {
       clearTimeout(room.timer);
@@ -1349,24 +1369,25 @@ class RoomManager {
   }
 
   broadcastRoomState(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room) return;
+    const actualRoomId = room.id;
 
     // Send personalized state to each connected socket in this room
     for (const [partId, p] of Object.entries(room.participants)) {
       if (p.socketId) {
-        const state = this.getSanitizedRoomState(roomId, partId);
+        const state = this.getSanitizedRoomState(actualRoomId, partId);
         this.io.to(p.socketId).emit('room_state_update', state);
       }
     }
 
-    const currentQ = (room.currentQuestionIndex >= 0 && room.questions[room.currentQuestionIndex])
+    const currentQ = (room.currentQuestionIndex >= 0 && room.questions && room.questions[room.currentQuestionIndex])
       ? room.questions[room.currentQuestionIndex]
       : null;
 
     // Also broadcast general admin / spectator view to room channel
-    const genericState = this.getSanitizedRoomState(roomId, null);
-    this.io.to('admin_' + roomId).emit('admin_room_state_update', {
+    const genericState = this.getSanitizedRoomState(actualRoomId, null);
+    this.io.to('admin_' + actualRoomId).emit('admin_room_state_update', {
       ...genericState,
       question: currentQ || genericState.question,
       fullAnswers: room.currentRound ? room.currentRound.answers : {},
@@ -1374,9 +1395,24 @@ class RoomManager {
       participants: room.participants,
       teams: room.teams
     });
+    if (room.code) {
+      this.io.to('admin_' + room.code).emit('admin_room_state_update', {
+        ...genericState,
+        question: currentQ || genericState.question,
+        fullAnswers: room.currentRound ? room.currentRound.answers : {},
+        currentQuestionRaw: currentQ,
+        participants: room.participants,
+        teams: room.teams
+      });
+    }
 
-    // Also broadcast to Telão
+    // Generic update for all clients, spectators and display boards
+    this.io.to(actualRoomId).emit('room_state_update', genericState);
+    if (room.code) {
+      this.io.to(room.code).emit('room_state_update', genericState);
+    }
     this.emitToTelao(room, 'telao_state_update', genericState);
+    this.io.to('telao_global').emit('telao_state_update', genericState);
   }
 }
 
