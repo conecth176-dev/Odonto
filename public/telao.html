@@ -127,6 +127,85 @@
       color: #c084fc;
     }
 
+    
+    /* Controles Pequenos do Telão (Liberar Botão e Próxima Pergunta) */
+    .telao-ctrl-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 3px 6px;
+    }
+
+    .telao-mini-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.45rem 0.95rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .telao-mini-btn.btn-unlock-buzzer {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .telao-mini-btn.btn-unlock-buzzer:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.7);
+    }
+
+    .telao-mini-btn.btn-unlock-buzzer.unlocked {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #34d399;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .telao-mini-btn.btn-next-round {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+    }
+
+    .telao-mini-btn.btn-next-round:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 18px rgba(37, 99, 235, 0.7);
+    }
+
+    .telao-mini-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Floating Dock at bottom right for easy access on any screen size */
+    .telao-dock {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(14px);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+
     /* Sound Control Button */
     .btn-sound-toggle {
       background: linear-gradient(135deg, #0284c7, #06b6d4);
@@ -635,6 +714,18 @@
           <span>VALENDO:</span>
           <span id="telaoPointsLabel">-- pts</span>
         </div>
+        
+        <!-- BOTOES DE CONTROLE DO TELAO (PEQUENOS E DISCRETOS) -->
+        <div class="telao-ctrl-group" id="telaoHeaderControls">
+          <button class="telao-mini-btn btn-unlock-buzzer" id="btnTelaoUnlockBuzzer" onclick="window.telaoApp.unlockBuzzerManual()" title="Liberar botão no celular dos participantes">
+            <span class="btn-icon">🔓</span>
+            <span class="btn-text">Liberar Botão</span>
+          </button>
+          <button class="telao-mini-btn btn-next-round" id="btnTelaoNextQuestion" onclick="window.telaoApp.nextQuestionManual()" title="Avançar para a próxima pergunta">
+            <span class="btn-icon">⏩</span>
+            <span class="btn-text">Próxima Pergunta</span>
+          </button>
+        </div>
         <button class="btn-sound-toggle" id="btnSoundToggle" onclick="window.telaoApp.toggleSound()">
           <span id="soundIcon">🔊</span>
           <span id="soundText">Som do Telão Ativado</span>
@@ -710,9 +801,22 @@
     </div>
   </div>
 
+  
+  <!-- Mini Dock Flutuante de Controle do Telão -->
+  <div class="telao-dock" id="telaoDock">
+    <button class="telao-mini-btn btn-unlock-buzzer" id="btnDockUnlockBuzzer" onclick="window.telaoApp.unlockBuzzerManual()" title="Liberar botão no celular dos participantes">
+      <span class="btn-icon">🔓</span>
+      <span class="btn-text">Liberar Botão</span>
+    </button>
+    <button class="telao-mini-btn btn-next-round" id="btnDockNextQuestion" onclick="window.telaoApp.nextQuestionManual()" title="Avançar para a próxima pergunta">
+      <span class="btn-icon">⏩</span>
+      <span class="btn-text">Próxima Pergunta</span>
+    </button>
+  </div>
+
   <!-- Socket.io & Telão Script -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/sound.js"></script>
-  <script src="/js/telao.js?v=20261110_realvoices"></script>
+  <script src="/js/telao.js?v=20261110_nobots_manualbtns"></script>
 </body>
 </html>

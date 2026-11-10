@@ -208,6 +208,40 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Telão: Liberar Botão do Quem Sou Eu (acionado pelo responsável via botão no telão)
+  socket.on('telao_unlock_buzzer', ({ roomId }, callback) => {
+    try {
+      const res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Telão: Próxima Pergunta do Quem Sou Eu (acionado pelo responsável via botão no telão)
+  socket.on('telao_advance_round', ({ roomId }, callback) => {
+    try {
+      const room = roomManager.getRoom(roomId);
+      if (!room) return callback && callback({ error: 'Sala não encontrada.' });
+
+      if (roomManager._qseAutoAdvanceTimers && roomManager._qseAutoAdvanceTimers[room.id]) {
+        clearTimeout(roomManager._qseAutoAdvanceTimers[room.id]);
+        delete roomManager._qseAutoAdvanceTimers[room.id];
+      }
+
+      const nextIdx = (room.currentQuestionIndex !== undefined && room.currentQuestionIndex >= 0) ? (room.currentQuestionIndex + 1) : 0;
+      let res;
+      if (nextIdx < room.questions.length) {
+        res = roomManager.startQseRound(room.id, nextIdx);
+      } else {
+        res = roomManager.finishQseCompetition(room.id);
+      }
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
   // Quem Sou Eu: Emergency unlock by admin
   socket.on('qse_emergency_unlock', ({ roomId, adminToken }, callback) => {
     try {

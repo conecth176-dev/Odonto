@@ -486,7 +486,7 @@ class RoomManager {
   }
 
   startQseRound(roomId, questionIndex = null) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (this._qseAutoAdvanceTimers && this._qseAutoAdvanceTimers[roomId]) { clearTimeout(this._qseAutoAdvanceTimers[roomId]); delete this._qseAutoAdvanceTimers[roomId]; }
 
@@ -528,7 +528,7 @@ class RoomManager {
   }
 
   finishQseNarration(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
     if (room.qseState !== 'reading') return { error: 'Narração não está em andamento.' };
 
@@ -556,7 +556,7 @@ class RoomManager {
   }
 
   emergencyUnlockQseBuzzer(roomId) {
-    const room = this.rooms[roomId];
+    const room = this.getRoom(roomId);
     if (!room || room.mode !== 'quem_sou_eu') return { error: 'Sala inválida.' };
 
     room.qseState = 'buzzer_active';

@@ -478,6 +478,76 @@ class TelaoApp {
     }).join('');
   }
 
+
+  updateTelaoControlsState(state) {
+    const unlockBtns = [
+      document.getElementById('btnTelaoUnlockBuzzer'),
+      document.getElementById('btnDockUnlockBuzzer')
+    ].filter(Boolean);
+
+    const nextBtns = [
+      document.getElementById('btnTelaoNextQuestion'),
+      document.getElementById('btnDockNextQuestion')
+    ].filter(Boolean);
+
+    if (state === 'locked') {
+      unlockBtns.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('unlocked');
+        btn.innerHTML = '<span class="btn-icon">🔓</span><span class="btn-text">Liberar Botão</span>';
+      });
+      nextBtns.forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">⏩</span><span class="btn-text">Próxima Pergunta</span>';
+      });
+    } else if (state === 'unlocked') {
+      unlockBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('unlocked');
+        btn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">Botão Liberado!</span>';
+      });
+      nextBtns.forEach(btn => {
+        btn.disabled = false;
+      });
+    } else if (state === 'winner') {
+      unlockBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('unlocked');
+        btn.innerHTML = '<span class="btn-icon">🚨</span><span class="btn-text">Respondendo...</span>';
+      });
+      nextBtns.forEach(btn => {
+        btn.disabled = false;
+      });
+    }
+  }
+
+  unlockBuzzerManual() {
+    console.log('🔓 Responsável liberou o botão no Telão para a sala:', this.roomId);
+    this.stopNarration();
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('telao_unlock_buzzer', { roomId: this.roomId });
+      this.socket.emit('qse_finish_narration', { roomId: this.roomId });
+    }
+    this.onBuzzerUnlocked();
+  }
+
+  nextQuestionManual() {
+    console.log('⏩ Responsável avançou a pergunta no Telão para a sala:', this.roomId);
+    if (this._autoAdvanceCountdown) {
+      clearInterval(this._autoAdvanceCountdown);
+      this._autoAdvanceCountdown = null;
+    }
+    this.stopNarration();
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('telao_advance_round', { roomId: this.roomId });
+      this.socket.emit('qse_admin_action', {
+        roomId: this.roomId,
+        action: 'advance_round',
+        adminToken: this.adminToken
+      });
+    }
+  }
+
   // AI Voice Narration Sequence
   async onRoundStarted(data) {
     const q = data.question;
@@ -512,13 +582,15 @@ class TelaoApp {
       if (el && q.options && q.options[i]) el.innerText = q.options[i];
     }
 
-    // Banner: Reading in progress
+    // Banner: Pergunta pronta no telão, aguardando responsável liberar o botão
     const banner = document.getElementById('statusBanner');
-    banner.className = 'telao-banner banner-locked';
-    banner.innerHTML = `<span>🔒</span><span>OUÇA COM ATENÇÃO! A IA ESTÁ NARRANDO A PERGUNTA</span>`;
+    if (banner) {
+      banner.className = 'telao-banner banner-locked';
+      banner.innerHTML = `<span>🔒</span><span>ATENÇÃO! LEIAM A PERGUNTA — AGUARDEM O RESPONSÁVEL LIBERAR O BOTÃO!</span>`;
+    }
 
-    // Start Narration
-    this.narrateFullQuestion(q);
+    // Atualiza botões no telão para estado inicial da rodada
+    this.updateTelaoControlsState('locked');
   }
 
   stopNarration() {
@@ -659,98 +731,8 @@ class TelaoApp {
   }
 
   playAudioOrSpeak(audioUrlOrText, character = 'cebolinha', sessionId = null, fallbackText = null, isImmediate = false) {
-    return new Promise((resolve) => {
-      if (!this.soundEnabled) return resolve();
-      if (sessionId && this.activeNarrationSession !== sessionId) return resolve();
-
-      const isAudioFile = typeof audioUrlOrText === 'string' && (audioUrlOrText.startsWith('/audio/') || audioUrlOrText.endsWith('.mp3'));
-      const audioUrl = isAudioFile ? audioUrlOrText : null;
-      const text = isAudioFile ? (fallbackText || '') : audioUrlOrText;
-
-      const charTag = (character === 'cebolinha') ? '🧅 Cebolinha' : (character === 'magali') ? '🍉 Magali' : (character === 'cascao') ? '🧦 Cascão' : '🐰 Mônica';
-      this.setNarratorVisual(true, `${charTag}: "${text}"`, character);
-
-      if (audioUrl) {
-        try {
-          if (this.currentAudio) {
-            try { this.currentAudio.pause(); } catch (e) {}
-            this.currentAudio = null;
-          }
-
-          const audio = new Audio(audioUrl);
-          this.currentAudio = audio;
-          window._activeAudioElement = audio;
-          let resolved = false;
-
-          const finish = () => {
-            if (!resolved) {
-              resolved = true;
-              if (this._utteranceSafetyTimer) {
-                clearTimeout(this._utteranceSafetyTimer);
-                this._utteranceSafetyTimer = null;
-              }
-              if (this.currentAudio === audio) {
-                try { audio.pause(); } catch (e) {}
-                this.currentAudio = null;
-                window._activeAudioElement = null;
-              }
-              resolve();
-            }
-          };
-
-          audio.onended = () => {
-            if (isImmediate) {
-              finish();
-            } else {
-              setTimeout(finish, 200);
-            }
-          };
-
-          audio.onerror = (err) => {
-            console.warn('Áudio MP3 indisponível:', audioUrl, err);
-            // Voz de IA desativada - aguarda breve pausa e segue sem síntese robótica
-            setTimeout(finish, 150);
-          };
-
-          // Timeout de segurança proporcional: perguntas têm até 25s de áudio oficial
-          let defaultSafety = 35000;
-          if (audioUrl.includes('/options/')) {
-            defaultSafety = 15000;
-          } else if (audioUrl.includes('/monica/') || audioUrl.includes('/magali/') || audioUrl.includes('/cascao/')) {
-            defaultSafety = 15000;
-          }
-
-          this._utteranceSafetyTimer = setTimeout(finish, defaultSafety);
-
-          audio.onloadedmetadata = () => {
-            if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
-              if (this._utteranceSafetyTimer) clearTimeout(this._utteranceSafetyTimer);
-              this._utteranceSafetyTimer = setTimeout(finish, Math.round((audio.duration + 3) * 1000));
-            }
-          };
-
-          if (!sessionId || this.activeNarrationSession === sessionId) {
-            audio.load();
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-              playPromise.catch((err) => {
-                console.warn('Erro ao reproduzir arquivo MP3 (bloqueio de autoplay?):', audioUrl, err);
-                const alertBanner = document.getElementById('telaoAudioAlertFloating');
-                if (alertBanner) alertBanner.style.display = 'flex';
-                setTimeout(finish, 200);
-              });
-            }
-          } else {
-            finish();
-          }
-          return;
-        } catch (e) {
-          console.warn('Erro na inicialização do áudio:', e);
-        }
-      }
-
-      this.fallbackSpeechSynthesis(text, character, sessionId).then(resolve);
-    });
+    // Voz dos personagens desativada por completo a pedido do usuário
+    return Promise.resolve();
   }
 
   fallbackSpeechSynthesis(text, character = 'cebolinha', sessionId = null) {
@@ -870,6 +852,7 @@ class TelaoApp {
 
   onBuzzerUnlocked() {
     this.resetOptionCards();
+    this.updateTelaoControlsState("unlocked");
     this.setNarratorVisual(false, 'Disputa no botão liberada!');
 
     const banner = document.getElementById('statusBanner');
@@ -883,6 +866,7 @@ class TelaoApp {
 
   onBuzzerWinner(winner) {
     this.stopNarration();
+    this.updateTelaoControlsState("winner");
     const name = winner.participantName || winner.name || 'Participante';
     const rawTeam = winner.team || '';
     const team = (rawTeam === 'Equipe 2' || String(rawTeam).toLowerCase().includes('2') || name.toLowerCase().includes('equipe 2') || name.toLowerCase().includes('time 2')) ? 'Equipe 2' : 'Equipe 1';
