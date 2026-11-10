@@ -156,8 +156,8 @@ io.on('connection', (socket) => {
       }
       if (!targetRoom) {
         const allRooms = roomManager.getAllRoomsSummary();
-        const activeQse = allRooms.filter(r => r.mode === 'quem_sou_eu' && r.status !== 'finished');
-        const fallback = activeQse.length > 0 ? activeQse[activeQse.length - 1] : allRooms.find(r => r.mode === 'quem_sou_eu');
+        const activeRooms = allRooms.filter(r => r.status !== 'finished');
+        const fallback = activeRooms.length > 0 ? activeRooms[activeRooms.length - 1] : allRooms[allRooms.length - 1];
         if (fallback) {
           targetRoom = roomManager.getRoom(fallback.id);
         }
@@ -212,6 +212,32 @@ io.on('connection', (socket) => {
   socket.on('telao_unlock_buzzer', ({ roomId }, callback) => {
     try {
       const res = roomManager.emergencyUnlockQseBuzzer(roomId);
+      if (callback) callback(res);
+    } catch (err) {
+      if (callback) callback({ error: err.message });
+    }
+  });
+
+  // Telão / Admin action for Quiz (Solo, Duo, QSE)
+  socket.on('telao_admin_action', async ({ roomId, action, adminToken }, callback) => {
+    try {
+      const room = roomManager.getRoom(roomId);
+      if (!room) return callback && callback({ error: 'Sala não encontrada.' });
+
+      let res = { success: true };
+      if (action === 'unlock_answers') {
+        res = roomManager.unlockRoundAnswers(room.id);
+      } else if (action === 'start') {
+        res = roomManager.startCompetition(room.id);
+      } else if (action === 'advance') {
+        res = roomManager.advanceManually(room.id);
+      } else if (action === 'pause') {
+        res = roomManager.pauseCompetition(room.id);
+      } else if (action === 'resume') {
+        res = roomManager.resumeCompetition(room.id);
+      } else if (action === 'finish') {
+        res = roomManager.finishCompetition(room.id);
+      }
       if (callback) callback(res);
     } catch (err) {
       if (callback) callback({ error: err.message });

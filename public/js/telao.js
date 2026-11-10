@@ -394,18 +394,45 @@ class TelaoApp {
     if (!state) return;
     this.roomState = state;
 
-    // Header info
+    const mode = (state.mode || 'solo').toLowerCase();
+    const isDuo = mode === 'duo';
+    const isSolo = mode === 'solo';
+    const isQse = mode === 'quem_sou_eu';
+
+    // 1. Títulos e Subtítulos do Telão
+    const titleEl = document.getElementById('telaoTitle');
+    const subEl = document.getElementById('telaoSubtitle');
+    if (titleEl) {
+      titleEl.innerText = isDuo ? 'QUIZ EM DUPLAS 👥' : isSolo ? 'QUIZ INDIVIDUAL (SOLO) 👤' : 'QUEM SOU EU? 🧠🥧';
+    }
+    if (subEl) {
+      subEl.innerText = isDuo ? 'Embriologia Humana • Alternância de Turnos em Tempo Real' : isSolo ? 'Embriologia Humana • Competição Individual ao Vivo' : 'Minigame Interativo com Torta na Cara';
+    }
+
+    // 2. Info Header (Sala, Rodada, Pontuação)
     document.getElementById('telaoRoomCode').innerText = state.code || state.id;
     const currentQIdx = state.currentQuestionIndex !== undefined ? state.currentQuestionIndex : -1;
-    const totalQ = state.totalQuestions || 0;
+    const totalQ = state.totalQuestions || 10;
     document.getElementById('telaoRoundLabel').innerText = currentQIdx >= 0 ? `${currentQIdx + 1} / ${totalQ}` : `-- / ${totalQ}`;
 
+    // 3. Título da Pergunta
+    const qTitleEl = document.getElementById('questionRiddleTitle');
+    if (qTitleEl) {
+      if (isQse) {
+        qTitleEl.innerText = 'QUEM SOU EU? 🧠';
+      } else {
+        qTitleEl.innerText = currentQIdx >= 0 ? `PERGUNTA ${currentQIdx + 1} DE ${totalQ} ❓` : 'QUIZ DE EMBRIOLOGIA ❓';
+      }
+    }
+
     const currentQ = state.question;
+    const isRoundClosed = !state.currentRound || state.currentRound.isClosed || state.status === 'explanation' || state.status === 'finished';
+    const isRevealed = isQse ? (state.qseState === 'revealed' || state.status === 'finished') : isRoundClosed;
+
     if (currentQ && state.currentQuestionIndex !== undefined && state.currentQuestionIndex >= 0) {
       const diff = currentQ.difficulty || 'Médio';
       const pts = currentQ.points || (diff === 'Difícil' ? 30 : diff === 'Médio' ? 20 : 10);
       document.getElementById('telaoPointsLabel').innerText = `${pts} pts (${diff})`;
-      const tEl1 = document.getElementById('questionThemeTag'); if (tEl1) { tEl1.innerText = ''; tEl1.style.display = 'none'; }
       document.getElementById('questionPrompt').innerText = currentQ.question || '';
 
       if (currentQ.options && currentQ.options.length === 4) {
@@ -415,40 +442,80 @@ class TelaoApp {
         }
       }
     } else {
-      document.getElementById('questionPrompt').innerText = 'Aguardando o anfitrião iniciar a rodada...';
-      document.getElementById('telaoRoundLabel').innerText = `-- / ${totalQ || 10}`;
+      document.getElementById('questionPrompt').innerText = isQse ? 'Aguardando o anfitrião iniciar a rodada...' : 'Aguardando o professor iniciar o Quiz no Telão...';
+      document.getElementById('telaoRoundLabel').innerText = `-- / ${totalQ}`;
       document.getElementById('telaoPointsLabel').innerText = '-- pts';
       for (let i = 0; i < 4; i++) {
         const txtEl = document.getElementById(`optionText${i}`);
         if (txtEl) txtEl.innerText = `Aguardando alternativa ${['A','B','C','D'][i]}...`;
       }
-      const banner = document.getElementById('statusBanner');
-      if (banner) {
+    }
+
+    // 4. Revelação de Gabarito & Explicação Científica no Telão
+    this.resetOptionCards();
+    const explBox = document.getElementById('telaoExplanationBox');
+    const explText = document.getElementById('telaoExplanationText');
+
+    if (isRevealed && currentQ && currentQ.correctAnswer !== null && currentQ.correctAnswer !== undefined) {
+      const correctCard = document.getElementById(`optionCard${currentQ.correctAnswer}`);
+      if (correctCard) {
+        correctCard.classList.add('correct');
+      }
+      if (explBox && explText && currentQ.scientificExplanation) {
+        explText.innerText = currentQ.scientificExplanation;
+        explBox.style.display = 'block';
+      }
+    } else {
+      if (explBox) explBox.style.display = 'none';
+    }
+
+    // 5. Dynamic Status Banner
+    const banner = document.getElementById('statusBanner');
+    if (banner) {
+      if (state.status === 'lobby') {
         banner.className = 'telao-banner banner-locked';
-        banner.innerHTML = `<span>🔒</span><span>SALA ABERTA • AGUARDANDO O INÍCIO PELO ANFITRIÃO</span>`;
+        banner.innerHTML = `<span>⏳</span><span>SALA ABERTA • AGUARDANDO O PROFESSOR INICIAR O QUIZ</span>`;
+      } else if (state.status === 'in_progress') {
+        if (isQse) {
+          if (state.qseState === 'buzzer_active') {
+            banner.className = 'telao-banner banner-active';
+            banner.innerHTML = `<span>⚡</span><span>VALENDO! BOTÃO LIBERADO! APERTEM O BOTÃO NO CELULAR!</span>`;
+          } else if (state.qseState === 'answering' && state.buzzerWinner) {
+            const name = state.buzzerWinner.participantName || state.buzzerWinner.name || 'Participante';
+            banner.className = 'telao-banner banner-winner';
+            banner.innerHTML = `<span>🚨</span><span><strong>${name.toUpperCase()}</strong> APERTOU PRIMEIRO E ESTÁ RESPONDENDO!</span>`;
+          } else {
+            banner.className = 'telao-banner banner-locked';
+            banner.innerHTML = `<span>🔒</span><span>ATENÇÃO! LEIAM A PERGUNTA — AGUARDEM O RESPONSÁVEL LIBERAR O BOTÃO!</span>`;
+          }
+        } else {
+          // Solo / Duo Quiz
+          const round = state.currentRound;
+          const isUnlocked = round && round.answersUnlocked !== false;
+          if (!isUnlocked) {
+            banner.className = 'telao-banner banner-locked';
+            banner.innerHTML = `<span>🔒</span><span>LEIAM A PERGUNTA NO TELÃO — AGUARDEM O PROFESSOR LIBERAR AS RESPOSTAS!</span>`;
+          } else {
+            const count = round ? round.answersCount : 0;
+            const totalExp = round ? round.totalExpected : (state.participantsList ? state.participantsList.length : 0);
+            banner.className = 'telao-banner banner-active';
+            banner.innerHTML = `<span>⚡</span><span>RESPOSTAS LIBERADAS! ESCOLHAM NO CELULAR (A, B, C ou D)! &nbsp;•&nbsp; <strong>${count} / ${totalExp}</strong> responderam</span>`;
+          }
+        }
+      } else if (state.status === 'explanation') {
+        banner.className = 'telao-banner banner-correct';
+        banner.innerHTML = `<span>💡</span><span>RODADA ENCERRADA! VEJAM A RESPOSTA CORRETA E A EXPLICAÇÃO NO TELÃO!</span>`;
+      } else if (state.status === 'finished') {
+        banner.className = 'telao-banner banner-correct';
+        banner.innerHTML = `<span>🏆</span><span>COMPETIÇÃO FINALIZADA! PARABÉNS A TODOS OS PARTICIPANTES!</span>`;
       }
     }
 
-    // Ranking sidebar
+    // 6. Ranking Sidebar
     this.renderRanking(state.leaderboard || state.participantsList || []);
 
-    // Status sync strictly visual (NO audio trigger on passive state update)
-    if (state.qseState === 'buzzer_active') {
-      const banner = document.getElementById('statusBanner');
-      if (banner) {
-        banner.className = 'telao-banner banner-active';
-        banner.innerHTML = `<span>⚡</span><span>VALENDO! APERTEM O BOTÃO NO CELULAR!</span>`;
-      }
-    } else if (state.qseState === 'answering' && state.buzzerWinner) {
-      const name = state.buzzerWinner.participantName || state.buzzerWinner.name || 'Participante';
-      const rawTeam = state.buzzerWinner.team || '';
-      const team = (rawTeam === 'Equipe 2' || String(rawTeam).toLowerCase().includes('2')) ? 'Equipe 2' : 'Equipe 1';
-      const banner = document.getElementById('statusBanner');
-      if (banner) {
-        banner.className = 'telao-banner banner-winner';
-        banner.innerHTML = `<span>🚨</span><span><strong>${team.toUpperCase()}</strong> (${name}) APERTOU PRIMEIRO!</span>`;
-      }
-    }
+    // 7. Atualiza botões de controle para o modo da sala
+    this.updateControlsForMode(state);
   }
 
   renderRanking(list) {
@@ -478,6 +545,117 @@ class TelaoApp {
     }).join('');
   }
 
+
+
+  async triggerAdminAction(action) {
+    console.log(`Disparando ação admin no Telão: ${action} para a sala ${this.roomId}`);
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('telao_admin_action', {
+        roomId: this.roomId,
+        action,
+        adminToken: this.adminToken
+      });
+    }
+    try {
+      const endpoint = (action === 'unlock_answers')
+        ? `/api/admin/rooms/${this.roomId}/unlock-answers`
+        : `/api/admin/rooms/${this.roomId}/${action}`;
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.adminToken}`
+        }
+      });
+    } catch (e) {}
+  }
+
+  updateControlsForMode(state) {
+    const mode = (state.mode || 'solo').toLowerCase();
+    const isQse = mode === 'quem_sou_eu';
+    const isLobby = state.status === 'lobby';
+    const isRunning = state.status === 'in_progress';
+    const isExplanation = state.status === 'explanation';
+    const isFinished = state.status === 'finished';
+
+    const unlockBtns = [
+      document.getElementById('btnTelaoUnlockBuzzer'),
+      document.getElementById('btnDockUnlockBuzzer')
+    ].filter(Boolean);
+
+    const nextBtns = [
+      document.getElementById('btnTelaoNextQuestion'),
+      document.getElementById('btnDockNextQuestion')
+    ].filter(Boolean);
+
+    if (isQse) {
+      // Quem Sou Eu mode
+      if (state.qseState === 'reading' || !state.qseState) {
+        unlockBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.classList.remove('unlocked');
+          btn.innerHTML = '<span class="btn-icon">🔓</span><span class="btn-text">Liberar Botão</span>';
+        });
+      } else {
+        unlockBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.classList.add('unlocked');
+          btn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">Botão Liberado!</span>';
+        });
+      }
+      nextBtns.forEach(btn => {
+        btn.disabled = isFinished;
+        btn.innerHTML = '<span class="btn-icon">⏩</span><span class="btn-text">Próxima Pergunta</span>';
+      });
+    } else {
+      // Quiz Solo or Duo mode
+      const round = state.currentRound;
+      const isAnswersUnlocked = round && round.answersUnlocked !== false;
+
+      if (isLobby) {
+        unlockBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.classList.remove('unlocked');
+          btn.innerHTML = '<span class="btn-icon">▶</span><span class="btn-text">Iniciar Quiz</span>';
+        });
+        nextBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="btn-icon">⏩</span><span class="btn-text">Avançar</span>';
+        });
+      } else if (isRunning) {
+        if (!isAnswersUnlocked) {
+          unlockBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('unlocked');
+            btn.innerHTML = '<span class="btn-icon">🔓</span><span class="btn-text">Liberar Respostas (A, B, C, D)</span>';
+          });
+        } else {
+          unlockBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('unlocked');
+            btn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">Respostas Liberadas</span>';
+          });
+        }
+        nextBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="btn-icon">⏩</span><span class="btn-text">Fechar Rodada</span>';
+        });
+      } else if (isExplanation) {
+        unlockBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.classList.add('unlocked');
+          btn.innerHTML = '<span class="btn-icon">🔬</span><span class="btn-text">Gabarito Revelado</span>';
+        });
+        nextBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="btn-icon">⏩</span><span class="btn-text">Próxima Pergunta →</span>';
+        });
+      } else if (isFinished) {
+        unlockBtns.forEach(btn => { btn.disabled = true; });
+        nextBtns.forEach(btn => { btn.disabled = true; });
+      }
+    }
+  }
 
   updateTelaoControlsState(state) {
     const unlockBtns = [
@@ -522,29 +700,43 @@ class TelaoApp {
   }
 
   unlockBuzzerManual() {
-    console.log('🔓 Responsável liberou o botão no Telão para a sala:', this.roomId);
     this.stopNarration();
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('telao_unlock_buzzer', { roomId: this.roomId });
-      this.socket.emit('qse_finish_narration', { roomId: this.roomId });
+    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : 'solo';
+    if (mode === 'solo' || mode === 'duo') {
+      if (this.roomState && this.roomState.status === 'lobby') {
+        this.triggerAdminAction('start');
+      } else {
+        this.triggerAdminAction('unlock_answers');
+      }
+    } else {
+      console.log('🔓 Responsável liberou o botão no Telão para a sala:', this.roomId);
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('telao_unlock_buzzer', { roomId: this.roomId });
+        this.socket.emit('qse_finish_narration', { roomId: this.roomId });
+      }
+      this.onBuzzerUnlocked();
     }
-    this.onBuzzerUnlocked();
   }
 
   nextQuestionManual() {
-    console.log('⏩ Responsável avançou a pergunta no Telão para a sala:', this.roomId);
     if (this._autoAdvanceCountdown) {
       clearInterval(this._autoAdvanceCountdown);
       this._autoAdvanceCountdown = null;
     }
     this.stopNarration();
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('telao_advance_round', { roomId: this.roomId });
-      this.socket.emit('qse_admin_action', {
-        roomId: this.roomId,
-        action: 'advance_round',
-        adminToken: this.adminToken
-      });
+    const mode = (this.roomState && this.roomState.mode) ? this.roomState.mode.toLowerCase() : 'solo';
+    if (mode === 'solo' || mode === 'duo') {
+      this.triggerAdminAction('advance');
+    } else {
+      console.log('⏩ Responsável avançou a pergunta no Telão para a sala:', this.roomId);
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('telao_advance_round', { roomId: this.roomId });
+        this.socket.emit('qse_admin_action', {
+          roomId: this.roomId,
+          action: 'advance_round',
+          adminToken: this.adminToken
+        });
+      }
     }
   }
 

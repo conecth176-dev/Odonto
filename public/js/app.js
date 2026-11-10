@@ -515,8 +515,8 @@ class EmbryoApp {
                 Entrar na Sala 🚪 →
               </button>
             `)}
-            ${(r.mode === 'quem_sou_eu' && this.adminToken) ? `
-              <button class="btn btn-secondary btn-block btn-sm" style="margin-top: 0.45rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="app.openTelao('${r.id}')">
+            ${this.adminToken ? `
+              <button class="btn btn-secondary btn-block btn-sm" style="margin-top: 0.45rem; border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; font-weight: 800;" onclick="app.openTelao('${r.id}')" title="Abrir Telão dedicado em nova aba para projetor">
                 🖥️ ABRIR TELÃO DO AUDITÓRIO ↗
               </button>
             ` : ''}
@@ -2515,6 +2515,9 @@ class EmbryoApp {
         </div>
 
         <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" style="border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; font-weight: 800;" onclick="app.openTelao('${r.id}')" title="Abrir Telão em aba/janela separada para projetor">
+            🖥️ Abrir Telão ↗
+          </button>
           <button class="btn btn-primary btn-sm" onclick="app.selectAdminRoom('${r.id}')">
             Controle Ao Vivo 🎮
           </button>
@@ -2650,7 +2653,10 @@ class EmbryoApp {
           </span>
         </div>
 
-        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-secondary btn-sm" style="background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; color: #38bdf8; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; padding: 0.45rem 0.95rem;" onclick="app.openTelao('${adminState.id}')" title="Abrir Telão dedicado em janela/aba separada para projetar">
+            🖥️ Abrir em Janela Separada (Telão) ↗
+          </button>
           ${isLobby ? `
             <button class="btn btn-emerald" onclick="app.adminRoomAction('start')">▶ Iniciar Competição</button>
           ` : ''}
@@ -2740,25 +2746,37 @@ class EmbryoApp {
           </div>
 
           ${q ? `
-            <div style="background: rgba(15, 23, 42, 0.75); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem;">
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">Enunciado:</div>
-              <div style="font-size: 1rem; color: #f8fafc; font-weight: 600; line-height: 1.5;">
+            <div style="background: rgba(15, 23, 42, 0.85); padding: 1.35rem 1.5rem; border-radius: var(--radius-md); border: 1.5px solid rgba(56, 189, 248, 0.25); margin-bottom: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+              <div style="font-size: 0.8rem; text-transform: uppercase; color: #38bdf8; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 6px;">Enunciado da Questão:</div>
+              <div style="font-size: 1.25rem; color: #ffffff; font-weight: 700; line-height: 1.6;">
                 ${this.escapeHtml(q.question)}
               </div>
             </div>
 
             <!-- Alternativas A, B, C, D -->
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
               ${(q.options || []).map((opt, i) => `
-                <div style="display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                  <span style="font-weight: 800; min-width: 24px; color: #38bdf8;">
-                    ${letters[i]})
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.2rem; border-radius: var(--radius-md); background: rgba(30, 41, 59, 0.6); border: 1.5px solid rgba(255,255,255,0.1); transition: all 0.2s;">
+                  <span style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; font-weight: 900; font-size: 1.1rem; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; color: #38bdf8; flex-shrink: 0;">
+                    ${letters[i]}
                   </span>
-                  <span style="font-size: 0.88rem; color: #cbd5e1; flex: 1;">
+                  <span style="font-size: 1.05rem; color: #f1f5f9; font-weight: 600; flex: 1; line-height: 1.4;">
                     ${this.escapeHtml(opt)}
                   </span>
                 </div>
               `).join('')}
+            </div>
+
+            <div style="margin-top: 1rem;">
+              ${round && round.answersUnlocked === false ? `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 0.9rem; font-weight: 700;">
+                  <span>🔒</span> Alternativas bloqueadas nos celulares dos participantes. Clique no botão verde <strong>"🔓 Liberar Respostas"</strong> acima para autorizar!
+                </div>
+              ` : `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; font-size: 0.9rem; font-weight: 700;">
+                  <span>⚡</span> Alternativas liberadas! Os participantes estão escolhendo a resposta no celular.
+                </div>
+              `}
             </div>
           ` : `
             <div style="text-align: center; padding: 2.5rem 0; color: var(--text-dim);">
